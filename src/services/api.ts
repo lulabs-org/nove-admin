@@ -1,4 +1,14 @@
-import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+/*
+ * @Author: 杨仕明 shiming.y@qq.com
+ * @Date: 2026-01-06 09:06:26
+ * @LastEditors: 杨仕明 shiming.y@qq.com
+ * @LastEditTime: 2026-01-07 02:24:52
+ * @FilePath: /nove-admin/src/services/api.ts
+ * @Description: 
+ * 
+ * Copyright (c) 2026 by LuLab-Team, All Rights Reserved. 
+ */
+import axios, { type AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 import { message } from 'antd';
 import { StorageService } from '../utils/storage';
 import type { ApiErrorResponse } from '../types/api';
