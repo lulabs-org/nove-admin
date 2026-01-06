@@ -1,0 +1,42 @@
+/*
+ * @Author: 杨仕明 shiming.y@qq.com
+ * @Date: 2026-01-07 07:04:28
+ * @LastEditors: 杨仕明 shiming.y@qq.com
+ * @LastEditTime: 2026-01-07 07:04:29
+ * @FilePath: /nove-admin/src/features/settings/routes.tsx
+ * @Description:
+ *
+ * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
+ */
+import type { RouteConfig } from '../../shared/router/types';
+
+export const settingsRoutes: RouteConfig[] = [
+  {
+    path: '/settings',
+    element: <div>Settings</div>,
+    title: '系统设置',
+    menu: true,
+    permission: 'settings:view',
+    children: [
+      {
+        path: '/settings/profile',
+        element: <div>Profile</div>,
+        title: '个人资料',
+        menu: true,
+      },
+      {
+        path: '/settings/security',
+        element: <div>Security</div>,
+        title: '安全设置',
+        menu: true,
+        permission: 'settings:security',
+      },
+    ],
+  },
+  {
+    path: '/404',
+    element: <div>Not Found</div>,
+    title: '404',
+    hidden: true,
+  },
+];
