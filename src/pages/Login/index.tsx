@@ -29,9 +29,15 @@ const LoginPage: React.FC = () => {
       navigate('/dashboard');
     } catch (err) {
       // Display error message
-      const errorMessage = err instanceof Error && err.message 
-        ? err.message 
-        : 'Login failed. Please try again.';
+      let errorMessage = 'Login failed. Please try again.';
+      
+      if (err instanceof Error && err.message) {
+        errorMessage = err.message;
+      } else if (typeof err === 'object' && err !== null) {
+        // Handle API interceptor error object
+        errorMessage = (err as { message?: string }).message || errorMessage;
+      }
+      
       setError(errorMessage);
     }
   };

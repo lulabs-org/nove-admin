@@ -45,9 +45,27 @@ apiClient.interceptors.request.use(
  */
 apiClient.interceptors.response.use(
   (response) => {
+    console.log('API Response:', {
+      url: response.config.url,
+      method: response.config.method,
+      status: response.status,
+      data: response.data
+    });
     return response;
   },
   (error: AxiosError<ApiErrorResponse>) => {
+    console.error('API Error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      data: error.config?.data,
+      headers: error.config?.headers,
+      error: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      request: error.request ? 'Request made but no response received' : 'No request made'
+    });
+
     // Network error
     if (!error.response) {
       message.error('Network error. Please check your connection.');
@@ -55,6 +73,7 @@ apiClient.interceptors.response.use(
         message: 'Network error',
         code: 'NETWORK_ERROR',
         statusCode: 0,
+        originalError: error
       });
     }
 
@@ -97,6 +116,7 @@ apiClient.interceptors.response.use(
       code: data?.error?.code || 'UNKNOWN_ERROR',
       statusCode: status,
       details: data?.error?.details,
+      originalError: error
     });
   }
 );
