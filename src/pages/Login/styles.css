@@ -5,13 +5,50 @@
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated background effect */
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: backgroundMove 20s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes backgroundMove {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(50px, 50px);
+  }
 }
 
 .login-card {
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  border-radius: 16px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.login-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
 }
 
 .login-header {
@@ -22,10 +59,62 @@
 .login-header h2 {
   margin-bottom: 8px;
   color: #1890ff;
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: -0.5px;
 }
 
-@media (max-width: 576px) {
+.login-header p {
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Tablet and below */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 16px;
+  }
+
   .login-card {
     max-width: 100%;
+  }
+
+  .login-header {
+    margin-bottom: 24px;
+  }
+
+  .login-header h2 {
+    font-size: 22px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 576px) {
+  .login-container {
+    padding: 12px;
+  }
+
+  .login-header {
+    margin-bottom: 20px;
+  }
+
+  .login-header h2 {
+    font-size: 20px;
+  }
+
+  .login-header p {
+    font-size: 13px;
+  }
+}
+
+/* Extra small mobile */
+@media (max-width: 374px) {
+  .login-container {
+    padding: 8px;
+  }
+
+  .login-header h2 {
+    font-size: 18px;
   }
 }

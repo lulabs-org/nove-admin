@@ -4,14 +4,70 @@
 
 .welcome-section {
   margin-bottom: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(24, 144, 255, 0.05) 0%, rgba(24, 144, 255, 0.02) 100%);
+  border-radius: 12px;
+  border-left: 4px solid #1890ff;
+  transition: all 0.3s ease;
+}
+
+.welcome-section:hover {
+  background: linear-gradient(135deg, rgba(24, 144, 255, 0.08) 0%, rgba(24, 144, 255, 0.04) 100%);
+  transform: translateX(4px);
 }
 
 .welcome-section h2 {
   margin-bottom: 8px;
+  font-size: 28px;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.85);
+  letter-spacing: -0.5px;
 }
 
+.welcome-section p {
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.65);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .welcome-section h2 {
+    font-size: 24px;
+  }
+
+  .welcome-section p {
+    font-size: 15px;
+  }
+
+  .welcome-section {
+    margin-bottom: 20px;
+  }
+}
+
+/* Mobile */
 @media (max-width: 576px) {
   .welcome-section h2 {
     font-size: 20px;
+  }
+
+  .welcome-section p {
+    font-size: 14px;
+  }
+
+  .welcome-section {
+    margin-bottom: 16px;
+  }
+}
+
+/* Extra small mobile */
+@media (max-width: 374px) {
+  .welcome-section h2 {
+    font-size: 18px;
+  }
+
+  .welcome-section p {
+    font-size: 13px;
   }
 }

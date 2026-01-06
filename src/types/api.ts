@@ -15,7 +15,7 @@ export interface ApiError {
   message: string;
   code: string;
   statusCode: number;
-  details?: any;
+  details?: unknown;
 }
 
 /**
@@ -26,7 +26,7 @@ export interface ApiErrorResponse {
   error: {
     message: string;
     code: string;
-    details?: any;
+    details?: unknown;
   };
   timestamp: string;
 }

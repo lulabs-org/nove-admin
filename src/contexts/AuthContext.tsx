@@ -1,24 +1,16 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+/*
+ * @Author: 杨仕明 shiming.y@qq.com
+ * @Date: 2026-01-06 09:07:17
+ * @LastEditors: 杨仕明 shiming.y@qq.com
+ * @LastEditTime: 2026-01-06 20:24:17
+ * @FilePath: /nove-admin/src/contexts/AuthContext.tsx
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
+import { useState, useEffect, type ReactNode } from 'react';
 import { authApi } from '../services/auth';
 import { StorageService } from '../utils/storage';
-import type { User, LoginRequest } from '../types/auth';
-
-/**
- * Authentication context type definition
- */
-export interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (credentials: LoginRequest) => Promise<void>;
-  logout: () => void;
-  checkAuth: () => Promise<void>;
-}
-
-/**
- * Create authentication context
- */
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import type { LoginRequest, User } from '../types/auth';
+import { AuthContext, type AuthContextType } from './AuthContext.types';
 
 /**
  * Authentication provider props
@@ -31,7 +23,7 @@ interface AuthProviderProps {
  * Authentication provider component
  * Manages global authentication state and provides auth methods
  */
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -48,7 +40,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   const checkAuth = async (): Promise<void> => {
     const token = StorageService.getToken();
-    const storedUser = StorageService.getUser();
 
     if (!token) {
       setIsLoading(false);
@@ -60,7 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const currentUser = await authApi.getCurrentUser();
       setUser(currentUser);
       StorageService.setUser(currentUser);
-    } catch (error) {
+    } catch {
       // Token is invalid or expired
       StorageService.clear();
       setUser(null);
@@ -82,9 +73,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       StorageService.setUser(response.user);
       
       setUser(response.user);
-    } catch (error) {
-      // Error is already handled by axios interceptor
-      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -116,4 +104,4 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+}

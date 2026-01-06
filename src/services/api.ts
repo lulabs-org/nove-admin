@@ -52,12 +52,13 @@ apiClient.interceptors.response.use(
 
     // Handle different error status codes
     switch (status) {
-      case 401:
+      case 401: {
         // Unauthorized - clear auth and redirect to login
         StorageService.clear();
         message.error('Session expired. Please login again.');
         window.location.href = '/login';
         break;
+      }
       
       case 403:
         message.error('Access denied. Insufficient permissions.');
@@ -75,8 +76,10 @@ apiClient.interceptors.response.use(
       
       default:
         // Display error message from API if available
-        const errorMessage = data?.error?.message || 'An error occurred';
-        message.error(errorMessage);
+        {
+          const errorMessage = data?.error?.message || 'An error occurred';
+          message.error(errorMessage);
+        }
     }
 
     return Promise.reject({

@@ -27,9 +27,12 @@ const LoginPage: React.FC = () => {
       await login(values);
       // Redirect to dashboard on success
       navigate('/dashboard');
-    } catch (err: any) {
+    } catch (err) {
       // Display error message
-      setError(err?.message || 'Login failed. Please try again.');
+      const errorMessage = err instanceof Error && err.message 
+        ? err.message 
+        : 'Login failed. Please try again.';
+      setError(errorMessage);
     }
   };
 
