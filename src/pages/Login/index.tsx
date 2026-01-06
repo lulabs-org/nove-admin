@@ -24,17 +24,18 @@ const LoginPage: React.FC = () => {
     setError(null);
     
     try {
-      await login(values);
-      // Redirect to dashboard on success
+      await login({
+        type: 'email_password',
+        username: values.username,
+        password: values.password
+      });
       navigate('/dashboard');
     } catch (err) {
-      // Display error message
       let errorMessage = 'Login failed. Please try again.';
       
       if (err instanceof Error && err.message) {
         errorMessage = err.message;
       } else if (typeof err === 'object' && err !== null) {
-        // Handle API interceptor error object
         errorMessage = (err as { message?: string }).message || errorMessage;
       }
       

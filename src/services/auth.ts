@@ -10,54 +10,39 @@
  */
 import apiClient from './api';
 import type { LoginRequest, LoginResponse, User } from '../types/auth';
-import type { ApiResponse } from '../types/api';
 
-/**
- * Authentication API service
- */
 export const authApi = {
-  /**
-   * Login with username and password
-   */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     console.log('Login attempt with credentials:', credentials);
     console.log('API base URL:', apiClient.defaults.baseURL);
     
     try {
-      const response = await apiClient.post<ApiResponse<LoginResponse>>(
+      const response = await apiClient.post<LoginResponse>(
         '/auth/login',
         credentials
       );
       console.log('Login response:', response);
-      return response.data.data;
+      return response.data;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
     }
   },
 
-  /**
-   * Logout current user
-   */
   async logout(): Promise<void> {
     await apiClient.post('/auth/logout');
   },
 
-  /**
-   * Get current authenticated user information
-   */
   async getCurrentUser(): Promise<User> {
-    const response = await apiClient.get<ApiResponse<User>>('/auth/me');
-    return response.data.data;
+    const response = await apiClient.get<User>('/auth/me');
+    return response.data;
   },
 
-  /**
-   * Refresh authentication token
-   */
-  async refreshToken(): Promise<{ token: string }> {
-    const response = await apiClient.post<ApiResponse<{ token: string }>>(
-      '/auth/refresh'
+  async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+    const response = await apiClient.post<{ accessToken: string; refreshToken: string }>(
+      '/auth/refresh',
+      { refreshToken }
     );
-    return response.data.data;
+    return response.data;
   },
 };

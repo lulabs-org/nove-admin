@@ -68,8 +68,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const response = await authApi.login(credentials);
       
-      // Store token and user information
-      StorageService.setToken(response.token);
+      StorageService.setToken(response.accessToken);
+      StorageService.setRefreshToken(response.refreshToken);
       StorageService.setUser(response.user);
       
       setUser(response.user);

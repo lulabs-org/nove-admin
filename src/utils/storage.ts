@@ -1,43 +1,38 @@
 import type { User } from '../types/auth';
 
 const TOKEN_KEY = 'nove_admin_token';
+const REFRESH_TOKEN_KEY = 'nove_admin_refresh_token';
 const USER_KEY = 'nove_admin_user';
 
-/**
- * Storage service for managing authentication data in local storage
- */
 export const StorageService = {
-  /**
-   * Store authentication token
-   */
   setToken(token: string): void {
     localStorage.setItem(TOKEN_KEY, token);
   },
 
-  /**
-   * Retrieve authentication token
-   */
   getToken(): string | null {
     return localStorage.getItem(TOKEN_KEY);
   },
 
-  /**
-   * Remove authentication token
-   */
   removeToken(): void {
     localStorage.removeItem(TOKEN_KEY);
   },
 
-  /**
-   * Store user information
-   */
+  setRefreshToken(refreshToken: string): void {
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  },
+
+  getRefreshToken(): string | null {
+    return localStorage.getItem(REFRESH_TOKEN_KEY);
+  },
+
+  removeRefreshToken(): void {
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+  },
+
   setUser(user: User): void {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
   },
 
-  /**
-   * Retrieve user information
-   */
   getUser(): User | null {
     const userStr = localStorage.getItem(USER_KEY);
     if (!userStr) return null;
@@ -49,18 +44,13 @@ export const StorageService = {
     }
   },
 
-  /**
-   * Remove user information
-   */
   removeUser(): void {
     localStorage.removeItem(USER_KEY);
   },
 
-  /**
-   * Clear all authentication data
-   */
   clear(): void {
     this.removeToken();
+    this.removeRefreshToken();
     this.removeUser();
   },
 };
