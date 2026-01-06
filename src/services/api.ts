@@ -17,7 +17,7 @@ import type { ApiErrorResponse } from '../types/api';
  * Create axios instance with base configuration
  */
 const apiClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://118.178.234.94:3000',
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',

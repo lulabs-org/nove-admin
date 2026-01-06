@@ -1,0 +1,3343 @@
+{
+    "openapi": "3.0.0",
+    "paths": {
+        "/": {
+            "get": {
+                "operationId": "AppController_getHello",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "\u8fd4\u56de\u6b22\u8fce\u4fe1\u606f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "\u83b7\u53d6\u6b22\u8fce\u4fe1\u606f",
+                "tags": [
+                    "Default"
+                ]
+            }
+        },
+        "/tasks/health": {
+            "get": {
+                "description": "\u68c0\u67e5\u4efb\u52a1\u670d\u52a1\u662f\u5426\u6b63\u5e38\u8fd0\u884c",
+                "operationId": "TasksController_health",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "\u670d\u52a1\u6b63\u5e38\u8fd0\u884c",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "status": "ok",
+                                        "timestamp": "2025-10-01T08:00:00.000Z"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "\u4efb\u52a1\u670d\u52a1\u5065\u5eb7\u68c0\u67e5",
+                "tags": [
+                    "Tasks"
+                ]
+            }
+        },
+        "/tasks/once": {
+            "post": {
+                "description": "\u521b\u5efa\u4e00\u4e2a\u5728\u6307\u5b9a\u65f6\u95f4\u70b9\u6267\u884c\u7684\u4e00\u6b21\u6027\u4efb\u52a1\uff0c\u4efb\u52a1\u5c06\u5728\u6307\u5b9a\u7684ISO 8601\u65f6\u95f4\u81ea\u52a8\u6267\u884c",
+                "operationId": "TasksController_createOnce",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "description": "\u4e00\u6b21\u6027\u4efb\u52a1\u521b\u5efa\u53c2\u6570",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateOnceDto"
+                            },
+                            "examples": {
+                                "basic_example": {
+                                    "summary": "\u57fa\u672c\u4e00\u6b21\u6027\u4efb\u52a1",
+                                    "description": "\u521b\u5efa\u7b80\u5355\u7684\u4e00\u6b21\u6027\u4efb\u52a1",
+                                    "value": {
+                                        "name": "\u6570\u636e\u540c\u6b65\u4efb\u52a1",
+                                        "runAt": "2025-10-15T14:30:00.000Z",
+                                        "payload": {
+                                            "userId": 123,
+                                            "action": "sync_data"
+                                        }
+                                    }
+                                },
+                                "with_job_id": {
+                                    "summary": "\u6307\u5b9a\u4efb\u52a1ID",
+                                    "description": "\u521b\u5efa\u65f6\u6307\u5b9a\u81ea\u5b9a\u4e49\u4efb\u52a1ID",
+                                    "value": {
+                                        "name": "\u90ae\u4ef6\u53d1\u9001\u4efb\u52a1",
+                                        "runAt": "2025-10-16T09:00:00.000Z",
+                                        "payload": {
+                                            "email": "user@example.com",
+                                            "template": "welcome"
+                                        },
+                                        "jobIdHint": "email-job-001"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "\u5df2\u521b\u5efa\u7684\u4e00\u6b21\u6027\u4efb\u52a1",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "id": "clx9abc123def456",
+                                        "name": "\u6570\u636e\u540c\u6b65\u4efb\u52a1",
+                                        "type": "ONCE",
+                                        "queueName": "tasks",
+                                        "jobId": "job_123456",
+                                        "repeatKey": null,
+                                        "cron": null,
+                                        "runAt": "2025-10-15T14:30:00.000Z",
+                                        "payload": {
+                                            "userId": 123,
+                                            "action": "sync_data"
+                                        },
+                                        "status": "SCHEDULED",
+                                        "lastError": null,
+                                        "createdAt": "2025-10-01T08:00:00.000Z",
+                                        "updatedAt": "2025-10-01T08:00:00.000Z"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "\u8bf7\u6c42\u53c2\u6570\u9519\u8bef",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 400,
+                                        "message": [
+                                            "runAt\u5fc5\u987b\u662f\u6709\u6548\u7684ISO 8601\u65f6\u95f4\u683c\u5f0f"
+                                        ],
+                                        "error": "Bad Request"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "\u672a\u6388\u6743\uff0c\u8bbf\u95ee\u4ee4\u724c\u65e0\u6548\u6216\u5df2\u8fc7\u671f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 401,
+                                        "message": "Unauthorized",
+                                        "error": "Unauthorized"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u521b\u5efa\u4e00\u6b21\u6027\u4efb\u52a1\uff08\u5728\u6307\u5b9a\u65f6\u95f4\u70b9\u6267\u884c\uff09",
+                "tags": [
+                    "Tasks"
+                ]
+            }
+        },
+        "/tasks/cron": {
+            "post": {
+                "description": "\u521b\u5efa\u4e00\u4e2a\u6309\u7167Cron\u8868\u8fbe\u5f0f\u5468\u671f\u6027\u6267\u884c\u7684\u4efb\u52a1\uff0c\u4f7f\u7528\u4e0a\u6d77\u65f6\u533a(Asia/Shanghai)",
+                "operationId": "TasksController_createCron",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "description": "Cron\u4efb\u52a1\u521b\u5efa\u53c2\u6570",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateCronDto"
+                            },
+                            "examples": {
+                                "daily_backup": {
+                                    "summary": "\u6bcf\u65e5\u5907\u4efd\u4efb\u52a1",
+                                    "description": "\u6bcf\u5929\u51cc\u66682\u70b9\u6267\u884c\u6570\u636e\u5907\u4efd",
+                                    "value": {
+                                        "name": "\u6bcf\u65e5\u6570\u636e\u5907\u4efd",
+                                        "cron": "0 0 2 * * *",
+                                        "payload": {
+                                            "backupType": "full",
+                                            "retentionDays": 30
+                                        }
+                                    }
+                                },
+                                "hourly_sync": {
+                                    "summary": "\u6bcf\u5c0f\u65f6\u540c\u6b65\u4efb\u52a1",
+                                    "description": "\u6bcf\u5c0f\u65f6\u6267\u884c\u4e00\u6b21\u6570\u636e\u540c\u6b65",
+                                    "value": {
+                                        "name": "\u5c0f\u65f6\u6570\u636e\u540c\u6b65",
+                                        "cron": "0 0 * * * *",
+                                        "payload": {
+                                            "syncType": "incremental",
+                                            "source": "api"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "\u5df2\u521b\u5efa\u7684\u5468\u671f\u4efb\u52a1",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "id": "clx9abc123def457",
+                                        "name": "\u6bcf\u65e5\u6570\u636e\u5907\u4efd",
+                                        "type": "CRON",
+                                        "queueName": "tasks",
+                                        "jobId": "job_789012",
+                                        "repeatKey": "__default__::cron::daily-backup::0 0 2 * * *",
+                                        "cron": "0 0 2 * * *",
+                                        "runAt": null,
+                                        "payload": {
+                                            "backupType": "full",
+                                            "retentionDays": 30
+                                        },
+                                        "status": "SCHEDULED",
+                                        "lastError": null,
+                                        "createdAt": "2025-10-01T08:00:00.000Z",
+                                        "updatedAt": "2025-10-01T08:00:00.000Z"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "\u8bf7\u6c42\u53c2\u6570\u9519\u8bef",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 400,
+                                        "message": [
+                                            "cron\u8868\u8fbe\u5f0f\u683c\u5f0f\u4e0d\u6b63\u786e"
+                                        ],
+                                        "error": "Bad Request"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "\u672a\u6388\u6743\uff0c\u8bbf\u95ee\u4ee4\u724c\u65e0\u6548\u6216\u5df2\u8fc7\u671f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 401,
+                                        "message": "Unauthorized",
+                                        "error": "Unauthorized"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u521b\u5efa Cron \u4efb\u52a1\uff08pattern/cron \u5468\u671f\u6267\u884c\uff09",
+                "tags": [
+                    "Tasks"
+                ]
+            }
+        },
+        "/tasks": {
+            "get": {
+                "description": "\u83b7\u53d6\u4efb\u52a1\u5217\u8868\uff0c\u652f\u6301\u5206\u9875\u3001\u641c\u7d22\u3001\u72b6\u6001\u7b5b\u9009\u3001\u7c7b\u578b\u7b5b\u9009\u548c\u6392\u5e8f\u529f\u80fd",
+                "operationId": "TasksController_list",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "\u6309\u540d\u79f0\u6a21\u7cca\u641c\u7d22",
+                        "schema": {
+                            "example": "\u6570\u636e\u540c\u6b65"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "required": false,
+                        "in": "query",
+                        "description": "\u4efb\u52a1\u72b6\u6001\u7b5b\u9009",
+                        "schema": {
+                            "enum": [
+                                "PENDING",
+                                "SCHEDULED",
+                                "RUNNING",
+                                "COMPLETED",
+                                "FAILED",
+                                "PAUSED"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "required": false,
+                        "in": "query",
+                        "description": "\u4efb\u52a1\u7c7b\u578b\u7b5b\u9009",
+                        "schema": {
+                            "enum": [
+                                "ONCE",
+                                "CRON"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "\u9875\u7801\uff0c\u9ed8\u8ba4\u4e3a1",
+                        "schema": {
+                            "example": 1,
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "pageSize",
+                        "required": false,
+                        "in": "query",
+                        "description": "\u6bcf\u9875\u8bb0\u5f55\u6570\uff0c\u9ed8\u8ba4\u4e3a20",
+                        "schema": {
+                            "example": 20,
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "orderBy",
+                        "required": false,
+                        "in": "query",
+                        "description": "\u6392\u5e8f\u5b57\u6bb5\uff0c\u9ed8\u8ba4\u4e3acreatedAt",
+                        "schema": {
+                            "enum": [
+                                "createdAt",
+                                "updatedAt"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "orderDir",
+                        "required": false,
+                        "in": "query",
+                        "description": "\u6392\u5e8f\u65b9\u5411\uff0c\u9ed8\u8ba4\u4e3adesc",
+                        "schema": {
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\u4efb\u52a1\u5217\u8868\u5206\u9875\u6570\u636e",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "items": [
+                                            {
+                                                "id": "clx9abc123def456",
+                                                "name": "\u6570\u636e\u540c\u6b65\u4efb\u52a1",
+                                                "type": "ONCE",
+                                                "queueName": "tasks",
+                                                "jobId": "job_123456",
+                                                "repeatKey": null,
+                                                "cron": null,
+                                                "runAt": "2025-10-15T14:30:00.000Z",
+                                                "payload": {
+                                                    "userId": 123,
+                                                    "action": "sync_data"
+                                                },
+                                                "status": "SCHEDULED",
+                                                "lastError": null,
+                                                "createdAt": "2025-10-01T08:00:00.000Z",
+                                                "updatedAt": "2025-10-01T08:00:00.000Z"
+                                            }
+                                        ],
+                                        "total": 25,
+                                        "page": 1,
+                                        "pageSize": 20
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "\u672a\u6388\u6743\uff0c\u8bbf\u95ee\u4ee4\u724c\u65e0\u6548\u6216\u5df2\u8fc7\u671f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 401,
+                                        "message": "Unauthorized",
+                                        "error": "Unauthorized"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u4efb\u52a1\u5217\u8868\uff08\u5206\u9875/\u641c\u7d22/\u6392\u5e8f\uff09",
+                "tags": [
+                    "Tasks"
+                ]
+            }
+        },
+        "/tasks/{id}": {
+            "get": {
+                "description": "\u6839\u636e\u4efb\u52a1ID\u83b7\u53d6\u5355\u4e2a\u4efb\u52a1\u7684\u8be6\u7ec6\u4fe1\u606f",
+                "operationId": "TasksController_detail",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "description": "\u4efb\u52a1 ID",
+                        "schema": {
+                            "example": "clx9abc123def456",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\u4efb\u52a1\u8be6\u7ec6\u4fe1\u606f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "id": "clx9abc123def456",
+                                        "name": "\u6570\u636e\u540c\u6b65\u4efb\u52a1",
+                                        "type": "ONCE",
+                                        "queueName": "tasks",
+                                        "jobId": "job_123456",
+                                        "repeatKey": null,
+                                        "cron": null,
+                                        "runAt": "2025-10-15T14:30:00.000Z",
+                                        "payload": {
+                                            "userId": 123,
+                                            "action": "sync_data"
+                                        },
+                                        "status": "SCHEDULED",
+                                        "lastError": null,
+                                        "createdAt": "2025-10-01T08:00:00.000Z",
+                                        "updatedAt": "2025-10-01T08:00:00.000Z"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "\u672a\u6388\u6743\uff0c\u8bbf\u95ee\u4ee4\u724c\u65e0\u6548\u6216\u5df2\u8fc7\u671f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 401,
+                                        "message": "Unauthorized",
+                                        "error": "Unauthorized"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "\u4efb\u52a1\u4e0d\u5b58\u5728",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 404,
+                                        "message": "\u4efb\u52a1\u4e0d\u5b58\u5728",
+                                        "error": "Not Found"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u4efb\u52a1\u8be6\u60c5",
+                "tags": [
+                    "Tasks"
+                ]
+            },
+            "patch": {
+                "description": "\u66f4\u65b0\u4efb\u52a1\u7684\u540d\u79f0\u3001Cron\u8868\u8fbe\u5f0f\u3001\u8d1f\u8f7d\u6570\u636e\u6216\u72b6\u6001\u3002\u6ce8\u610f\uff1a\u4fee\u6539Cron\u8868\u8fbe\u5f0f\u4f1a\u91cd\u65b0\u521b\u5efaBullMQ\u4efb\u52a1",
+                "operationId": "TasksController_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "description": "\u4efb\u52a1 ID",
+                        "schema": {
+                            "example": "clx9abc123def456",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "description": "\u4efb\u52a1\u66f4\u65b0\u53c2\u6570",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateTaskDto"
+                            },
+                            "examples": {
+                                "update_name": {
+                                    "summary": "\u66f4\u65b0\u4efb\u52a1\u540d\u79f0",
+                                    "description": "\u4ec5\u66f4\u65b0\u4efb\u52a1\u540d\u79f0",
+                                    "value": {
+                                        "name": "\u66f4\u65b0\u7684\u4efb\u52a1\u540d\u79f0"
+                                    }
+                                },
+                                "update_cron": {
+                                    "summary": "\u66f4\u65b0Cron\u8868\u8fbe\u5f0f",
+                                    "description": "\u4fee\u6539\u4efb\u52a1\u7684\u6267\u884c\u65f6\u95f4",
+                                    "value": {
+                                        "cron": "0 0 3 * * *"
+                                    }
+                                },
+                                "update_payload": {
+                                    "summary": "\u66f4\u65b0\u8d1f\u8f7d\u6570\u636e",
+                                    "description": "\u4fee\u6539\u4efb\u52a1\u7684\u8d1f\u8f7d\u6570\u636e",
+                                    "value": {
+                                        "payload": {
+                                            "userId": 456,
+                                            "action": "updated_action"
+                                        }
+                                    }
+                                },
+                                "update_status": {
+                                    "summary": "\u66f4\u65b0\u72b6\u6001",
+                                    "description": "\u4fee\u6539\u4efb\u52a1\u72b6\u6001",
+                                    "value": {
+                                        "status": "SCHEDULED"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "\u66f4\u65b0\u540e\u7684\u4efb\u52a1\u4fe1\u606f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "id": "clx9abc123def456",
+                                        "name": "\u66f4\u65b0\u7684\u4efb\u52a1\u540d\u79f0",
+                                        "type": "CRON",
+                                        "queueName": "tasks",
+                                        "jobId": "job_123456",
+                                        "repeatKey": "__default__::cron::updated-task::0 0 3 * * *",
+                                        "cron": "0 0 3 * * *",
+                                        "runAt": null,
+                                        "payload": {
+                                            "userId": 456,
+                                            "action": "updated_action"
+                                        },
+                                        "status": "SCHEDULED",
+                                        "lastError": null,
+                                        "createdAt": "2025-10-01T08:00:00.000Z",
+                                        "updatedAt": "2025-10-01T09:30:00.000Z"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "\u8bf7\u6c42\u53c2\u6570\u9519\u8bef",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 400,
+                                        "message": [
+                                            "cron\u8868\u8fbe\u5f0f\u683c\u5f0f\u4e0d\u6b63\u786e"
+                                        ],
+                                        "error": "Bad Request"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "\u672a\u6388\u6743\uff0c\u8bbf\u95ee\u4ee4\u724c\u65e0\u6548\u6216\u5df2\u8fc7\u671f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 401,
+                                        "message": "Unauthorized",
+                                        "error": "Unauthorized"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "\u4efb\u52a1\u4e0d\u5b58\u5728",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 404,
+                                        "message": "\u4efb\u52a1\u4e0d\u5b58\u5728",
+                                        "error": "Not Found"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u66f4\u65b0\u4efb\u52a1\uff08\u53ef\u6539\u540d/cron/payload/status\uff09",
+                "tags": [
+                    "Tasks"
+                ]
+            },
+            "delete": {
+                "description": "\u5220\u9664\u6307\u5b9a\u4efb\u52a1\uff0c\u4f1a\u540c\u65f6\u79fb\u9664\u5bf9\u5e94\u7684BullMQ\u961f\u5217\u4efb\u52a1\u3002\u5bf9\u4e8eCron\u4efb\u52a1\u4f1a\u79fb\u9664\u91cd\u590d\u4efb\u52a1\uff0c\u5bf9\u4e8e\u4e00\u6b21\u6027\u4efb\u52a1\u4f1a\u79fb\u9664\u5177\u4f53\u4efb\u52a1",
+                "operationId": "TasksController_remove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "description": "\u4efb\u52a1 ID",
+                        "schema": {
+                            "example": "clx9abc123def456",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\u5220\u9664\u6210\u529f\u54cd\u5e94",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "ok": true
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "\u672a\u6388\u6743\uff0c\u8bbf\u95ee\u4ee4\u724c\u65e0\u6548\u6216\u5df2\u8fc7\u671f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 401,
+                                        "message": "Unauthorized",
+                                        "error": "Unauthorized"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "\u4efb\u52a1\u4e0d\u5b58\u5728",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 404,
+                                        "message": "\u4efb\u52a1\u4e0d\u5b58\u5728",
+                                        "error": "Not Found"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u5220\u9664\u4efb\u52a1\uff08\u4f1a\u79fb\u9664\u5bf9\u5e94\u961f\u5217\u4efb\u52a1\uff09",
+                "tags": [
+                    "Tasks"
+                ]
+            }
+        },
+        "/tasks/pause": {
+            "post": {
+                "description": "\u6682\u505c\u6574\u4e2a\u4efb\u52a1\u961f\u5217\uff0c\u6240\u6709\u72b6\u6001\u4e3aSCHEDULED\u7684\u4efb\u52a1\u4f1a\u88ab\u6807\u8bb0\u4e3aPAUSED\u72b6\u6001\uff0c\u961f\u5217\u5904\u7406\u4f1a\u88ab\u6682\u505c",
+                "operationId": "TasksController_pause",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "\u6682\u505c\u6210\u529f\u54cd\u5e94",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "ok": true
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "\u672a\u6388\u6743\uff0c\u8bbf\u95ee\u4ee4\u724c\u65e0\u6548\u6216\u5df2\u8fc7\u671f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 401,
+                                        "message": "Unauthorized",
+                                        "error": "Unauthorized"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u6682\u505c\u6574\u4e2a\u4efb\u52a1\u961f\u5217\uff08\u6570\u636e\u5e93\u72b6\u6001\u6807\u8bb0\u4e3a PAUSED\uff09",
+                "tags": [
+                    "Tasks"
+                ]
+            }
+        },
+        "/tasks/resume": {
+            "post": {
+                "description": "\u6062\u590d\u88ab\u6682\u505c\u7684\u4efb\u52a1\u961f\u5217\uff0c\u6240\u6709\u72b6\u6001\u4e3aPAUSED\u7684\u4efb\u52a1\u4f1a\u88ab\u6062\u590d\u4e3aSCHEDULED\u72b6\u6001\uff0c\u961f\u5217\u5904\u7406\u4f1a\u91cd\u65b0\u542f\u52a8",
+                "operationId": "TasksController_resume",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "\u6062\u590d\u6210\u529f\u54cd\u5e94",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "ok": true
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "\u672a\u6388\u6743\uff0c\u8bbf\u95ee\u4ee4\u724c\u65e0\u6548\u6216\u5df2\u8fc7\u671f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 401,
+                                        "message": "Unauthorized",
+                                        "error": "Unauthorized"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u6062\u590d\u6574\u4e2a\u4efb\u52a1\u961f\u5217\uff08\u6570\u636e\u5e93\u72b6\u6001\u6062\u590d\u4e3a SCHEDULED\uff09",
+                "tags": [
+                    "Tasks"
+                ]
+            }
+        },
+        "/tasks/{id}/run": {
+            "post": {
+                "description": "\u7acb\u5373\u89e6\u53d1\u6267\u884c\u6307\u5b9a\u7684\u4efb\u52a1\u4e00\u6b21\uff0c\u4e0d\u6539\u53d8\u4efb\u52a1\u539f\u6709\u7684\u6267\u884c\u8ba1\u5212\u3002\u5bf9\u4e8eCron\u4efb\u52a1\uff0c\u4f1a\u521b\u5efa\u4e00\u4e2a\u72ec\u7acb\u7684\u7acb\u5373\u6267\u884c\u4efb\u52a1",
+                "operationId": "TasksController_runNow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "description": "\u4efb\u52a1 ID",
+                        "schema": {
+                            "example": "clx9abc123def456",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\u7acb\u5373\u6267\u884c\u4efb\u52a1\u7684\u54cd\u5e94\uff0c\u5305\u542b\u65b0\u521b\u5efa\u7684\u4efb\u52a1ID",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "jobId": "job_987654"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "\u672a\u6388\u6743\uff0c\u8bbf\u95ee\u4ee4\u724c\u65e0\u6548\u6216\u5df2\u8fc7\u671f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 401,
+                                        "message": "Unauthorized",
+                                        "error": "Unauthorized"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "\u4efb\u52a1\u4e0d\u5b58\u5728",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 404,
+                                        "message": "\u4efb\u52a1\u4e0d\u5b58\u5728",
+                                        "error": "Not Found"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u7acb\u5373\u6267\u884c\u67d0\u4efb\u52a1\u4e00\u6b21\uff08\u4e0d\u6539\u53d8\u5176\u8ba1\u5212\uff09",
+                "tags": [
+                    "Tasks"
+                ]
+            }
+        },
+        "/mail/send": {
+            "post": {
+                "description": "\u53d1\u9001\u90ae\u4ef6\u5230\u6307\u5b9a\u6536\u4ef6\u4eba\uff0c\u652f\u6301\u7eaf\u6587\u672c\u548cHTML\u683c\u5f0f\uff0c\u53ef\u6dfb\u52a0\u6284\u9001\u548c\u5bc6\u9001\u6536\u4ef6\u4eba\u3002",
+                "operationId": "MailController_sendEmail",
+                "parameters": [
+                    {
+                        "name": "Content-Type",
+                        "in": "header",
+                        "description": "\u8bf7\u6c42\u5185\u5bb9\u7c7b\u578b",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "default": "application/json"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "description": "\u90ae\u4ef6\u53d1\u9001\u8bf7\u6c42\u53c2\u6570",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SendEmailDto"
+                            },
+                            "examples": {
+                                "basic_email": {
+                                    "summary": "\u57fa\u7840\u90ae\u4ef6",
+                                    "description": "\u53d1\u9001\u7b80\u5355\u7684\u7eaf\u6587\u672c\u90ae\u4ef6",
+                                    "value": {
+                                        "to": "recipient@example.com",
+                                        "subject": "\u6d4b\u8bd5\u90ae\u4ef6\u4e3b\u9898",
+                                        "text": "\u8fd9\u662f\u90ae\u4ef6\u7684\u7eaf\u6587\u672c\u5185\u5bb9"
+                                    }
+                                },
+                                "html_email": {
+                                    "summary": "HTML\u90ae\u4ef6",
+                                    "description": "\u53d1\u9001HTML\u683c\u5f0f\u7684\u90ae\u4ef6",
+                                    "value": {
+                                        "to": "recipient@example.com",
+                                        "subject": "HTML\u90ae\u4ef6\u4e3b\u9898",
+                                        "text": "\u8fd9\u662f\u90ae\u4ef6\u7684\u7eaf\u6587\u672c\u5185\u5bb9",
+                                        "html": "<h1>\u8fd9\u662f\u90ae\u4ef6\u7684HTML\u5185\u5bb9</h1><p>\u5305\u542b\u5bcc\u6587\u672c\u683c\u5f0f</p>"
+                                    }
+                                },
+                                "email_with_cc": {
+                                    "summary": "\u5e26\u6284\u9001\u7684\u90ae\u4ef6",
+                                    "description": "\u53d1\u9001\u5e26\u6284\u9001\u6536\u4ef6\u4eba\u7684\u90ae\u4ef6",
+                                    "value": {
+                                        "to": "primary@example.com",
+                                        "cc": [
+                                            "cc1@example.com",
+                                            "cc2@example.com"
+                                        ],
+                                        "subject": "\u5e26\u6284\u9001\u7684\u90ae\u4ef6",
+                                        "text": "\u8fd9\u5c01\u90ae\u4ef6\u53d1\u9001\u7ed9\u4e3b\u8981\u6536\u4ef6\u4eba\uff0c\u5e76\u6284\u9001\u7ed9\u5176\u4ed6\u4eba"
+                                    }
+                                },
+                                "email_with_bcc": {
+                                    "summary": "\u5e26\u5bc6\u9001\u7684\u90ae\u4ef6",
+                                    "description": "\u53d1\u9001\u5e26\u5bc6\u9001\u6536\u4ef6\u4eba\u7684\u90ae\u4ef6",
+                                    "value": {
+                                        "to": "primary@example.com",
+                                        "bcc": [
+                                            "bcc1@example.com",
+                                            "bcc2@example.com"
+                                        ],
+                                        "subject": "\u5e26\u5bc6\u9001\u7684\u90ae\u4ef6",
+                                        "text": "\u8fd9\u5c01\u90ae\u4ef6\u53d1\u9001\u7ed9\u4e3b\u8981\u6536\u4ef6\u4eba\uff0c\u5e76\u5bc6\u9001\u7ed9\u5176\u4ed6\u4eba"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "\u90ae\u4ef6\u53d1\u9001\u6210\u529f\uff0c\u8fd4\u56de\u6d88\u606fID",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 200,
+                                        "message": "\u90ae\u4ef6\u53d1\u9001\u6210\u529f",
+                                        "data": {
+                                            "messageId": "message-123456"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "\u90ae\u4ef6\u53d1\u9001\u5931\u8d25",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 400,
+                                        "message": "\u90ae\u4ef6\u53d1\u9001\u5931\u8d25",
+                                        "error": "Invalid email address"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "\u670d\u52a1\u5668\u5185\u90e8\u9519\u8bef",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 500,
+                                        "message": "\u670d\u52a1\u5668\u5185\u90e8\u9519\u8bef",
+                                        "error": "Internal server error"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u53d1\u9001\u90ae\u4ef6",
+                "tags": [
+                    "Mail"
+                ]
+            }
+        },
+        "/mail/verify": {
+            "get": {
+                "description": "\u9a8c\u8bc1\u90ae\u4ef6\u670d\u52a1\u5668SMTP\u8fde\u63a5\u72b6\u6001\uff0c\u68c0\u67e5\u90ae\u4ef6\u670d\u52a1\u662f\u5426\u53ef\u7528\u3002",
+                "operationId": "MailController_verifyConnection",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "SMTP\u8fde\u63a5\u5931\u8d25",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 200,
+                                        "message": "SMTP\u8fde\u63a5\u5931\u8d25",
+                                        "data": {
+                                            "connected": false
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "\u9a8c\u8bc1\u8fde\u63a5\u65f6\u53d1\u751f\u9519\u8bef",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 500,
+                                        "message": "\u9a8c\u8bc1\u8fde\u63a5\u65f6\u53d1\u751f\u9519\u8bef",
+                                        "error": "Connection timeout"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u9a8c\u8bc1SMTP\u8fde\u63a5",
+                "tags": [
+                    "Mail"
+                ]
+            }
+        },
+        "/mail/send-later": {
+            "post": {
+                "operationId": "MailController_sendLater",
+                "parameters": [],
+                "responses": {
+                    "201": {
+                        "description": ""
+                    }
+                },
+                "tags": [
+                    "Mail"
+                ]
+            }
+        },
+        "/api/auth/register": {
+            "post": {
+                "description": "\u7528\u6237\u6ce8\u518c\u9700\u8981\u5148\u901a\u8fc7\u90ae\u7bb1\u6216\u624b\u673a\u53f7\u9a8c\u8bc1\u7801\u9a8c\u8bc1\u3002\u652f\u6301\u7684\u6ce8\u518c\u7c7b\u578b\uff1aemail_code\uff08\u90ae\u7bb1\u9a8c\u8bc1\u7801\uff09\u3001phone_code\uff08\u624b\u673a\u9a8c\u8bc1\u7801\uff09\u3002\u4e3a\u4e86\u5b89\u5168\u8003\u8651\uff0c\u4e0d\u518d\u652f\u6301\u7eaf\u7528\u6237\u540d\u5bc6\u7801\u6ce8\u518c\u3002",
+                "operationId": "AuthController_register",
+                "parameters": [
+                    {
+                        "name": "Content-Type",
+                        "in": "header",
+                        "description": "\u8bf7\u6c42\u5185\u5bb9\u7c7b\u578b",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "default": "application/json"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "description": "\u6ce8\u518c\u8bf7\u6c42\u53c2\u6570",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RegisterDto"
+                            },
+                            "examples": {
+                                "email_code": {
+                                    "summary": "\u90ae\u7bb1\u9a8c\u8bc1\u7801\u6ce8\u518c",
+                                    "description": "\u4f7f\u7528\u90ae\u7bb1\u9a8c\u8bc1\u7801\u8fdb\u884c\u6ce8\u518c",
+                                    "value": {
+                                        "type": "email_code",
+                                        "email": "user@example.com",
+                                        "username": "testuser",
+                                        "password": "password123",
+                                        "code": "123456"
+                                    }
+                                },
+                                "phone_code": {
+                                    "summary": "\u624b\u673a\u9a8c\u8bc1\u7801\u6ce8\u518c",
+                                    "description": "\u4f7f\u7528\u624b\u673a\u9a8c\u8bc1\u7801\u8fdb\u884c\u6ce8\u518c",
+                                    "value": {
+                                        "type": "phone_code",
+                                        "phone": "13800138000",
+                                        "countryCode": "+86",
+                                        "username": "testuser",
+                                        "password": "password123",
+                                        "code": "123456"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "\u6ce8\u518c\u6210\u529f\uff0c\u8fd4\u56de\u8bbf\u95ee\u4ee4\u724c\u548c\u7528\u6237\u4fe1\u606f",
+                        "schema": {
+                            "example": {
+                                "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                                "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                                "user": {
+                                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                                    "username": "testuser",
+                                    "email": "user@example.com",
+                                    "phone": "13800138000",
+                                    "countryCode": "+86",
+                                    "createdAt": "2024-01-01T00:00:00.000Z"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthResponseDto"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "\u8bf7\u6c42\u53c2\u6570\u9519\u8bef\u6216\u4f7f\u7528\u4e86\u4e0d\u652f\u6301\u7684\u6ce8\u518c\u65b9\u5f0f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 400,
+                                        "message": [
+                                            "\u90ae\u7bb1\u683c\u5f0f\u4e0d\u6b63\u786e",
+                                            "\u5bc6\u7801\u5fc5\u987b\u5305\u542b\u81f3\u5c11\u4e00\u4e2a\u5b57\u6bcd\u548c\u4e00\u4e2a\u6570\u5b57"
+                                        ],
+                                        "error": "Bad Request"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "\u7528\u6237\u5df2\u5b58\u5728",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 409,
+                                        "message": "\u8be5\u90ae\u7bb1\u5df2\u88ab\u6ce8\u518c",
+                                        "error": "Conflict"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "\u9a8c\u8bc1\u7801\u9519\u8bef\u6216\u5df2\u8fc7\u671f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 422,
+                                        "message": "\u9a8c\u8bc1\u7801\u9519\u8bef\u6216\u5df2\u8fc7\u671f",
+                                        "error": "Unprocessable Entity"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "\u7528\u6237\u6ce8\u518c",
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/api/auth/login": {
+            "post": {
+                "description": "\u652f\u6301\u591a\u79cd\u767b\u5f55\u65b9\u5f0f\uff1a\u7528\u6237\u540d\u5bc6\u7801\u3001\u90ae\u7bb1\u5bc6\u7801\u3001\u624b\u673a\u5bc6\u7801\u3001\u90ae\u7bb1\u9a8c\u8bc1\u7801\u3001\u624b\u673a\u9a8c\u8bc1\u7801\u3002\u6839\u636e\u4e0d\u540c\u7684\u767b\u5f55\u7c7b\u578b\u63d0\u4f9b\u76f8\u5e94\u7684\u53c2\u6570\u3002",
+                "operationId": "AuthController_login",
+                "parameters": [
+                    {
+                        "name": "Content-Type",
+                        "in": "header",
+                        "description": "\u8bf7\u6c42\u5185\u5bb9\u7c7b\u578b",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "default": "application/json"
+                        }
+                    },
+                    {
+                        "name": "User-Agent",
+                        "in": "header",
+                        "description": "\u7528\u6237\u4ee3\u7406\u4fe1\u606f",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "description": "\u767b\u5f55\u8bf7\u6c42\u53c2\u6570",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginDto"
+                            },
+                            "examples": {
+                                "username_password": {
+                                    "summary": "\u7528\u6237\u540d\u5bc6\u7801\u767b\u5f55",
+                                    "description": "\u4f7f\u7528\u7528\u6237\u540d\u548c\u5bc6\u7801\u8fdb\u884c\u767b\u5f55",
+                                    "value": {
+                                        "type": "username_password",
+                                        "username": "testuser",
+                                        "password": "password123"
+                                    }
+                                },
+                                "email_password": {
+                                    "summary": "\u90ae\u7bb1\u5bc6\u7801\u767b\u5f55",
+                                    "description": "\u4f7f\u7528\u90ae\u7bb1\u548c\u5bc6\u7801\u8fdb\u884c\u767b\u5f55",
+                                    "value": {
+                                        "type": "email_password",
+                                        "email": "user@example.com",
+                                        "password": "password123"
+                                    }
+                                },
+                                "phone_password": {
+                                    "summary": "\u624b\u673a\u5bc6\u7801\u767b\u5f55",
+                                    "description": "\u4f7f\u7528\u624b\u673a\u53f7\u548c\u5bc6\u7801\u8fdb\u884c\u767b\u5f55",
+                                    "value": {
+                                        "type": "phone_password",
+                                        "phone": "13800138000",
+                                        "countryCode": "+86",
+                                        "password": "password123"
+                                    }
+                                },
+                                "email_code": {
+                                    "summary": "\u90ae\u7bb1\u9a8c\u8bc1\u7801\u767b\u5f55",
+                                    "description": "\u4f7f\u7528\u90ae\u7bb1\u9a8c\u8bc1\u7801\u8fdb\u884c\u767b\u5f55",
+                                    "value": {
+                                        "type": "email_code",
+                                        "email": "user@example.com",
+                                        "code": "123456"
+                                    }
+                                },
+                                "phone_code": {
+                                    "summary": "\u624b\u673a\u9a8c\u8bc1\u7801\u767b\u5f55",
+                                    "description": "\u4f7f\u7528\u624b\u673a\u9a8c\u8bc1\u7801\u8fdb\u884c\u767b\u5f55",
+                                    "value": {
+                                        "type": "phone_code",
+                                        "phone": "13800138000",
+                                        "countryCode": "+86",
+                                        "code": "123456"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "\u767b\u5f55\u6210\u529f\uff0c\u8fd4\u56de\u8bbf\u95ee\u4ee4\u724c\u548c\u7528\u6237\u4fe1\u606f",
+                        "schema": {
+                            "example": {
+                                "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                                "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                                "user": {
+                                    "id": "123e4567-e89b-12d3-a456-426614174000",
+                                    "username": "testuser",
+                                    "email": "user@example.com",
+                                    "phone": "13800138000",
+                                    "countryCode": "+86",
+                                    "createdAt": "2024-01-01T00:00:00.000Z"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthResponseDto"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "\u8ba4\u8bc1\u5931\u8d25\uff0c\u7528\u6237\u540d/\u5bc6\u7801\u9519\u8bef\u6216\u9a8c\u8bc1\u7801\u65e0\u6548",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 401,
+                                        "message": "\u7528\u6237\u540d\u6216\u5bc6\u7801\u9519\u8bef",
+                                        "error": "Unauthorized"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "\u7528\u6237\u4e0d\u5b58\u5728",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 404,
+                                        "message": "\u7528\u6237\u4e0d\u5b58\u5728",
+                                        "error": "Not Found"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "\u767b\u5f55\u5c1d\u8bd5\u8fc7\u4e8e\u9891\u7e41\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 429,
+                                        "message": "\u767b\u5f55\u5c1d\u8bd5\u8fc7\u4e8e\u9891\u7e41\uff0c\u8bf75\u5206\u949f\u540e\u518d\u8bd5",
+                                        "error": "Too Many Requests"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "\u7528\u6237\u767b\u5f55",
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/api/auth/reset-password": {
+            "post": {
+                "description": "\u901a\u8fc7\u9a8c\u8bc1\u7801\u91cd\u7f6e\u7528\u6237\u5bc6\u7801\u3002\u9700\u8981\u5148\u8c03\u7528\u53d1\u9001\u9a8c\u8bc1\u7801\u63a5\u53e3\u83b7\u53d6\u9a8c\u8bc1\u7801\uff0c\u7136\u540e\u63d0\u4f9b\u9a8c\u8bc1\u7801\u548c\u65b0\u5bc6\u7801\u5b8c\u6210\u91cd\u7f6e\u3002",
+                "operationId": "AuthController_resetPassword",
+                "parameters": [
+                    {
+                        "name": "Content-Type",
+                        "in": "header",
+                        "description": "\u8bf7\u6c42\u5185\u5bb9\u7c7b\u578b",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "default": "application/json"
+                        }
+                    },
+                    {
+                        "name": "User-Agent",
+                        "in": "header",
+                        "description": "\u7528\u6237\u4ee3\u7406\u4fe1\u606f",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ResetPasswordDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "\u5bc6\u7801\u91cd\u7f6e\u6210\u529f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "description": "\u91cd\u7f6e\u662f\u5426\u6210\u529f"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "description": "\u91cd\u7f6e\u7ed3\u679c\u6d88\u606f"
+                                        }
+                                    },
+                                    "example": {
+                                        "success": true,
+                                        "message": "\u5bc6\u7801\u91cd\u7f6e\u6210\u529f"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "\u8bf7\u6c42\u53c2\u6570\u9519\u8bef",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 400,
+                                        "message": [
+                                            "\u5bc6\u7801\u5fc5\u987b\u5305\u542b\u81f3\u5c11\u4e00\u4e2a\u5b57\u6bcd\u548c\u4e00\u4e2a\u6570\u5b57",
+                                            "\u9a8c\u8bc1\u7801\u81f3\u5c114\u4f4d"
+                                        ],
+                                        "error": "Bad Request"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "\u7528\u6237\u4e0d\u5b58\u5728",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 404,
+                                        "message": "\u7528\u6237\u4e0d\u5b58\u5728",
+                                        "error": "Not Found"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "\u9a8c\u8bc1\u7801\u9519\u8bef\u6216\u5df2\u8fc7\u671f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 422,
+                                        "message": "\u9a8c\u8bc1\u7801\u9519\u8bef\u6216\u5df2\u8fc7\u671f",
+                                        "error": "Unprocessable Entity"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "\u91cd\u7f6e\u5bc6\u7801",
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/api/auth/refresh-token": {
+            "post": {
+                "description": "\u4f7f\u7528\u5237\u65b0\u4ee4\u724c\u83b7\u53d6\u65b0\u7684\u8bbf\u95ee\u4ee4\u724c\u3002\u5f53\u8bbf\u95ee\u4ee4\u724c\u8fc7\u671f\u65f6\uff0c\u53ef\u4ee5\u4f7f\u7528\u6b64\u63a5\u53e3\u83b7\u53d6\u65b0\u7684\u8bbf\u95ee\u4ee4\u724c\u800c\u65e0\u9700\u91cd\u65b0\u767b\u5f55\u3002",
+                "operationId": "AuthController_refreshToken",
+                "parameters": [
+                    {
+                        "name": "Content-Type",
+                        "in": "header",
+                        "description": "\u8bf7\u6c42\u5185\u5bb9\u7c7b\u578b",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "default": "application/json"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "description": "\u5237\u65b0\u4ee4\u724c\u8bf7\u6c42\u4f53",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "refreshToken"
+                                ],
+                                "properties": {
+                                    "refreshToken": {
+                                        "type": "string",
+                                        "description": "\u7528\u4e8e\u6362\u53d6\u65b0\u8bbf\u95ee\u4ee4\u724c\u7684\u5237\u65b0\u4ee4\u724c",
+                                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh..."
+                                    }
+                                },
+                                "example": {
+                                    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh..."
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "\u4ee4\u724c\u5237\u65b0\u6210\u529f\uff0c\u8fd4\u56de\u65b0\u7684\u8bbf\u95ee\u4ee4\u724c\u548c\u5237\u65b0\u4ee4\u724c\uff08\u4ee4\u724c\u8f6e\u6362\uff09",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "accessToken": {
+                                            "type": "string",
+                                            "description": "\u65b0\u7684\u8bbf\u95ee\u4ee4\u724c",
+                                            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                                        },
+                                        "refreshToken": {
+                                            "type": "string",
+                                            "description": "\u65b0\u7684\u5237\u65b0\u4ee4\u724c\uff08\u4ee4\u724c\u8f6e\u6362\u540e\u751f\u6210\u7684\u65b0\u4ee4\u724c\uff09",
+                                            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.new_refresh..."
+                                        }
+                                    },
+                                    "example": {
+                                        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                                        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.new_refresh..."
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "\u8bf7\u6c42\u53c2\u6570\u9519\u8bef",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 400,
+                                        "message": "\u5237\u65b0\u4ee4\u724c\u4e0d\u80fd\u4e3a\u7a7a",
+                                        "error": "Bad Request"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "\u5237\u65b0\u4ee4\u724c\u65e0\u6548\u6216\u5df2\u8fc7\u671f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 401,
+                                        "message": "\u5237\u65b0\u4ee4\u724c\u65e0\u6548\u6216\u5df2\u8fc7\u671f",
+                                        "error": "Unauthorized"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "\u5237\u65b0\u8bbf\u95ee\u4ee4\u724c",
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/api/auth/logout": {
+            "post": {
+                "description": "\u7528\u6237\u9000\u51fa\u767b\u5f55\u3002\u652f\u6301\u5168\u9762\u7684\u4ee4\u724c\u64a4\u9500\uff0c\u5305\u62ec\u8bbf\u95ee\u4ee4\u724c\u548c\u5237\u65b0\u4ee4\u724c\u3002\u53ef\u9009\u62e9\u64a4\u9500\u5355\u4e2a\u8bbe\u5907\u6216\u6240\u6709\u8bbe\u5907\u7684\u4ee4\u724c\u3002",
+                "operationId": "AuthController_logout",
+                "parameters": [],
+                "requestBody": {
+                    "required": false,
+                    "description": "\u767b\u51fa\u8bf7\u6c42\u53c2\u6570\uff08\u53ef\u9009\uff09",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "refreshToken": {
+                                        "type": "string",
+                                        "description": "\u5237\u65b0\u4ee4\u724c\uff08\u53ef\u9009\uff09\uff0c\u7528\u4e8e\u64a4\u9500\u8be5\u5237\u65b0\u4ee4\u724c",
+                                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh..."
+                                    },
+                                    "deviceId": {
+                                        "type": "string",
+                                        "description": "\u8bbe\u5907ID\uff08\u53ef\u9009\uff09\uff0c\u7528\u4e8e\u64a4\u9500\u7279\u5b9a\u8bbe\u5907\u7684\u6240\u6709\u4ee4\u724c",
+                                        "example": "mobile-app-ios"
+                                    },
+                                    "revokeAllDevices": {
+                                        "type": "boolean",
+                                        "description": "\u662f\u5426\u64a4\u9500\u6240\u6709\u8bbe\u5907\u7684\u4ee4\u724c\uff08\u53ef\u9009\uff09",
+                                        "example": false
+                                    }
+                                },
+                                "example": {
+                                    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh...",
+                                    "deviceId": "mobile-app-ios",
+                                    "revokeAllDevices": false
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "\u9000\u51fa\u767b\u5f55\u6210\u529f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "description": "\u9000\u51fa\u662f\u5426\u6210\u529f"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "description": "\u9000\u51fa\u7ed3\u679c\u6d88\u606f"
+                                        },
+                                        "details": {
+                                            "type": "object",
+                                            "properties": {
+                                                "accessTokenRevoked": {
+                                                    "type": "boolean",
+                                                    "description": "\u8bbf\u95ee\u4ee4\u724c\u662f\u5426\u88ab\u64a4\u9500"
+                                                },
+                                                "refreshTokenRevoked": {
+                                                    "type": "boolean",
+                                                    "description": "\u5237\u65b0\u4ee4\u724c\u662f\u5426\u88ab\u64a4\u9500"
+                                                },
+                                                "allDevicesLoggedOut": {
+                                                    "type": "boolean",
+                                                    "description": "\u662f\u5426\u64a4\u9500\u4e86\u6240\u6709\u8bbe\u5907\u7684\u4ee4\u724c"
+                                                },
+                                                "revokedTokensCount": {
+                                                    "type": "number",
+                                                    "description": "\u64a4\u9500\u7684\u4ee4\u724c\u6570\u91cf"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "examples": {
+                                        "simple_logout": {
+                                            "summary": "\u7b80\u5355\u767b\u51fa",
+                                            "value": {
+                                                "success": true,
+                                                "message": "\u9000\u51fa\u767b\u5f55\u6210\u529f",
+                                                "details": {
+                                                    "accessTokenRevoked": true,
+                                                    "refreshTokenRevoked": false
+                                                }
+                                            }
+                                        },
+                                        "comprehensive_logout": {
+                                            "summary": "\u5168\u9762\u767b\u51fa",
+                                            "value": {
+                                                "success": true,
+                                                "message": "\u9000\u51fa\u767b\u5f55\u6210\u529f\uff0c\u5df2\u64a4\u9500\u6240\u6709\u8bbe\u5907\u7684 3 \u4e2a\u4ee4\u724c",
+                                                "details": {
+                                                    "accessTokenRevoked": true,
+                                                    "refreshTokenRevoked": true,
+                                                    "allDevicesLoggedOut": true,
+                                                    "revokedTokensCount": 3
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "\u672a\u6388\u6743\uff0c\u8bbf\u95ee\u4ee4\u724c\u65e0\u6548\u6216\u5df2\u8fc7\u671f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 401,
+                                        "message": "Unauthorized",
+                                        "error": "Unauthorized"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u9000\u51fa\u767b\u5f55",
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/api/user/profile": {
+            "get": {
+                "description": "\u83b7\u53d6\u5f53\u524d\u767b\u5f55\u7528\u6237\u7684\u8be6\u7ec6\u4fe1\u606f\uff0c\u5305\u62ec\u57fa\u672c\u4fe1\u606f\u3001\u9a8c\u8bc1\u72b6\u6001\u3001\u7528\u6237\u6863\u6848\u7b49\u3002\u9700\u8981\u63d0\u4f9b\u6709\u6548\u7684\u8bbf\u95ee\u4ee4\u724c\u3002",
+                "operationId": "UserController_getProfile",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "\u83b7\u53d6\u7528\u6237\u4fe1\u606f\u6210\u529f\uff0c\u8fd4\u56de\u7528\u6237\u8be6\u7ec6\u4fe1\u606f",
+                        "schema": {
+                            "example": {
+                                "id": "123e4567-e89b-12d3-a456-426614174000",
+                                "username": "testuser",
+                                "email": "user@example.com",
+                                "countryCode": "+86",
+                                "phone": "13800138000",
+                                "emailVerified": true,
+                                "phoneVerified": true,
+                                "lastLoginAt": "2024-01-01T12:00:00.000Z",
+                                "createdAt": "2024-01-01T00:00:00.000Z",
+                                "profile": {
+                                    "name": "\u5f20\u4e09",
+                                    "avatar": "https://example.com/avatar.jpg",
+                                    "bio": "\u8fd9\u662f\u6211\u7684\u4e2a\u4eba\u7b80\u4ecb",
+                                    "firstName": "\u4e09",
+                                    "lastName": "\u5f20",
+                                    "dateOfBirth": "1990-01-01T00:00:00.000Z",
+                                    "gender": "male",
+                                    "city": "\u5317\u4eac",
+                                    "country": "\u4e2d\u56fd"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserProfileResponseDto"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "\u672a\u6388\u6743\uff0c\u8bbf\u95ee\u4ee4\u724c\u65e0\u6548\u6216\u5df2\u8fc7\u671f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 401,
+                                        "message": "Unauthorized",
+                                        "error": "Unauthorized"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u83b7\u53d6\u5f53\u524d\u7528\u6237\u4fe1\u606f",
+                "tags": [
+                    "User"
+                ]
+            },
+            "put": {
+                "description": "\u66f4\u65b0\u5f53\u524d\u767b\u5f55\u7528\u6237\u7684\u8d44\u6599\u4fe1\u606f\uff0c\u5305\u62ec\u7528\u6237\u540d\u3001\u90ae\u7bb1\u3001\u624b\u673a\u53f7\u3001\u5934\u50cf\u3001\u59d3\u540d\u3001\u4e2a\u4eba\u7b80\u4ecb\u7b49\u3002\u9700\u8981\u63d0\u4f9b\u6709\u6548\u7684\u8bbf\u95ee\u4ee4\u724c\u3002",
+                "operationId": "UserController_updateProfile",
+                "parameters": [
+                    {
+                        "name": "Content-Type",
+                        "in": "header",
+                        "description": "\u8bf7\u6c42\u5185\u5bb9\u7c7b\u578b",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "default": "application/json"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "description": "\u66f4\u65b0\u7528\u6237\u8d44\u6599\u8bf7\u6c42\u53c2\u6570",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateProfileDto"
+                            },
+                            "examples": {
+                                "basic_update": {
+                                    "summary": "\u57fa\u672c\u4fe1\u606f\u66f4\u65b0",
+                                    "description": "\u66f4\u65b0\u7528\u6237\u540d\u548c\u90ae\u7bb1",
+                                    "value": {
+                                        "username": "newusername",
+                                        "email": "newemail@example.com"
+                                    }
+                                },
+                                "profile_update": {
+                                    "summary": "\u6863\u6848\u4fe1\u606f\u66f4\u65b0",
+                                    "description": "\u66f4\u65b0\u7528\u6237\u6863\u6848\u4fe1\u606f",
+                                    "value": {
+                                        "name": "\u674e\u56db",
+                                        "avatar": "https://example.com/new-avatar.jpg",
+                                        "bio": "\u8fd9\u662f\u6211\u66f4\u65b0\u540e\u7684\u4e2a\u4eba\u7b80\u4ecb"
+                                    }
+                                },
+                                "contact_update": {
+                                    "summary": "\u8054\u7cfb\u65b9\u5f0f\u66f4\u65b0",
+                                    "description": "\u66f4\u65b0\u624b\u673a\u53f7\u7801",
+                                    "value": {
+                                        "phone": "13800138001",
+                                        "countryCode": "+86"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "\u66f4\u65b0\u6210\u529f\uff0c\u8fd4\u56de\u66f4\u65b0\u540e\u7684\u7528\u6237\u4fe1\u606f",
+                        "schema": {
+                            "example": {
+                                "id": "123e4567-e89b-12d3-a456-426614174000",
+                                "username": "newusername",
+                                "email": "newemail@example.com",
+                                "countryCode": "+86",
+                                "phone": "13800138001",
+                                "emailVerified": false,
+                                "phoneVerified": false,
+                                "lastLoginAt": "2024-01-01T12:00:00.000Z",
+                                "createdAt": "2024-01-01T00:00:00.000Z",
+                                "profile": {
+                                    "name": "\u674e\u56db",
+                                    "avatar": "https://example.com/new-avatar.jpg",
+                                    "bio": "\u8fd9\u662f\u6211\u66f4\u65b0\u540e\u7684\u4e2a\u4eba\u7b80\u4ecb"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserProfileResponseDto"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "\u8bf7\u6c42\u53c2\u6570\u9519\u8bef",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 400,
+                                        "message": [
+                                            "\u90ae\u7bb1\u683c\u5f0f\u4e0d\u6b63\u786e",
+                                            "\u7528\u6237\u540d\u53ea\u80fd\u5305\u542b\u5b57\u6bcd\u3001\u6570\u5b57\u548c\u4e0b\u5212\u7ebf"
+                                        ],
+                                        "error": "Bad Request"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "\u672a\u6388\u6743\uff0c\u8bbf\u95ee\u4ee4\u724c\u65e0\u6548\u6216\u5df2\u8fc7\u671f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 401,
+                                        "message": "Unauthorized",
+                                        "error": "Unauthorized"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "\u7528\u6237\u540d/\u90ae\u7bb1/\u624b\u673a\u53f7\u5df2\u88ab\u5176\u4ed6\u7528\u6237\u4f7f\u7528",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 409,
+                                        "message": "\u8be5\u90ae\u7bb1\u5df2\u88ab\u5176\u4ed6\u7528\u6237\u4f7f\u7528",
+                                        "error": "Conflict"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u66f4\u65b0\u7528\u6237\u8d44\u6599",
+                "tags": [
+                    "User"
+                ]
+            }
+        },
+        "/api/verification/send": {
+            "post": {
+                "description": "\u5411\u6307\u5b9a\u7684\u90ae\u7bb1\u6216\u624b\u673a\u53f7\u53d1\u9001\u9a8c\u8bc1\u7801\u3002\u652f\u6301\u6ce8\u518c\u3001\u767b\u5f55\u3001\u91cd\u7f6e\u5bc6\u7801\u7b49\u573a\u666f\u3002\u53d1\u9001\u9891\u7387\u9650\u5236\uff1a\u540c\u4e00\u76ee\u680760\u79d2\u5185\u53ea\u80fd\u53d1\u9001\u4e00\u6b21\u3002\u9a8c\u8bc1\u7801\u6709\u6548\u671f\u4e3a5\u5206\u949f\u3002",
+                "operationId": "VerificationController_send",
+                "parameters": [
+                    {
+                        "name": "Content-Type",
+                        "in": "header",
+                        "description": "\u8bf7\u6c42\u5185\u5bb9\u7c7b\u578b",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "default": "application/json"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "description": "\u53d1\u9001\u9a8c\u8bc1\u7801\u8bf7\u6c42\u53c2\u6570",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "target": {
+                                        "type": "string",
+                                        "description": "\u90ae\u7bb1\u6216\u624b\u673a\u53f7",
+                                        "example": "user@example.com||13800000000"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "description": "\u9a8c\u8bc1\u7801\u7c7b\u578b",
+                                        "enum": [
+                                            "register",
+                                            "login",
+                                            "reset_password"
+                                        ],
+                                        "example": "register"
+                                    },
+                                    "countryCode": {
+                                        "type": "string",
+                                        "description": "\u56fd\u5bb6\u4ee3\u7801",
+                                        "example": "+86"
+                                    }
+                                },
+                                "required": [
+                                    "target",
+                                    "type"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "\u9a8c\u8bc1\u7801\u53d1\u9001\u6210\u529f\uff0c\u8bf7\u67e5\u6536\u90ae\u7bb1\u6216\u77ed\u4fe1",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "description": "\u53d1\u9001\u662f\u5426\u6210\u529f",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "description": "\u53d1\u9001\u7ed3\u679c\u6d88\u606f",
+                                            "example": "\u9a8c\u8bc1\u7801\u5df2\u53d1\u9001\uff0c\u8bf7\u67e5\u6536"
+                                        }
+                                    },
+                                    "example": {
+                                        "success": true,
+                                        "message": "\u9a8c\u8bc1\u7801\u5df2\u53d1\u9001\u5230\u60a8\u7684\u90ae\u7bb1\uff0c\u8bf7\u67e5\u6536"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "\u8bf7\u6c42\u53c2\u6570\u9519\u8bef\uff0c\u90ae\u7bb1\u6216\u624b\u673a\u53f7\u683c\u5f0f\u4e0d\u6b63\u786e",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "\u90ae\u7bb1\u683c\u5f0f\u4e0d\u6b63\u786e"
+                                        },
+                                        "statusCode": {
+                                            "type": "number",
+                                            "example": 400
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Bad Request"
+                                        }
+                                    },
+                                    "example": {
+                                        "success": false,
+                                        "message": "\u90ae\u7bb1\u683c\u5f0f\u4e0d\u6b63\u786e",
+                                        "statusCode": 400,
+                                        "error": "Bad Request"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "\u53d1\u9001\u8fc7\u4e8e\u9891\u7e41\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "\u53d1\u9001\u8fc7\u4e8e\u9891\u7e41\uff0c\u8bf760\u79d2\u540e\u518d\u8bd5"
+                                        },
+                                        "statusCode": {
+                                            "type": "number",
+                                            "example": 429
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Too Many Requests"
+                                        }
+                                    },
+                                    "example": {
+                                        "success": false,
+                                        "message": "\u53d1\u9001\u8fc7\u4e8e\u9891\u7e41\uff0c\u8bf760\u79d2\u540e\u518d\u8bd5",
+                                        "statusCode": 429,
+                                        "error": "Too Many Requests"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "\u670d\u52a1\u5668\u5185\u90e8\u9519\u8bef\uff0c\u9a8c\u8bc1\u7801\u53d1\u9001\u5931\u8d25",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "\u9a8c\u8bc1\u7801\u53d1\u9001\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5"
+                                        },
+                                        "statusCode": {
+                                            "type": "number",
+                                            "example": 500
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Internal Server Error"
+                                        }
+                                    },
+                                    "example": {
+                                        "success": false,
+                                        "message": "\u9a8c\u8bc1\u7801\u53d1\u9001\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5",
+                                        "statusCode": 500,
+                                        "error": "Internal Server Error"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "\u53d1\u9001\u9a8c\u8bc1\u7801",
+                "tags": [
+                    "Verification"
+                ]
+            }
+        },
+        "/api/verification/verify": {
+            "post": {
+                "description": "\u9a8c\u8bc1\u6307\u5b9a\u90ae\u7bb1\u6216\u624b\u673a\u53f7\u7684\u9a8c\u8bc1\u7801\u662f\u5426\u6709\u6548\uff0c\u7528\u4e8e\u6ce8\u518c\u3001\u767b\u5f55\u3001\u91cd\u7f6e\u5bc6\u7801\u7b49\u573a\u666f\u3002",
+                "operationId": "VerificationController_verify",
+                "parameters": [
+                    {
+                        "name": "Content-Type",
+                        "in": "header",
+                        "description": "\u8bf7\u6c42\u5185\u5bb9\u7c7b\u578b",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "default": "application/json"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/VerifyCodeDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "\u9a8c\u8bc1\u7ed3\u679c\u8fd4\u56de",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "valid": {
+                                            "type": "boolean",
+                                            "description": "\u9a8c\u8bc1\u7801\u662f\u5426\u6709\u6548"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "description": "\u9a8c\u8bc1\u7ed3\u679c\u6d88\u606f"
+                                        }
+                                    },
+                                    "example": {
+                                        "valid": true,
+                                        "message": "\u9a8c\u8bc1\u7801\u9a8c\u8bc1\u6210\u529f"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "\u8bf7\u6c42\u53c2\u6570\u9519\u8bef",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "statusCode": 400,
+                                        "message": [
+                                            "\u9a8c\u8bc1\u7801\u81f3\u5c114\u4f4d",
+                                            "\u76ee\u6807\u4e0d\u80fd\u4e3a\u7a7a"
+                                        ],
+                                        "error": "Bad Request"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "\u9a8c\u8bc1\u7801\u9519\u8bef\u6216\u5df2\u8fc7\u671f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "example": {
+                                        "valid": false,
+                                        "message": "\u9a8c\u8bc1\u7801\u9519\u8bef\u6216\u5df2\u8fc7\u671f"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "\u9a8c\u8bc1\u9a8c\u8bc1\u7801",
+                "tags": [
+                    "Verification"
+                ]
+            }
+        },
+        "/meetings": {
+            "get": {
+                "description": "\u6839\u636e\u67e5\u8be2\u6761\u4ef6\u83b7\u53d6\u4f1a\u8bae\u8bb0\u5f55\u5217\u8868\uff0c\u652f\u6301\u5206\u9875\u3001\u7b5b\u9009\u548c\u6392\u5e8f",
+                "operationId": "MeetingController_getMeetingRecords",
+                "parameters": [
+                    {
+                        "name": "platform",
+                        "required": false,
+                        "in": "query",
+                        "description": "\u4f1a\u8bae\u5e73\u53f0",
+                        "schema": {
+                            "enum": [
+                                "TENCENT_MEETING",
+                                "ZOOM",
+                                "TEAMS",
+                                "DINGTALK",
+                                "FEISHU",
+                                "WEBEX",
+                                "VOOV",
+                                "OTHER"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "required": false,
+                        "in": "query",
+                        "description": "\u4f1a\u8bae\u72b6\u6001",
+                        "schema": {
+                            "enum": [
+                                "PENDING",
+                                "PROCESSING",
+                                "COMPLETED",
+                                "FAILED",
+                                "SKIPPED"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "required": false,
+                        "in": "query",
+                        "description": "\u4f1a\u8bae\u7c7b\u578b",
+                        "schema": {
+                            "enum": [
+                                "ONE_TIME",
+                                "RECURRING",
+                                "INSTANT",
+                                "SCHEDULED",
+                                "WEBINAR"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "startDate",
+                        "required": false,
+                        "in": "query",
+                        "description": "\u5f00\u59cb\u65e5\u671f (YYYY-MM-DD)",
+                        "schema": {
+                            "example": "2024-01-01",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "endDate",
+                        "required": false,
+                        "in": "query",
+                        "description": "\u7ed3\u675f\u65e5\u671f (YYYY-MM-DD)",
+                        "schema": {
+                            "example": "2024-12-31",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "\u9875\u7801\uff0c\u4ece1\u5f00\u59cb",
+                        "schema": {
+                            "minimum": 1,
+                            "default": 1,
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "required": false,
+                        "in": "query",
+                        "description": "\u6bcf\u9875\u6570\u91cf",
+                        "schema": {
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 10,
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "required": false,
+                        "in": "query",
+                        "description": "\u641c\u7d22\u5173\u952e\u8bcd\uff08\u4f1a\u8bae\u4e3b\u9898\u3001\u4e3b\u6301\u4eba\u7b49\uff09",
+                        "schema": {
+                            "example": "\u9879\u76ee\u8ba8\u8bba",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\u83b7\u53d6\u6210\u529f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MeetingRecordListResponseDto"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "\u8bf7\u6c42\u53c2\u6570\u9519\u8bef"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u83b7\u53d6\u4f1a\u8bae\u8bb0\u5f55\u5217\u8868",
+                "tags": [
+                    "Meet"
+                ]
+            },
+            "post": {
+                "description": "\u624b\u52a8\u521b\u5efa\u4f1a\u8bae\u8bb0\u5f55",
+                "operationId": "MeetingController_createMeetingRecord",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "description": "\u4f1a\u8bae\u8bb0\u5f55\u521b\u5efa\u53c2\u6570",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "\u521b\u5efa\u6210\u529f"
+                    },
+                    "400": {
+                        "description": "\u8bf7\u6c42\u53c2\u6570\u9519\u8bef"
+                    },
+                    "409": {
+                        "description": "\u4f1a\u8bae\u8bb0\u5f55\u5df2\u5b58\u5728"
+                    },
+                    "500": {
+                        "description": "\u670d\u52a1\u5668\u5185\u90e8\u9519\u8bef"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u521b\u5efa\u4f1a\u8bae\u8bb0\u5f55",
+                "tags": [
+                    "Meet"
+                ]
+            }
+        },
+        "/meetings/{id}": {
+            "get": {
+                "description": "\u6839\u636e\u4f1a\u8bae\u8bb0\u5f55ID\u83b7\u53d6\u8be6\u7ec6\u4fe1\u606f\uff0c\u5305\u62ec\u6587\u4ef6\u5217\u8868\u548c\u53c2\u4f1a\u8005\u4fe1\u606f",
+                "operationId": "MeetingController_getMeetingRecordById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "description": "\u4f1a\u8bae\u8bb0\u5f55ID",
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\u83b7\u53d6\u6210\u529f"
+                    },
+                    "404": {
+                        "description": "\u4f1a\u8bae\u8bb0\u5f55\u4e0d\u5b58\u5728"
+                    },
+                    "500": {
+                        "description": "\u670d\u52a1\u5668\u5185\u90e8\u9519\u8bef"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u83b7\u53d6\u4f1a\u8bae\u8bb0\u5f55\u8be6\u60c5",
+                "tags": [
+                    "Meet"
+                ]
+            },
+            "put": {
+                "description": "\u66f4\u65b0\u4f1a\u8bae\u8bb0\u5f55\u4fe1\u606f",
+                "operationId": "MeetingController_updateMeetingRecord",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "description": "\u4f1a\u8bae\u8bb0\u5f55ID",
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "description": "\u4f1a\u8bae\u8bb0\u5f55\u66f4\u65b0\u53c2\u6570",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "\u66f4\u65b0\u6210\u529f"
+                    },
+                    "404": {
+                        "description": "\u4f1a\u8bae\u8bb0\u5f55\u4e0d\u5b58\u5728"
+                    },
+                    "500": {
+                        "description": "\u670d\u52a1\u5668\u5185\u90e8\u9519\u8bef"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u66f4\u65b0\u4f1a\u8bae\u8bb0\u5f55",
+                "tags": [
+                    "Meet"
+                ]
+            },
+            "delete": {
+                "description": "\u5220\u9664\u6307\u5b9a\u7684\u4f1a\u8bae\u8bb0\u5f55\u53ca\u5176\u5173\u8054\u7684\u6587\u4ef6",
+                "operationId": "MeetingController_deleteMeetingRecord",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "description": "\u4f1a\u8bae\u8bb0\u5f55ID",
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "\u5220\u9664\u6210\u529f"
+                    },
+                    "404": {
+                        "description": "\u4f1a\u8bae\u8bb0\u5f55\u4e0d\u5b58\u5728"
+                    },
+                    "500": {
+                        "description": "\u670d\u52a1\u5668\u5185\u90e8\u9519\u8bef"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u5220\u9664\u4f1a\u8bae\u8bb0\u5f55",
+                "tags": [
+                    "Meet"
+                ]
+            }
+        },
+        "/meetings/stats/summary": {
+            "get": {
+                "description": "\u83b7\u53d6\u4f1a\u8bae\u8bb0\u5f55\u7684\u7edf\u8ba1\u4fe1\u606f\uff0c\u5305\u62ec\u603b\u6570\u3001\u5404\u5e73\u53f0\u5206\u5e03\u3001\u72b6\u6001\u5206\u5e03\u7b49",
+                "operationId": "MeetingController_getMeetingStats",
+                "parameters": [
+                    {
+                        "name": "startDate",
+                        "required": false,
+                        "in": "query",
+                        "description": "\u7edf\u8ba1\u5f00\u59cb\u65e5\u671f (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "endDate",
+                        "required": false,
+                        "in": "query",
+                        "description": "\u7edf\u8ba1\u7ed3\u675f\u65e5\u671f (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\u83b7\u53d6\u6210\u529f",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "total": {
+                                            "type": "number",
+                                            "description": "\u603b\u4f1a\u8bae\u6570"
+                                        },
+                                        "platformStats": {
+                                            "type": "object",
+                                            "description": "\u5404\u5e73\u53f0\u4f1a\u8bae\u6570\u7edf\u8ba1"
+                                        },
+                                        "statusStats": {
+                                            "type": "object",
+                                            "description": "\u5404\u72b6\u6001\u4f1a\u8bae\u6570\u7edf\u8ba1"
+                                        },
+                                        "typeStats": {
+                                            "type": "object",
+                                            "description": "\u5404\u7c7b\u578b\u4f1a\u8bae\u6570\u7edf\u8ba1"
+                                        },
+                                        "recentMeetings": {
+                                            "type": "array",
+                                            "description": "\u6700\u8fd1\u7684\u4f1a\u8bae\u8bb0\u5f55"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "\u670d\u52a1\u5668\u5185\u90e8\u9519\u8bef"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u83b7\u53d6\u4f1a\u8bae\u7edf\u8ba1\u4fe1\u606f",
+                "tags": [
+                    "Meet"
+                ]
+            }
+        },
+        "/meetings/{id}/reprocess": {
+            "post": {
+                "description": "\u91cd\u65b0\u5904\u7406\u6307\u5b9a\u4f1a\u8bae\u7684\u5f55\u5236\u6587\u4ef6\uff0c\u91cd\u65b0\u751f\u6210AI\u6458\u8981\u548c\u8f6c\u5f55\u7b49",
+                "operationId": "MeetingController_reprocessMeetingRecord",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "required": true,
+                        "in": "path",
+                        "description": "\u4f1a\u8bae\u8bb0\u5f55ID",
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\u91cd\u65b0\u5904\u7406\u6210\u529f"
+                    },
+                    "404": {
+                        "description": "\u4f1a\u8bae\u8bb0\u5f55\u4e0d\u5b58\u5728"
+                    },
+                    "500": {
+                        "description": "\u670d\u52a1\u5668\u5185\u90e8\u9519\u8bef"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u91cd\u65b0\u5904\u7406\u4f1a\u8bae\u5f55\u5236\u6587\u4ef6",
+                "tags": [
+                    "Meet"
+                ]
+            }
+        },
+        "/meetings/health": {
+            "get": {
+                "description": "\u68c0\u67e5\u4f1a\u8bae\u670d\u52a1\u7684\u8fd0\u884c\u72b6\u6001",
+                "operationId": "MeetingController_healthCheck",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "\u670d\u52a1\u6b63\u5e38\u8fd0\u884c",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "ok"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "example": "2023-12-01T10:00:00.000Z"
+                                        },
+                                        "service": {
+                                            "type": "string",
+                                            "example": "meeting-service"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "\u670d\u52a1\u5668\u5185\u90e8\u9519\u8bef"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer": []
+                    }
+                ],
+                "summary": "\u5065\u5eb7\u68c0\u67e5",
+                "tags": [
+                    "Meet"
+                ]
+            }
+        },
+        "/webhooks/tencent": {
+            "get": {
+                "description": "\u7528\u4e8e\u817e\u8baf\u4f1a\u8baewebhook URL\u6709\u6548\u6027\u9a8c\u8bc1",
+                "operationId": "TencentWebhookController_verifyTencentWebhook",
+                "parameters": [
+                    {
+                        "name": "check_str",
+                        "required": true,
+                        "in": "query",
+                        "description": "\u9a8c\u8bc1\u5b57\u7b26\u4e32\uff08Base64\u7f16\u7801\uff0cURL\u53c2\u6570\uff09",
+                        "schema": {
+                            "example": "check_str",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "timestamp",
+                        "in": "header",
+                        "description": "\u65f6\u95f4\u6233\uff0c\u4e0e nonce \u7ed3\u5408\u4f7f\u7528\uff0c\u7528\u4e8e\u7b7e\u540d\u6821\u9a8c\u3002",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "nonce",
+                        "in": "header",
+                        "description": "\u968f\u673a\u6570\uff0c\u4e0etimestamp \u7ed3\u5408\u4f7f\u7528\uff0c\u7528\u4e8e\u7b7e\u540d\u6821\u9a8c\u3002",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "signature",
+                        "in": "header",
+                        "description": "\u52a0\u5bc6\u7b7e\u540d\uff0csignature \u7684\u8ba1\u7b97\u7ed3\u5408\u5f00\u53d1\u8005\u586b\u5199\u7684 token\u3001timestamp\u3001nonce\u3001\u6d88\u606f\u4f53\uff0c\u7b7e\u540d\u8ba1\u7b97\u65b9\u6cd5\u8bf7\u53c2\u89c1-https://cloud.tencent.com/document/product/1095/51612",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\u9a8c\u8bc1\u6210\u529f\uff0c\u8fd4\u56de\u89e3\u5bc6\u540e\u7684\u660e\u6587"
+                    },
+                    "400": {
+                        "description": "\u7f3a\u5c11\u5fc5\u8981\u53c2\u6570"
+                    },
+                    "403": {
+                        "description": "\u7b7e\u540d\u9a8c\u8bc1\u5931\u8d25"
+                    }
+                },
+                "summary": "\u817e\u8baf\u4f1a\u8baeWebhook URL\u9a8c\u8bc1",
+                "tags": [
+                    "Tencent Meeting"
+                ]
+            },
+            "post": {
+                "description": "\u63a5\u6536\u817e\u8baf\u4f1a\u8bae\u7684Webhook\u4e8b\u4ef6\u901a\u77e5\u3002\u652f\u6301\u4f1a\u8bae\u521b\u5efa\u3001\u5f00\u59cb\u3001\u7ed3\u675f\u3001\u5f55\u5236\u5b8c\u6210\u7b49\u4e8b\u4ef6\u3002\u8bf7\u6c42\u4f53\u4e2d\u7684data\u5b57\u6bb5\u662fBase64\u7f16\u7801\u7684\u52a0\u5bc6\u4e8b\u4ef6\u6570\u636e\uff0c\u9700\u8981\u4f7f\u7528EncodingAESKey\u8fdb\u884c\u89e3\u5bc6\u3002",
+                "operationId": "TencentWebhookController_handleTencentWebhook",
+                "parameters": [
+                    {
+                        "name": "timestamp",
+                        "in": "header",
+                        "description": "\u65f6\u95f4\u6233\uff0c\u4e0e nonce \u7ed3\u5408\u4f7f\u7528\uff0c\u7528\u4e8e\u7b7e\u540d\u6821\u9a8c\u3002",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "nonce",
+                        "in": "header",
+                        "description": "\u968f\u673a\u6570\uff0c\u4e0etimestamp \u7ed3\u5408\u4f7f\u7528\uff0c\u7528\u4e8e\u7b7e\u540d\u6821\u9a8c\u3002",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "signature",
+                        "in": "header",
+                        "description": "\u52a0\u5bc6\u7b7e\u540d\uff0csignature \u7684\u8ba1\u7b97\u7ed3\u5408\u5f00\u53d1\u8005\u586b\u5199\u7684 token\u3001timestamp\u3001nonce\u3001\u6d88\u606f\u4f53\uff0c\u7b7e\u540d\u8ba1\u7b97\u65b9\u6cd5\u8bf7\u53c2\u89c1-https://cloud.tencent.com/document/product/1095/51612",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "description": "\u817e\u8baf\u4f1a\u8baeWebhook\u4e8b\u4ef6\u8bf7\u6c42\u4f53",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "data": {
+                                        "type": "string",
+                                        "description": "Base64\u7f16\u7801\u7684\u52a0\u5bc6\u4e8b\u4ef6\u6570\u636e",
+                                        "example": "PEircBnzWLN8UEmnWYclRuejXA55PpzDhz4UDpL2L7kSR/g3eWQ+4k8s+BYwviUtOgiYJ+qWBkMUatK7n0hD37DbxnroY3Svohpzhe8UVjPyjPj/ywbMfkvv9VbBZb7b3Zc2E72N3wPixoY312/SVC2rYNzsvUOKQwKCyIIFVkpepufOwVNKGikwv6apt7KqmNg9uR/PAyB39WBtAs6DlmvHBTDZY8Dnh+Wckm/KGKcUyuQ0OMNXbLLaEqZhlnLf8ciVdhDySOvbS50yTNElJFtIdmpmCwbx02n+MUUk3PfQEW8bTx0w1+/3YXhLo5Xs8DfOcIKRLoGa3o9uJeo54n20zxGmAroMiR3bebsKfa4xJruTH23tkpxg6wHqZIrJAEWrdeHsmKjWt5LhdIdbto5fh6AVD4lkzoXm9wtxM7WOlr6yKux0ErAgP63I2Ig+n2ReimGtGMhrgBAtwNndzgXcoMqjiAY6jaJ7UWK/QbDnVee4RpfxvmkMppGJmn/5bF0Glt+K/d8zbbtbI1YWvZY3ImBny1WmXaGORu+++i4y51MZUgrURguQJo0WiGn+DLP5/IPIVe5bIJMLODHPNADGy5rZIkjAOYGJq2yav7ln5WfLd4VPlP/xLbDJrKdScbxSMrpkROZ1UwudnfYUtg=="
+                                    }
+                                },
+                                "required": [
+                                    "data"
+                                ],
+                                "$ref": "#/components/schemas/"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Webhook\u5904\u7406\u6210\u529f\uff0c\u5fc5\u987b\u8fd4\u56de\u5b57\u7b26\u4e32 \"successfully received callback\"\uff08\u4e0d\u542b\u5f15\u53f7\uff09",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "successfully received callback"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "\u8bf7\u6c42\u53c2\u6570\u9519\u8bef\uff0c\u5982\u7f3a\u5c11\u5fc5\u8981\u7684\u8bf7\u6c42\u5934\u6216\u8bf7\u6c42\u4f53\u683c\u5f0f\u4e0d\u6b63\u786e"
+                    },
+                    "401": {
+                        "description": "\u7b7e\u540d\u9a8c\u8bc1\u5931\u8d25\uff0c\u53ef\u80fd\u662ftimestamp\u3001nonce\u6216signature\u4e0d\u6b63\u786e"
+                    },
+                    "500": {
+                        "description": "\u670d\u52a1\u5668\u5185\u90e8\u9519\u8bef\uff0c\u5982\u89e3\u5bc6\u5931\u8d25\u6216\u4e8b\u4ef6\u5904\u7406\u5f02\u5e38"
+                    }
+                },
+                "summary": "\u817e\u8baf\u4f1a\u8baeWebhook\u4e8b\u4ef6\u63a5\u6536",
+                "tags": [
+                    "Tencent Meeting"
+                ]
+            }
+        },
+        "/webhooks/lark": {
+            "post": {
+                "description": "\u63a5\u6536 Lark Webhook \u4e8b\u4ef6",
+                "operationId": "LarkWebhookController_handleLarkWebhook",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Webhook \u5904\u7406\u6210\u529f"
+                    }
+                },
+                "summary": "Lark Webhook",
+                "tags": [
+                    "Webhooks"
+                ]
+            }
+        }
+    },
+    "info": {
+        "title": "LuLab Backend API",
+        "description": "LuLab Backend API\u6587\u6863",
+        "version": "1.0",
+        "contact": {}
+    },
+    "tags": [],
+    "servers": [],
+    "components": {
+        "securitySchemes": {
+            "bearer": {
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "type": "http"
+            }
+        },
+        "schemas": {
+            "TaskEntity": {
+                "type": "object",
+                "properties": {}
+            },
+            "PaginatedTasksResponse": {
+                "type": "object",
+                "properties": {}
+            },
+            "OkResponse": {
+                "type": "object",
+                "properties": {}
+            },
+            "RunNowResponse": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreateOnceDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "CreateCronDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "UpdateTaskDto": {
+                "type": "object",
+                "properties": {}
+            },
+            "SendEmailDto": {
+                "type": "object",
+                "properties": {
+                    "to": {
+                        "type": "string",
+                        "description": "\u6536\u4ef6\u4eba\u90ae\u7bb1\u5730\u5740",
+                        "example": "recipient@example.com"
+                    },
+                    "cc": {
+                        "description": "\u6284\u9001\u90ae\u7bb1\u5730\u5740\u5217\u8868",
+                        "example": [
+                            "cc1@example.com",
+                            "cc2@example.com"
+                        ],
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "bcc": {
+                        "description": "\u5bc6\u9001\u90ae\u7bb1\u5730\u5740\u5217\u8868",
+                        "example": [
+                            "bcc1@example.com",
+                            "bcc2@example.com"
+                        ],
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "subject": {
+                        "type": "string",
+                        "description": "\u90ae\u4ef6\u4e3b\u9898",
+                        "example": "\u6d4b\u8bd5\u90ae\u4ef6\u4e3b\u9898"
+                    },
+                    "text": {
+                        "type": "string",
+                        "description": "\u90ae\u4ef6\u7eaf\u6587\u672c\u5185\u5bb9",
+                        "example": "\u8fd9\u662f\u90ae\u4ef6\u7684\u7eaf\u6587\u672c\u5185\u5bb9"
+                    },
+                    "html": {
+                        "type": "string",
+                        "description": "\u90ae\u4ef6HTML\u5185\u5bb9",
+                        "example": "<h1>\u8fd9\u662f\u90ae\u4ef6\u7684HTML\u5185\u5bb9</h1>"
+                    }
+                },
+                "required": [
+                    "to",
+                    "subject",
+                    "text"
+                ]
+            },
+            "RegisterDto": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "description": "\u6ce8\u518c\u7c7b\u578b",
+                        "enum": [
+                            "username_password",
+                            "email_password",
+                            "email_code",
+                            "phone_password",
+                            "phone_code"
+                        ]
+                    },
+                    "username": {
+                        "type": "string",
+                        "description": "\u7528\u6237\u540d"
+                    },
+                    "email": {
+                        "type": "string",
+                        "description": "\u90ae\u7bb1"
+                    },
+                    "countryCode": {
+                        "type": "string",
+                        "description": "\u56fd\u5bb6\u4ee3\u7801\uff0c\u5982 +86"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "description": "\u624b\u673a\u53f7"
+                    },
+                    "password": {
+                        "type": "string",
+                        "description": "\u5bc6\u7801\uff0c\u81f3\u5c116\u4f4d\u4e14\u5305\u542b\u5b57\u6bcd\u548c\u6570\u5b57"
+                    },
+                    "code": {
+                        "type": "string",
+                        "description": "\u9a8c\u8bc1\u7801\uff0c4-6\u4f4d\u6570\u5b57"
+                    },
+                    "deviceInfo": {
+                        "type": "string",
+                        "description": "\u8bbe\u5907\u4fe1\u606f\uff0c\u5982\u8bbe\u5907\u578b\u53f7\u3001\u64cd\u4f5c\u7cfb\u7edf\u7b49"
+                    },
+                    "deviceId": {
+                        "type": "string",
+                        "description": "\u8bbe\u5907ID\uff0c\u7528\u4e8e\u6807\u8bc6\u552f\u4e00\u8bbe\u5907"
+                    }
+                },
+                "required": [
+                    "type"
+                ]
+            },
+            "AuthResponseDto": {
+                "type": "object",
+                "properties": {
+                    "accessToken": {
+                        "type": "string",
+                        "description": "\u8bbf\u95ee\u4ee4\u724c"
+                    },
+                    "refreshToken": {
+                        "type": "string",
+                        "description": "\u5237\u65b0\u4ee4\u724c"
+                    },
+                    "user": {
+                        "type": "object",
+                        "description": "\u7528\u6237\u57fa\u672c\u4fe1\u606f"
+                    }
+                },
+                "required": [
+                    "accessToken",
+                    "refreshToken",
+                    "user"
+                ]
+            },
+            "LoginDto": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "description": "\u767b\u5f55\u7c7b\u578b",
+                        "enum": [
+                            "username_password",
+                            "email_password",
+                            "email_code",
+                            "phone_password",
+                            "phone_code"
+                        ]
+                    },
+                    "username": {
+                        "type": "string",
+                        "description": "\u7528\u6237\u540d"
+                    },
+                    "email": {
+                        "type": "string",
+                        "description": "\u90ae\u7bb1"
+                    },
+                    "countryCode": {
+                        "type": "string",
+                        "description": "\u56fd\u5bb6\u4ee3\u7801\uff0c\u5982 +86"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "description": "\u624b\u673a\u53f7"
+                    },
+                    "password": {
+                        "type": "string",
+                        "description": "\u5bc6\u7801"
+                    },
+                    "code": {
+                        "type": "string",
+                        "description": "\u9a8c\u8bc1\u7801"
+                    },
+                    "deviceInfo": {
+                        "type": "string",
+                        "description": "\u8bbe\u5907\u4fe1\u606f\uff0c\u5982\u8bbe\u5907\u578b\u53f7\u3001\u64cd\u4f5c\u7cfb\u7edf\u7b49"
+                    },
+                    "deviceId": {
+                        "type": "string",
+                        "description": "\u8bbe\u5907ID\uff0c\u7528\u4e8e\u6807\u8bc6\u552f\u4e00\u8bbe\u5907"
+                    }
+                },
+                "required": [
+                    "type"
+                ]
+            },
+            "ResetPasswordDto": {
+                "type": "object",
+                "properties": {
+                    "target": {
+                        "type": "string",
+                        "description": "\u76ee\u6807\u90ae\u7bb1\u6216\u624b\u673a\u53f7"
+                    },
+                    "code": {
+                        "type": "string",
+                        "description": "\u91cd\u7f6e\u5bc6\u7801\u9a8c\u8bc1\u7801"
+                    },
+                    "newPassword": {
+                        "type": "string",
+                        "description": "\u65b0\u5bc6\u7801\uff0c\u81f3\u5c116\u4f4d\u4e14\u5305\u542b\u5b57\u6bcd\u548c\u6570\u5b57"
+                    }
+                },
+                "required": [
+                    "target",
+                    "code",
+                    "newPassword"
+                ]
+            },
+            "UserProfileResponseDto": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "username": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "countryCode": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "phone": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "emailVerified": {
+                        "type": "boolean"
+                    },
+                    "phoneVerified": {
+                        "type": "boolean"
+                    },
+                    "lastLoginAt": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "date-time"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "profile": {
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "id",
+                    "email",
+                    "emailVerified",
+                    "phoneVerified",
+                    "createdAt"
+                ]
+            },
+            "UpdateProfileDto": {
+                "type": "object",
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "description": "\u7528\u6237\u540d"
+                    },
+                    "email": {
+                        "type": "string",
+                        "description": "\u90ae\u7bb1"
+                    },
+                    "countryCode": {
+                        "type": "string",
+                        "description": "\u56fd\u5bb6\u4ee3\u7801\uff0c\u5982 +86"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "description": "\u624b\u673a\u53f7"
+                    },
+                    "avatar": {
+                        "type": "string",
+                        "description": "\u5934\u50cfURL"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "\u59d3\u540d\u6216\u6635\u79f0"
+                    },
+                    "bio": {
+                        "type": "string",
+                        "description": "\u4e2a\u4eba\u7b80\u4ecb"
+                    }
+                }
+            },
+            "VerifyCodeDto": {
+                "type": "object",
+                "properties": {
+                    "target": {
+                        "type": "string",
+                        "description": "\u76ee\u6807\u90ae\u7bb1\u6216\u624b\u673a\u53f7"
+                    },
+                    "code": {
+                        "type": "string",
+                        "description": "\u9a8c\u8bc1\u7801\uff0c4-6\u4f4d\u6570\u5b57"
+                    },
+                    "type": {
+                        "type": "string",
+                        "description": "\u9a8c\u8bc1\u7801\u7c7b\u578b",
+                        "enum": [
+                            "register",
+                            "login",
+                            "reset_password"
+                        ]
+                    }
+                },
+                "required": [
+                    "target",
+                    "code",
+                    "type"
+                ]
+            },
+            "MeetingRecordResponseDto": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "\u4f1a\u8bae\u8bb0\u5f55ID"
+                    },
+                    "platform": {
+                        "type": "string",
+                        "description": "\u4f1a\u8bae\u5e73\u53f0",
+                        "enum": [
+                            "TENCENT_MEETING",
+                            "ZOOM",
+                            "TEAMS",
+                            "DINGTALK",
+                            "FEISHU",
+                            "WEBEX",
+                            "VOOV",
+                            "OTHER"
+                        ]
+                    },
+                    "meetingId": {
+                        "type": "string",
+                        "description": "\u5e73\u53f0\u4f1a\u8baeID"
+                    },
+                    "subMeetingId": {
+                        "type": "object",
+                        "description": "\u5b50\u4f1a\u8baeID"
+                    },
+                    "externalId": {
+                        "type": "object",
+                        "description": "\u5916\u90e8\u7cfb\u7edfID"
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "\u4f1a\u8bae\u6807\u9898"
+                    },
+                    "description": {
+                        "type": "object",
+                        "description": "\u4f1a\u8bae\u63cf\u8ff0"
+                    },
+                    "meetingCode": {
+                        "type": "object",
+                        "description": "\u4f1a\u8bae\u53f7"
+                    },
+                    "type": {
+                        "type": "string",
+                        "description": "\u4f1a\u8bae\u7c7b\u578b",
+                        "enum": [
+                            "ONE_TIME",
+                            "RECURRING",
+                            "INSTANT",
+                            "SCHEDULED",
+                            "WEBINAR"
+                        ]
+                    },
+                    "language": {
+                        "type": "object",
+                        "description": "\u4f1a\u8bae\u8bed\u8a00"
+                    },
+                    "tags": {
+                        "description": "\u6807\u7b7e",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "hostPlatformUserId": {
+                        "type": "object",
+                        "description": "\u4e3b\u6301\u4eba\u5e73\u53f0\u7528\u6237ID"
+                    },
+                    "participantCount": {
+                        "type": "object",
+                        "description": "\u53c2\u4f1a\u4eba\u6570"
+                    },
+                    "scheduledStartAt": {
+                        "type": "object",
+                        "description": "\u9884\u5b9a\u5f00\u59cb\u65f6\u95f4"
+                    },
+                    "scheduledEndAt": {
+                        "type": "object",
+                        "description": "\u9884\u5b9a\u7ed3\u675f\u65f6\u95f4"
+                    },
+                    "startAt": {
+                        "type": "object",
+                        "description": "\u5b9e\u9645\u5f00\u59cb\u65f6\u95f4"
+                    },
+                    "endAt": {
+                        "type": "object",
+                        "description": "\u5b9e\u9645\u7ed3\u675f\u65f6\u95f4"
+                    },
+                    "durationSeconds": {
+                        "type": "object",
+                        "description": "\u6301\u7eed\u65f6\u95f4\uff08\u79d2\uff09"
+                    },
+                    "timezone": {
+                        "type": "object",
+                        "description": "\u65f6\u533a"
+                    },
+                    "hasRecording": {
+                        "type": "boolean",
+                        "description": "\u662f\u5426\u6709\u5f55\u5236"
+                    },
+                    "recordingStatus": {
+                        "type": "string",
+                        "description": "\u5f55\u5236\u72b6\u6001",
+                        "enum": [
+                            "PENDING",
+                            "PROCESSING",
+                            "COMPLETED",
+                            "FAILED",
+                            "SKIPPED"
+                        ]
+                    },
+                    "processingStatus": {
+                        "type": "string",
+                        "description": "\u5904\u7406\u72b6\u6001",
+                        "enum": [
+                            "PENDING",
+                            "PROCESSING",
+                            "COMPLETED",
+                            "FAILED",
+                            "SKIPPED"
+                        ]
+                    },
+                    "metadata": {
+                        "type": "object",
+                        "description": "\u5143\u6570\u636e"
+                    },
+                    "createdAt": {
+                        "format": "date-time",
+                        "type": "string",
+                        "description": "\u521b\u5efa\u65f6\u95f4"
+                    },
+                    "updatedAt": {
+                        "format": "date-time",
+                        "type": "string",
+                        "description": "\u66f4\u65b0\u65f6\u95f4"
+                    },
+                    "deletedAt": {
+                        "type": "object",
+                        "description": "\u8f6f\u5220\u9664\u65f6\u95f4"
+                    }
+                },
+                "required": [
+                    "id",
+                    "platform",
+                    "meetingId",
+                    "title",
+                    "type",
+                    "hasRecording",
+                    "recordingStatus",
+                    "processingStatus",
+                    "createdAt",
+                    "updatedAt"
+                ]
+            },
+            "MeetingRecordListResponseDto": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "description": "\u4f1a\u8bae\u8bb0\u5f55\u5217\u8868",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/MeetingRecordResponseDto"
+                        }
+                    },
+                    "total": {
+                        "type": "number",
+                        "description": "\u603b\u6570"
+                    },
+                    "page": {
+                        "type": "number",
+                        "description": "\u5f53\u524d\u9875"
+                    },
+                    "limit": {
+                        "type": "number",
+                        "description": "\u6bcf\u9875\u6570\u91cf"
+                    },
+                    "totalPages": {
+                        "type": "number",
+                        "description": "\u603b\u9875\u6570"
+                    }
+                },
+                "required": [
+                    "data",
+                    "total",
+                    "page",
+                    "limit",
+                    "totalPages"
+                ]
+            }
+        }
+    }
+}

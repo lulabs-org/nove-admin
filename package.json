@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "generate:api": "openapi --input openapi_formatted.json --output ./src/services/generated --client axios"
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
@@ -36,6 +37,7 @@
     "fast-check": "^4.5.3",
     "globals": "^16.5.0",
     "jsdom": "^27.4.0",
+    "openapi-typescript-codegen": "^0.30.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4",
