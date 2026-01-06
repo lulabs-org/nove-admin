@@ -50,9 +50,19 @@ describe('StorageService Property-Based Tests', () => {
           id: fc.string({ minLength: 1 }),
           username: fc.string({ minLength: 1 }),
           email: fc.emailAddress(),
-          role: fc.constantFrom('admin', 'manager', 'user'),
-          createdAt: fc.option(fc.integer({ min: 1577836800000, max: 1924905600000 }).map(ts => new Date(ts).toISOString())),
+          countryCode: fc.constant('+86'),
+          phone: fc.string({ minLength: 11, maxLength: 11 }),
+          emailVerified: fc.boolean(),
+          phoneVerified: fc.boolean(),
           lastLoginAt: fc.option(fc.integer({ min: 1577836800000, max: 1924905600000 }).map(ts => new Date(ts).toISOString())),
+          createdAt: fc.option(fc.integer({ min: 1577836800000, max: 1924905600000 }).map(ts => new Date(ts).toISOString())),
+          profile: fc.record({
+            name: fc.string(),
+            bio: fc.string(),
+            firstName: fc.string(),
+            lastName: fc.string(),
+            gender: fc.string(),
+          }),
         }), // Generate user object
         (token, user) => {
           // Setup: Store token and user (simulating authenticated state)
@@ -108,9 +118,19 @@ describe('StorageService Property-Based Tests', () => {
           id: fc.string({ minLength: 1 }),
           username: fc.string({ minLength: 1 }),
           email: fc.emailAddress(),
-          role: fc.constantFrom('admin', 'manager', 'user'),
-          createdAt: fc.option(fc.integer({ min: 1577836800000, max: 1924905600000 }).map(ts => new Date(ts).toISOString())),
+          countryCode: fc.constant('+86'),
+          phone: fc.string({ minLength: 11, maxLength: 11 }),
+          emailVerified: fc.boolean(),
+          phoneVerified: fc.boolean(),
           lastLoginAt: fc.option(fc.integer({ min: 1577836800000, max: 1924905600000 }).map(ts => new Date(ts).toISOString())),
+          createdAt: fc.option(fc.integer({ min: 1577836800000, max: 1924905600000 }).map(ts => new Date(ts).toISOString())),
+          profile: fc.record({
+            name: fc.string(),
+            bio: fc.string(),
+            firstName: fc.string(),
+            lastName: fc.string(),
+            gender: fc.string(),
+          }),
         }),
         (user) => {
           StorageService.setUser(user as User);

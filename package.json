@@ -17,6 +17,7 @@
     "@ant-design/icons": "^6.1.0",
     "antd": "^6.1.4",
     "axios": "^1.13.2",
+    "form-data": "^4.0.5",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.11.0"

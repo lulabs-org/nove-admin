@@ -108,7 +108,19 @@ describe('AuthContext Property-Based Tests', () => {
           id: fc.string({ minLength: 1 }),
           username: fc.string({ minLength: 1 }),
           email: fc.emailAddress(),
-          role: fc.constantFrom('admin', 'manager', 'user'),
+          countryCode: fc.constant('+86'),
+          phone: fc.string({ minLength: 11, maxLength: 11 }),
+          emailVerified: fc.boolean(),
+          phoneVerified: fc.boolean(),
+          lastLoginAt: fc.string(),
+          createdAt: fc.string(),
+          profile: fc.record({
+            name: fc.string(),
+            bio: fc.string(),
+            firstName: fc.string(),
+            lastName: fc.string(),
+            gender: fc.string(),
+          }),
         }),
         async (token, user) => {
           // Setup: Store valid token and user (simulating previous login)
@@ -161,7 +173,19 @@ describe('AuthContext Property-Based Tests', () => {
           id: fc.string({ minLength: 1 }),
           username: fc.string({ minLength: 1 }),
           email: fc.emailAddress(),
-          role: fc.constantFrom('admin', 'manager', 'user'),
+          countryCode: fc.constant('+86'),
+          phone: fc.string({ minLength: 11, maxLength: 11 }),
+          emailVerified: fc.boolean(),
+          phoneVerified: fc.boolean(),
+          lastLoginAt: fc.string(),
+          createdAt: fc.string(),
+          profile: fc.record({
+            name: fc.string(),
+            bio: fc.string(),
+            firstName: fc.string(),
+            lastName: fc.string(),
+            gender: fc.string(),
+          }),
         }),
         async (invalidToken, user) => {
           // Setup: Store invalid/expired token and user

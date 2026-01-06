@@ -2,7 +2,7 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-06 09:05:17
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-07 03:17:10
+ * @LastEditTime: 2026-01-07 04:34:03
  * @FilePath: /nove-admin/src/types/auth.ts
  * @Description: 
  * 
@@ -18,14 +18,15 @@ export interface UserProfile {
 
 export interface User {
   id: string;
+  username?: string | null;
   email: string;
-  countryCode: string;
-  phone: string;
+  countryCode?: string | null;
+  phone?: string | null;
   emailVerified: boolean;
   phoneVerified: boolean;
-  lastLoginAt: string;
+  lastLoginAt?: string | null;
   createdAt: string;
-  profile: UserProfile;
+  profile?: UserProfile | null;
 }
 
 export interface AuthToken {

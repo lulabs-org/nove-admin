@@ -13,7 +13,19 @@ describe('Dashboard Page Unit Tests', () => {
     id: '1',
     username: 'testuser',
     email: 'test@example.com',
-    role: 'admin',
+    countryCode: '+86',
+    phone: '13800138000',
+    emailVerified: true,
+    phoneVerified: true,
+    lastLoginAt: '2024-01-01T00:00:00Z',
+    createdAt: '2024-01-01T00:00:00Z',
+    profile: {
+      name: 'Test User',
+      bio: 'Test bio',
+      firstName: 'Test',
+      lastName: 'User',
+      gender: 'male',
+    },
   };
 
   const createMockAuthContext = (overrides?: Partial<AuthContextType>): AuthContextType => ({
@@ -123,7 +135,19 @@ describe('Dashboard Page Unit Tests', () => {
         id: '2',
         username: 'adminuser',
         email: 'admin@example.com',
-        role: 'admin',
+        countryCode: '+86',
+        phone: '13900139000',
+        emailVerified: true,
+        phoneVerified: true,
+        lastLoginAt: '2024-01-02T00:00:00Z',
+        createdAt: '2024-01-02T00:00:00Z',
+        profile: {
+          name: 'Admin User',
+          bio: 'Admin bio',
+          firstName: 'Admin',
+          lastName: 'User',
+          gender: 'male',
+        },
       };
 
       renderDashboard({ user: differentUser });

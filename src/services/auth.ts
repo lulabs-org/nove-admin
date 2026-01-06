@@ -8,21 +8,35 @@
  * 
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved. 
  */
-import apiClient from './api';
 import type { LoginRequest, LoginResponse, User } from '../types/auth';
+import { AuthService } from './generated/services/AuthService';
+import { UserService } from './generated/services/UserService';
+import { OpenAPI } from './generated/core/OpenAPI';
+
+OpenAPI.BASE = import.meta.env.VITE_API_BASE_URL || 'http://118.178.234.94:3000';
+OpenAPI.TOKEN = async () => {
+  const token = localStorage.getItem('nove_admin_token');
+  return token || '';
+};
 
 export const authApi = {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     console.log('Login attempt with credentials:', credentials);
-    console.log('API base URL:', apiClient.defaults.baseURL);
     
     try {
-      const response = await apiClient.post<LoginResponse>(
-        '/auth/login',
-        credentials
-      );
+      const response = await AuthService.authControllerLogin({
+        type: credentials.type as any,
+        username: credentials.username,
+        password: credentials.password,
+      });
+      
       console.log('Login response:', response);
-      return response.data;
+      
+      return {
+        user: response.user as User,
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+      };
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -30,19 +44,22 @@ export const authApi = {
   },
 
   async logout(): Promise<void> {
-    await apiClient.post('/auth/logout');
+    await AuthService.authControllerLogout();
   },
 
   async getCurrentUser(): Promise<User> {
-    const response = await apiClient.get<User>('/auth/me');
-    return response.data;
+    const response = await UserService.userControllerGetProfile();
+    return response as User;
   },
 
   async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
-    const response = await apiClient.post<{ accessToken: string; refreshToken: string }>(
-      '/auth/refresh',
-      { refreshToken }
-    );
-    return response.data;
+    const response = await AuthService.authControllerRefreshToken({
+      refreshToken,
+    });
+    
+    return {
+      accessToken: response.accessToken || '',
+      refreshToken: response.refreshToken || '',
+    };
   },
 };

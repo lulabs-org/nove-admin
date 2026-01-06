@@ -17,13 +17,25 @@ describe('Integration Test: Complete Login Flow', () => {
     id: '1',
     username: 'testuser',
     email: 'test@example.com',
-    role: 'admin',
+    countryCode: '+86',
+    phone: '13800138000',
+    emailVerified: true,
+    phoneVerified: true,
+    lastLoginAt: '2024-01-01T00:00:00Z',
+    createdAt: '2024-01-01T00:00:00Z',
+    profile: {
+      name: 'Test User',
+      bio: 'Test bio',
+      firstName: 'Test',
+      lastName: 'User',
+      gender: 'male',
+    },
   };
 
   const mockLoginResponse: LoginResponse = {
-    token: 'mock-jwt-token-12345',
+    accessToken: 'mock-jwt-token-12345',
+    refreshToken: 'mock-refresh-token-12345',
     user: mockUser,
-    expiresIn: 3600,
   };
 
   beforeEach(() => {
@@ -122,7 +134,7 @@ describe('Integration Test: Complete Login Flow', () => {
     expect(screen.queryByPlaceholderText('Password')).not.toBeInTheDocument();
 
     // Verify authentication token was stored
-    expect(localStorage.setItem).toHaveBeenCalledWith('nove_admin_token', mockLoginResponse.token);
+    expect(localStorage.setItem).toHaveBeenCalledWith('nove_admin_token', mockLoginResponse.accessToken);
     expect(localStorage.setItem).toHaveBeenCalledWith('nove_admin_user', JSON.stringify(mockUser));
 
     // Clean up
@@ -141,13 +153,25 @@ describe('Integration Test: Complete Login Flow', () => {
       id: '2',
       username: 'adminuser',
       email: 'admin@example.com',
-      role: 'superadmin',
+      countryCode: '+86',
+      phone: '13900139000',
+      emailVerified: true,
+      phoneVerified: true,
+      lastLoginAt: '2024-01-02T00:00:00Z',
+      createdAt: '2024-01-02T00:00:00Z',
+      profile: {
+        name: 'Admin User',
+        bio: 'Admin bio',
+        firstName: 'Admin',
+        lastName: 'User',
+        gender: 'male',
+      },
     };
 
     const differentLoginResponse: LoginResponse = {
-      token: 'different-jwt-token-67890',
+      accessToken: 'different-jwt-token-67890',
+      refreshToken: 'different-refresh-token-67890',
       user: differentUser,
-      expiresIn: 7200,
     };
 
     // Mock the auth API calls
@@ -281,13 +305,25 @@ describe('Integration Test: Session Persistence', () => {
     id: '1',
     username: 'testuser',
     email: 'test@example.com',
-    role: 'admin',
+    countryCode: '+86',
+    phone: '13800138000',
+    emailVerified: true,
+    phoneVerified: true,
+    lastLoginAt: '2024-01-01T00:00:00Z',
+    createdAt: '2024-01-01T00:00:00Z',
+    profile: {
+      name: 'Test User',
+      bio: 'Test bio',
+      firstName: 'Test',
+      lastName: 'User',
+      gender: 'male',
+    },
   };
 
   const mockLoginResponse: LoginResponse = {
-    token: 'mock-jwt-token-12345',
+    accessToken: 'mock-jwt-token-12345',
+    refreshToken: 'mock-refresh-token-12345',
     user: mockUser,
-    expiresIn: 3600,
   };
 
   let localStorageMock: { [key: string]: string } = {};
@@ -355,7 +391,7 @@ describe('Integration Test: Session Persistence', () => {
     }, { timeout: 3000 });
 
     // Verify token and user are stored in localStorage
-    expect(localStorageMock['nove_admin_token']).toBe(mockLoginResponse.token);
+    expect(localStorageMock['nove_admin_token']).toBe(mockLoginResponse.accessToken);
     expect(localStorageMock['nove_admin_user']).toBe(JSON.stringify(mockUser));
 
     // Step 2: Simulate page refresh by unmounting and re-rendering
@@ -382,7 +418,7 @@ describe('Integration Test: Session Persistence', () => {
     expect(screen.queryByPlaceholderText('Password')).not.toBeInTheDocument();
 
     // Verify token and user are still in localStorage
-    expect(localStorageMock['nove_admin_token']).toBe(mockLoginResponse.token);
+    expect(localStorageMock['nove_admin_token']).toBe(mockLoginResponse.accessToken);
     expect(localStorageMock['nove_admin_user']).toBe(JSON.stringify(mockUser));
 
     // Clean up
@@ -401,13 +437,25 @@ describe('Integration Test: Session Persistence', () => {
       id: '2',
       username: 'adminuser',
       email: 'admin@example.com',
-      role: 'superadmin',
+      countryCode: '+86',
+      phone: '13900139000',
+      emailVerified: true,
+      phoneVerified: true,
+      lastLoginAt: '2024-01-02T00:00:00Z',
+      createdAt: '2024-01-02T00:00:00Z',
+      profile: {
+        name: 'Admin User',
+        bio: 'Admin bio',
+        firstName: 'Admin',
+        lastName: 'User',
+        gender: 'male',
+      },
     };
 
     const differentLoginResponse: LoginResponse = {
-      token: 'different-jwt-token-67890',
+      accessToken: 'different-jwt-token-67890',
+      refreshToken: 'different-refresh-token-67890',
       user: differentUser,
-      expiresIn: 7200,
     };
 
     // Mock the auth API calls
@@ -435,7 +483,7 @@ describe('Integration Test: Session Persistence', () => {
     }, { timeout: 3000 });
 
     // Verify correct token and user are stored
-    expect(localStorageMock['nove_admin_token']).toBe(differentLoginResponse.token);
+    expect(localStorageMock['nove_admin_token']).toBe(differentLoginResponse.accessToken);
     expect(localStorageMock['nove_admin_user']).toBe(JSON.stringify(differentUser));
 
     // Step 2: Simulate page refresh
@@ -448,7 +496,7 @@ describe('Integration Test: Session Persistence', () => {
     }, { timeout: 3000 });
 
     expect(screen.getByText('adminuser')).toBeInTheDocument();
-    expect(localStorageMock['nove_admin_token']).toBe(differentLoginResponse.token);
+    expect(localStorageMock['nove_admin_token']).toBe(differentLoginResponse.accessToken);
 
     // Clean up
     loginSpy.mockRestore();
@@ -505,13 +553,25 @@ describe('Integration Test: Logout Flow', () => {
     id: '1',
     username: 'testuser',
     email: 'test@example.com',
-    role: 'admin',
+    countryCode: '+86',
+    phone: '13800138000',
+    emailVerified: true,
+    phoneVerified: true,
+    lastLoginAt: '2024-01-01T00:00:00Z',
+    createdAt: '2024-01-01T00:00:00Z',
+    profile: {
+      name: 'Test User',
+      bio: 'Test bio',
+      firstName: 'Test',
+      lastName: 'User',
+      gender: 'male',
+    },
   };
 
   const mockLoginResponse: LoginResponse = {
-    token: 'mock-jwt-token-12345',
+    accessToken: 'mock-jwt-token-12345',
+    refreshToken: 'mock-refresh-token-12345',
     user: mockUser,
-    expiresIn: 3600,
   };
 
   let localStorageMock: { [key: string]: string } = {};
@@ -581,7 +641,7 @@ describe('Integration Test: Logout Flow', () => {
     expect(screen.getByText('testuser')).toBeInTheDocument();
 
     // Verify token and user are stored in localStorage
-    expect(localStorageMock['nove_admin_token']).toBe(mockLoginResponse.token);
+    expect(localStorageMock['nove_admin_token']).toBe(mockLoginResponse.accessToken);
     expect(localStorageMock['nove_admin_user']).toBe(JSON.stringify(mockUser));
 
     // Step 3: Click user dropdown to reveal logout option (Requirement 4.4)
@@ -638,13 +698,25 @@ describe('Integration Test: Logout Flow', () => {
       id: '2',
       username: 'adminuser',
       email: 'admin@example.com',
-      role: 'superadmin',
+      countryCode: '+86',
+      phone: '13900139000',
+      emailVerified: true,
+      phoneVerified: true,
+      lastLoginAt: '2024-01-02T00:00:00Z',
+      createdAt: '2024-01-02T00:00:00Z',
+      profile: {
+        name: 'Admin User',
+        bio: 'Admin bio',
+        firstName: 'Admin',
+        lastName: 'User',
+        gender: 'male',
+      },
     };
 
     const differentLoginResponse: LoginResponse = {
-      token: 'different-jwt-token-67890',
+      accessToken: 'different-jwt-token-67890',
+      refreshToken: 'different-refresh-token-67890',
       user: differentUser,
-      expiresIn: 7200,
     };
 
     // Mock the auth API calls
@@ -674,7 +746,7 @@ describe('Integration Test: Logout Flow', () => {
     }, { timeout: 3000 });
 
     expect(screen.getByText('adminuser')).toBeInTheDocument();
-    expect(localStorageMock['nove_admin_token']).toBe(differentLoginResponse.token);
+    expect(localStorageMock['nove_admin_token']).toBe(differentLoginResponse.accessToken);
 
     // Step 3: Click user dropdown and logout
     const userDropdown = screen.getByText('adminuser');
