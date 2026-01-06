@@ -1,6 +1,6 @@
 import { RouterProvider, Outlet } from 'react-router-dom';
 import { createAppRouter } from './shared/router/utils';
-import { routes } from './shared/router/routes';
+import { routes } from './app/routes';
 import { Layout } from './shared/components/Layout';
 
 const router = createAppRouter(
