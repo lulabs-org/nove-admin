@@ -2,13 +2,18 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 10:29:11
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-07 11:25:48
- * @FilePath: /nove-admin/src/features/auth/LoginPage.tsx
+ * @LastEditTime: 2026-01-07 15:53:25
+ * @FilePath: /nove-admin/src/features/auth/pages/LoginPage.tsx
  * @Description:
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
-import { Form, Input, Button, Card, Typography, message } from 'antd';
+import Form from 'antd/es/form';
+import Input from 'antd/es/input';
+import Button from 'antd/es/button';
+import Card from 'antd/es/card';
+import Typography from 'antd/es/typography';
+import message from 'antd/es/message';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';

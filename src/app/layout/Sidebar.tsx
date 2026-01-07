@@ -8,10 +8,10 @@
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
-import { Menu } from 'antd';
+import Menu from 'antd/es/menu';
 import type { RouteConfig } from '../../shared/types';
 import { useLocation, useNavigate } from 'react-router-dom';
-import type { MenuProps } from 'antd';
+import type { MenuProps } from 'antd/es/menu';
 
 interface SidebarProps {
   routes: RouteConfig[];

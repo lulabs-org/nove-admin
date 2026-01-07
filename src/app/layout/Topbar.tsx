@@ -8,7 +8,10 @@
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
-import { Layout, Dropdown, Avatar, Space } from 'antd';
+import Layout from 'antd/es/layout';
+import Dropdown from 'antd/es/dropdown';
+import Avatar from 'antd/es/avatar';
+import Space from 'antd/es/space';
 import { UserOutlined, LogoutOutlined } from '@ant-design/icons';
 import { useAuth } from '../../shared/hooks/useAuth';
 

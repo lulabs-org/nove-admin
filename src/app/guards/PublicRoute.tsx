@@ -1,5 +1,5 @@
 import { useAuth } from '../../shared/hooks/useAuth';
-import { Spin } from 'antd';
+import Spin from 'antd/es/spin';
 import { Navigate } from 'react-router-dom';
 
 export function PublicRoute({ children }: { children: React.ReactNode }) {
