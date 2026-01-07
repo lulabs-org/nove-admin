@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "preview": "vite preview",
-    "prepare": "husky"
+    "prepare": "husky",
+    "api:generate": "orval",
+    "gen:api": "orval --config orval.config.ts",
+    "gen:api:watch": "orval --config orval.config.ts --watch"
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
@@ -39,6 +42,7 @@
     "globals": "^16.5.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
+    "orval": "^7.17.2",
     "prettier": "^3.7.4",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
