@@ -1,4 +1,4 @@
-import { useAuth } from '../../features/auth/useAuth';
+import { useAuth } from '../../shared/hooks/useAuth';
 import { Spin } from 'antd';
 import { Navigate } from 'react-router-dom';
 

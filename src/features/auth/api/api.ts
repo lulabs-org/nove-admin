@@ -8,9 +8,12 @@
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
-import { authControllerLogin, authControllerLogout } from '../../shared/api/orval/business/auth';
-import { userControllerGetProfile } from '../../shared/api/orval/business/user';
-import type { LoginRequest, LoginResponse, User } from './model/types';
+import {
+  authControllerLogin,
+  authControllerLogout,
+} from '../../../shared/lib/api/orval/business/auth';
+import { userControllerGetProfile } from '../../../shared/lib/api/orval/business/user';
+import type { LoginRequest, LoginResponse, User } from '../model/types';
 
 export const login = async (data: LoginRequest): Promise<LoginResponse> => {
   const response = await authControllerLogin(data);

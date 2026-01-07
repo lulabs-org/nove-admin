@@ -2,19 +2,19 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 10:43:46
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-07 10:50:45
- * @FilePath: /nove-admin/src/shared/router/router.tsx
+ * @LastEditTime: 2026-01-07 12:53:59
+ * @FilePath: /nove-admin/src/app/routes/router.tsx
  * @Description:
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
-import type { RouteConfig } from './types';
+import type { RouteConfig } from '../../shared/types';
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import type { RouteObject } from 'react-router-dom';
-import { AdminLayout } from '../components/AdminLayout';
-import { PublicLayout } from '../components/PublicLayout';
-import { ProtectedRoute } from './ProtectedRoute';
-import { PublicRoute } from './PublicRoute';
+import { AdminLayout } from '../layout/AdminLayout';
+import { PublicLayout } from '../layout/PublicLayout';
+import { ProtectedRoute } from '../guards/ProtectedRoute';
+import { PublicRoute } from '../guards/PublicRoute';
 
 export function generateRoutes(routeConfigs: RouteConfig[]): RouteObject[] {
   return routeConfigs.map((config) => {

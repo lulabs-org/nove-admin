@@ -1,5 +1,5 @@
 import { Button, Space, Table, message, Popconfirm } from 'antd';
-import { Perm } from '../../shared/components/Perm';
+import { Perm } from '../../app/guards/Perm';
 import { PERMISSIONS } from '../../shared/utils/permissions';
 import { useState } from 'react';
 

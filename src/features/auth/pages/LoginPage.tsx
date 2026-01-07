@@ -12,7 +12,7 @@ import { Form, Input, Button, Card, Typography, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { useAuth } from './useAuth';
+import { useAuth } from '../../../shared/hooks/useAuth';
 
 const { Title, Text } = Typography;
 

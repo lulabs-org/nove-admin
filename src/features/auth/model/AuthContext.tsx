@@ -2,17 +2,17 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 09:57:05
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-07 09:57:07
- * @FilePath: /nove-admin/src/features/auth/AuthContext.tsx
+ * @LastEditTime: 2026-01-07 12:50:49
+ * @FilePath: /nove-admin/src/features/auth/model/AuthContext.tsx
  * @Description:
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { login, getMe, logout as logoutApi } from './api';
-import { authService } from './service';
-import type { LoginRequest, User } from './model/types';
+import { login, getMe, logout as logoutApi } from '../api/api';
+import { authService } from '../api/service';
+import type { LoginRequest, User } from './types';
 import { AuthContext } from './AuthContext.types';
 
 export function AuthProvider({ children }: { children: ReactNode }) {

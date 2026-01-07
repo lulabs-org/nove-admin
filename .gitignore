@@ -32,4 +32,4 @@ dist-ssr
 .env.test
 
 # Orval generated API
-src/shared/api/orval
+src/shared/lib/api/orval
