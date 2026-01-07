@@ -8,8 +8,6 @@
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
-export { AuthProvider } from './model/AuthContext';
-export { AuthContext } from './model/AuthContext.types';
 export type { LoginRequest, LoginResponse, User } from './model/types';
 export { login, getMe, logout } from './api/api';
 export { authService } from './api/service';
