@@ -9,7 +9,7 @@
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
 import { RouterProvider } from 'react-router-dom';
-import { createAppRouter } from './shared/router/utils';
+import { createAppRouter } from './shared/router/router';
 import { routes } from './app/routes';
 
 const router = createAppRouter(routes);
