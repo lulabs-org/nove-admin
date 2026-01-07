@@ -12,7 +12,7 @@ src/
     api/
       http.ts                # 自定义的 axios instance（统一鉴权、错误处理）
       mutator.ts             # 自定义的 mutator（可选）
-      orval/
+      orval/                 # Orval 自动生成的代码（不要手动修改）
         business/            # nove-api 生成物
           index.ts
           schemas/
@@ -24,8 +24,18 @@ src/
             *.ts
           *.ts
   features/
-    users/
+    auth/
       api.ts                 # 业务层封装（调用 orval 生成的 client/hook）
+    users/
+      api.ts                 # 业务层封装
+    courses/
+      api.ts                 # 业务层封装
+    students/
+      api.ts                 # 业务层封装
+    orders/
+      api.ts                 # 业务层封装
+    ai-center/
+      api.ts                 # 业务层封装
 ```
 
 ## 文件职责说明
@@ -63,6 +73,139 @@ src/
 - 统一的数据转换和错误处理
 - 提供人类可读的业务 API
 
+每个业务域（feature）都应该有自己的 `api.ts` 文件，封装该域相关的所有 API 调用。
+
+#### 示例：用户管理 API
+
+```typescript
+// features/users/api.ts
+import {
+  useGetUsers,
+  useUpdateUser,
+  useCreateUser,
+  useDeleteUser,
+} from '@/shared/api/orval/business';
+import { useQueryClient } from '@tanstack/react-query';
+
+export const useUsersList = (params?: { page?: number; pageSize?: number }) => {
+  return useGetUsers({
+    page: params?.page ?? 1,
+    pageSize: params?.pageSize ?? 10,
+  });
+};
+
+export const useUpdateUser = () => {
+  const queryClient = useQueryClient();
+
+  return useUpdateUser({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['GetUsers'] });
+      },
+    },
+  });
+};
+
+export const useCreateUser = () => {
+  const queryClient = useQueryClient();
+
+  return useCreateUser({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['GetUsers'] });
+      },
+    },
+  });
+};
+
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+
+  return useDeleteUser({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['GetUsers'] });
+      },
+    },
+  });
+};
+```
+
+#### 示例：AI 中心 API
+
+```typescript
+// features/ai-center/api.ts
+import { useGetPrompts, useCreatePrompt, useUpdatePrompt } from '@/shared/api/orval/ai';
+import { useQueryClient } from '@tanstack/react-query';
+
+export const usePromptsList = (params?: { page?: number; pageSize?: number }) => {
+  return useGetPrompts({
+    page: params?.page ?? 1,
+    pageSize: params?.pageSize ?? 10,
+  });
+};
+
+export const useCreatePrompt = () => {
+  const queryClient = useQueryClient();
+
+  return useCreatePrompt({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['GetPrompts'] });
+      },
+    },
+  });
+};
+
+export const useUpdatePrompt = () => {
+  const queryClient = useQueryClient();
+
+  return useUpdatePrompt({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['GetPrompts'] });
+      },
+    },
+  });
+};
+```
+
+#### 示例：认证 API
+
+```typescript
+// features/auth/api.ts
+import { useLogin, useLogout, useGetUserInfo } from '@/shared/api/orval/business';
+import { useAuthStore } from './model/store';
+
+export const useLogin = () => {
+  const { setUser } = useAuthStore();
+
+  return useLogin({
+    mutation: {
+      onSuccess: (data) => {
+        setUser(data.user);
+      },
+    },
+  });
+};
+
+export const useLogout = () => {
+  const { clearUser } = useAuthStore();
+
+  return useLogout({
+    mutation: {
+      onSuccess: () => {
+        clearUser();
+      },
+    },
+  });
+};
+
+export const useUserInfo = () => {
+  return useGetUserInfo();
+};
+```
+
 ## package.json 脚本
 
 ```json
@@ -79,10 +222,10 @@ src/
 ### ❌ 不推荐：直接使用生成的 hooks
 
 ```typescript
-// features/users/page.tsx
+// features/users/pages/UserList.tsx
 import { useGetUsers } from '@/shared/api/orval/business';
 
-const UsersPage = () => {
+const UserList = () => {
   const { data, isLoading } = useGetUsers({
     page: 1,
     pageSize: 10,
@@ -120,16 +263,40 @@ export const useUpdateUser = () => {
 ```
 
 ```typescript
-// features/users/page.tsx
-import { useUsersList, useUpdateUser } from './api';
+// features/users/pages/UserList.tsx
+import { useUsersList, useUpdateUser } from '../api';
 
-const UsersPage = () => {
+const UserList = () => {
   const { data, isLoading } = useUsersList({ page: 1 });
   const updateUser = useUpdateUser();
 
   // ...
 };
 ```
+
+### ✅ 推荐：跨 feature 调用 API
+
+当需要在一个 feature 中调用另一个 feature 的 API 时，应该通过 `shared/api/orval` 调用，而不是直接 import 其他 feature 的 api.ts。
+
+```typescript
+// features/orders/pages/OrderDetail.tsx
+// ❌ 不推荐：直接 import 其他 feature 的 api
+import { useGetUser } from '@/features/users/api';
+
+// ✅ 推荐：通过 shared/api/orval 调用
+import { useGetUser } from '@/shared/api/orval/business';
+
+const OrderDetail = ({ userId }: { userId: string }) => {
+  const { data: user } = useGetUser({ userId });
+
+  // ...
+};
+```
+
+这样遵循了架构原则：
+
+- **shared/ 永远不依赖 features/**
+- **features/ 之间尽量少互相 import**，通过 shared 解耦
 
 ## 封装层的优势
 
