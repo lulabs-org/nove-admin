@@ -8,14 +8,8 @@
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
-import { RouterProvider } from 'react-router-dom';
-import { createAppRouter } from './routes/router';
-import { routes } from './routes';
-
-const router = createAppRouter(routes);
-
 function App() {
-  return <RouterProvider router={router} />;
+  return null;
 }
 
 export default App;
