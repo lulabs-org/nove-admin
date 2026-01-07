@@ -33,3 +33,8 @@ dist-ssr
 
 # Orval generated API
 src/shared/lib/api/orval
+
+# Test results and coverage
+test-results
+playwright-report
+coverage
