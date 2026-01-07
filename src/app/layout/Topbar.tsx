@@ -10,7 +10,7 @@
  */
 import { Layout, Dropdown, Avatar, Space } from 'antd';
 import { UserOutlined, LogoutOutlined } from '@ant-design/icons';
-import { useAuth } from '../../features/auth/useAuth';
+import { useAuth } from '../../shared/hooks/useAuth';
 
 const { Header } = Layout;
 

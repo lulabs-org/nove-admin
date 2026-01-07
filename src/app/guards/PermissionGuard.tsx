@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useAuth } from '../../features/auth/useAuth';
+import { useAuth } from '../../shared/hooks/useAuth';
 
 interface PermissionGuardProps {
   permission?: string;

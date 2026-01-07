@@ -18,13 +18,13 @@ export default defineConfig({
     },
     output: {
       mode: 'tags',
-      target: 'src/shared/api/orval/business/index.ts',
-      schemas: 'src/shared/api/orval/business/schemas',
+      target: 'src/shared/lib/api/orval/business/index.ts',
+      schemas: 'src/shared/lib/api/orval/business/schemas',
       client: 'react-query',
       prettier: true,
       override: {
         mutator: {
-          path: 'src/shared/api/mutator.ts',
+          path: 'src/shared/lib/api/mutator.ts',
           name: 'mutator',
         },
         query: {

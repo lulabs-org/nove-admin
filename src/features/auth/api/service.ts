@@ -2,13 +2,13 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 09:56:13
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-07 09:57:47
- * @FilePath: /nove-admin/src/features/auth/service.ts
+ * @LastEditTime: 2026-01-07 13:03:05
+ * @FilePath: /nove-admin/src/features/auth/api/service.ts
  * @Description:
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
-import type { User } from './model/types';
+import type { User } from '../model/types';
 
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';

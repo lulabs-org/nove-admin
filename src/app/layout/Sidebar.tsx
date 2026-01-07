@@ -9,7 +9,7 @@
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
 import { Menu } from 'antd';
-import type { RouteConfig } from '../router/types';
+import type { RouteConfig } from '../../shared/types';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { MenuProps } from 'antd';
 

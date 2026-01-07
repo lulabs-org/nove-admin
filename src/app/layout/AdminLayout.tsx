@@ -2,17 +2,17 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 07:14:19
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-07 07:14:21
- * @FilePath: /nove-admin/src/shared/components/AdminLayout.tsx
+ * @LastEditTime: 2026-01-07 12:51:27
+ * @FilePath: /nove-admin/src/app/layout/AdminLayout.tsx
  * @Description:
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
 import { Layout } from 'antd';
 import { Outlet } from 'react-router-dom';
-import type { RouteConfig } from '../router/types';
-import { Sidebar } from '../components/Sidebar';
-import { Topbar } from '../components/Topbar';
+import type { RouteConfig } from '../../shared/types';
+import { Sidebar } from './Sidebar';
+import { Topbar } from './Topbar';
 
 const { Content, Sider } = Layout;
 

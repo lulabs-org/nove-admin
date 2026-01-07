@@ -9,9 +9,9 @@
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
 import { Layout as AntLayout } from 'antd';
-import type { RouteConfig } from '../router/types';
-import { Sidebar } from '../components/Sidebar';
-import { PermissionGuard } from '../components/PermissionGuard';
+import type { RouteConfig } from '../../shared/types';
+import { Sidebar } from './Sidebar';
+import { PermissionGuard } from '../guards/PermissionGuard';
 
 const { Header, Content, Sider } = AntLayout;
 
