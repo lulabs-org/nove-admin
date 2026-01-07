@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "preview": "vite preview",
-    "prepare": "husky"
+    "prepare": "husky",
+    "api:generate": "orval",
+    "gen:api": "orval --config orval.config.ts",
+    "gen:api:watch": "orval --config orval.config.ts --watch"
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",

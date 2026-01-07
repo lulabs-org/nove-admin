@@ -2,7 +2,7 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-06 07:45:18
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-07 06:26:05
+ * @LastEditTime: 2026-01-07 08:43:45
  * @FilePath: /nove-admin/eslint.config.js
  * @Description:
  *
@@ -17,7 +17,7 @@ import { defineConfig, globalIgnores } from 'eslint/config';
 import prettier from 'eslint-config-prettier';
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'src/shared/api/orval/**']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
