@@ -1,5 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
+import { RouterProvider } from 'react-router-dom';
+import { createAppRouter } from '../routes/router';
+import { routes } from '../routes';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -10,10 +12,12 @@ const queryClient = new QueryClient({
   },
 });
 
-interface AppProvidersProps {
-  children: ReactNode;
-}
+const router = createAppRouter(routes);
 
-export function AppProviders({ children }: AppProvidersProps) {
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+export function AppProviders() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
+  );
 }

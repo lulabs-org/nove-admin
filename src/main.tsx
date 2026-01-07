@@ -2,7 +2,7 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 13:18:53
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-07 14:23:45
+ * @LastEditTime: 2026-01-07 14:37:07
  * @FilePath: /nove-admin/src/main.tsx
  * @Description:
  *
@@ -11,7 +11,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
-import App from './app/App';
 import { AppProviders } from './app/providers/AppProviders';
 import { useAuthStore } from './features/auth/model/authStore';
 
@@ -22,9 +21,7 @@ const initializeAuth = async () => {
 initializeAuth().then(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <AppProviders>
-        <App />
-      </AppProviders>
+      <AppProviders />
     </StrictMode>
   );
 });
