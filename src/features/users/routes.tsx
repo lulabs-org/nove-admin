@@ -1,23 +1,36 @@
+/*
+ * @Author: 杨仕明 shiming.y@qq.com
+ * @Date: 2026-01-07 07:12:18
+ * @LastEditors: 杨仕明 shiming.y@qq.com
+ * @LastEditTime: 2026-01-07 11:09:18
+ * @FilePath: /nove-admin/src/features/users/routes.tsx
+ * @Description:
+ *
+ * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
+ */
 import type { RouteConfig } from '../../shared/router/types';
+import { UserManagement } from './UserManagement';
+
+import { Outlet } from 'react-router-dom';
 
 export const userRoutes: RouteConfig[] = [
   {
     path: '/users',
-    element: <div>Users</div>,
+    element: <Outlet />,
     title: '用户管理',
     menu: true,
     permission: 'users:view',
     children: [
       {
         path: '/users/list',
-        element: <div>User List</div>,
+        element: <UserManagement />,
         title: '用户列表',
         menu: true,
         permission: 'users:list',
       },
       {
         path: '/users/create',
-        element: <div>Create User</div>,
+        element: <UserManagement />,
         title: '创建用户',
         menu: true,
         permission: 'users:create',

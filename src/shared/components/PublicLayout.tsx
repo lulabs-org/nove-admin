@@ -2,7 +2,7 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 07:14:49
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-07 07:14:50
+ * @LastEditTime: 2026-01-07 11:26:25
  * @FilePath: /nove-admin/src/shared/components/PublicLayout.tsx
  * @Description:
  *
@@ -25,7 +25,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '24px',
+          padding: '4px',
         }}
       >
         {children || <Outlet />}

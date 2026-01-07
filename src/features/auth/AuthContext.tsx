@@ -58,9 +58,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await login(credentials);
     authService.setToken(response.accessToken);
 
-    setUser(response.user);
-    authService.setUser(response.user);
-    setIsAuthenticated(true);
+    try {
+      const userData = await getMe();
+      setUser(userData);
+      authService.setUser(userData);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error('Failed to fetch user data after login:', error);
+      authService.clear();
+      setIsAuthenticated(false);
+      throw error;
+    }
   };
 
   const handleLogout = async () => {
@@ -77,7 +85,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkPermission = (permission: string): boolean => {
     if (!user || !user.permissions) return false;
-    return user.permissions.includes(permission);
+
+    const hasExactPermission = user.permissions.includes(permission);
+    if (hasExactPermission) return true;
+
+    const parts = permission.split(':');
+    if (parts.length === 2) {
+      const wildcardPermission = `${parts[0]}:*`;
+      return user.permissions.includes(wildcardPermission);
+    }
+
+    return false;
   };
 
   return (
