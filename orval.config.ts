@@ -2,7 +2,7 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 07:30:35
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-07 07:50:57
+ * @LastEditTime: 2026-01-07 21:44:30
  * @FilePath: /nove-admin/orval.config.ts
  * @Description:
  *
@@ -10,11 +10,19 @@
  */
 
 import { defineConfig } from 'orval';
+import { config } from 'dotenv';
+
+config();
 
 export default defineConfig({
   noveApi: {
     input: {
-      target: 'http://localhost:3000/api-json',
+      target: (() => {
+        if (!process.env.ORVAL_API_TARGET) {
+          throw new Error('ORVAL_API_TARGET environment variable is not set');
+        }
+        return process.env.ORVAL_API_TARGET;
+      })(),
     },
     output: {
       mode: 'tags',
