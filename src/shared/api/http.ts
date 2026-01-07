@@ -16,9 +16,8 @@ export const http = axios.create({
   timeout: 15000,
 });
 
-// 请求拦截：注入 token / request-id
 http.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -27,12 +26,13 @@ http.interceptors.request.use((config) => {
   return config;
 });
 
-// 响应拦截：统一错误处理
 http.interceptors.response.use(
   (res) => res,
   (error) => {
     if (error.response?.status === 401) {
-      // TODO: 触发登出 / refresh token
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

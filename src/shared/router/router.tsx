@@ -1,22 +1,10 @@
-/*
- * @Author: 杨仕明 shiming.y@qq.com
- * @Date: 2026-01-07 06:32:49
- * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-07 07:19:48
- * @FilePath: /nove-admin/src/shared/router/utils.tsx
- * @Description:
- *
- * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
- */
 import type { RouteConfig } from './types';
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import type { RouteObject } from 'react-router-dom';
 import { AdminLayout } from '../components/AdminLayout';
 import { PublicLayout } from '../components/PublicLayout';
-
-function createRedirectElement(to: string) {
-  return <Navigate to={to} replace />;
-}
+import { ProtectedRoute } from './ProtectedRoute';
+import { PublicRoute } from './PublicRoute';
 
 export function generateRoutes(routeConfigs: RouteConfig[]): RouteObject[] {
   return routeConfigs.map((config) => {
@@ -30,7 +18,7 @@ export function generateRoutes(routeConfigs: RouteConfig[]): RouteObject[] {
     }
 
     if (config.redirect) {
-      route.element = createRedirectElement(config.redirect);
+      route.element = <Navigate to={config.redirect} replace />;
     }
 
     return route;
@@ -45,18 +33,22 @@ export function createAppRouter(routeConfigs: RouteConfig[]) {
     {
       path: '/login',
       element: (
-        <PublicLayout>
-          <Outlet />
-        </PublicLayout>
+        <PublicRoute>
+          <PublicLayout>
+            <Outlet />
+          </PublicLayout>
+        </PublicRoute>
       ),
       children: generateRoutes(publicRoutes),
     },
     {
       path: '/',
       element: (
-        <AdminLayout routes={adminRoutes}>
-          <Outlet />
-        </AdminLayout>
+        <ProtectedRoute>
+          <AdminLayout routes={adminRoutes}>
+            <Outlet />
+          </AdminLayout>
+        </ProtectedRoute>
       ),
       children: generateRoutes(adminRoutes),
     },

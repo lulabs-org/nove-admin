@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useAuth } from '../../features/auth/useAuth';
 
 interface PermissionGuardProps {
   permission?: string;
@@ -6,6 +7,8 @@ interface PermissionGuardProps {
 }
 
 export function PermissionGuard({ permission, children }: PermissionGuardProps) {
+  const { checkPermission } = useAuth();
+
   if (!permission) {
     return <>{children}</>;
   }
@@ -17,13 +20,4 @@ export function PermissionGuard({ permission, children }: PermissionGuardProps) 
   }
 
   return <>{children}</>;
-}
-
-function checkPermission(permission: string): boolean {
-  const userPermissions = getUserPermissions();
-  return userPermissions.includes(permission);
-}
-
-function getUserPermissions(): string[] {
-  return ['users:view', 'users:list', 'settings:view'];
 }
