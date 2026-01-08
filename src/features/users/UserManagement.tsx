@@ -162,7 +162,7 @@ export function UserManagement() {
       key: 'action',
       render: (_: unknown, record: User) => (
         <Space size="small">
-          <Perm permission={PERMISSIONS.USER.EDIT}>
+          <Perm permission={PERMISSIONS.USER.UPDATE}>
             <Button type="link" size="small" onClick={() => handleEdit(record)}>
               编辑
             </Button>
@@ -181,7 +181,7 @@ export function UserManagement() {
             </Popconfirm>
           </Perm>
 
-          <Perm permission={PERMISSIONS.USER.AUDIT}>
+          <Perm permission={PERMISSIONS.USER.RESET_PASSWORD}>
             <Button
               type="link"
               size="small"

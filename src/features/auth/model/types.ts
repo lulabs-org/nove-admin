@@ -1,3 +1,13 @@
+/*
+ * @Author: 杨仕明 shiming.y@qq.com
+ * @Date: 2026-01-07 10:43:46
+ * @LastEditors: 杨仕明 shiming.y@qq.com
+ * @LastEditTime: 2026-01-09 03:25:34
+ * @FilePath: /nove-admin/src/features/auth/model/types.ts
+ * @Description:
+ *
+ * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
+ */
 export type LoginType =
   | 'username_password'
   | 'email_password'
@@ -13,6 +23,9 @@ export interface LoginRequest {
   countryCode?: string;
   password: string;
   code?: string;
+  clientType?: 'web' | 'app';
+  deviceInfo?: string;
+  deviceId?: string;
 }
 
 export interface UserProfile {
@@ -33,15 +46,18 @@ export interface User {
   lastLoginAt?: string | null;
   createdAt: string;
   username?: string | null;
+  name: string;
+  avatar?: string;
+  roles: string[];
+  permissions: string[];
+  active: boolean;
   profile?: UserProfile | null;
-  roles?: string[];
-  permissions?: string[];
 }
 
 export interface LoginResponse {
   user: User;
   accessToken: string;
-  refreshToken: string;
+  expiresIn: number;
 }
 
 export interface AuthState {

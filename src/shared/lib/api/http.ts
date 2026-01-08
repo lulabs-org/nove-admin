@@ -13,8 +13,6 @@ import axios from 'axios';
 import { message } from 'antd';
 import { authService } from '../../../features/auth/api/service';
 
-const REFRESH_TOKEN_KEY = 'refresh_token';
-
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
 
@@ -30,6 +28,7 @@ function onTokenRefreshed(token: string) {
 export const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 15000,
+  withCredentials: true,
 });
 
 http.interceptors.request.use(
@@ -66,25 +65,20 @@ http.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-        if (!refreshToken) {
-          throw new Error('No refresh token');
-        }
+        const response = await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL}/api/auth/refresh-token`,
+          {},
+          { withCredentials: true }
+        );
 
-        const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/refresh`, {
-          refreshToken,
-        });
+        const { accessToken } = response.data;
+        authService.setToken(accessToken);
 
-        const { access_token, refresh_token: newRefreshToken } = response.data;
-        authService.setToken(access_token);
-        localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
-
-        onTokenRefreshed(access_token);
-        originalRequest.headers.Authorization = `Bearer ${access_token}`;
+        onTokenRefreshed(accessToken);
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return http(originalRequest);
       } catch (refreshError) {
         authService.clear();
-        localStorage.removeItem(REFRESH_TOKEN_KEY);
         window.location.href = '/login';
         return Promise.reject(refreshError);
       } finally {

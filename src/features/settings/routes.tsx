@@ -16,7 +16,7 @@ export const settingsRoutes: RouteConfig[] = [
     element: <div>Settings</div>,
     title: '系统设置',
     menu: true,
-    permission: 'settings:view',
+    permission: 'system:config',
     children: [
       {
         path: '/settings/profile',
@@ -29,7 +29,7 @@ export const settingsRoutes: RouteConfig[] = [
         element: <div>Security</div>,
         title: '安全设置',
         menu: true,
-        permission: 'settings:security',
+        permission: 'system:config',
       },
     ],
   },
