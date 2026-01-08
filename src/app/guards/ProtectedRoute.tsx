@@ -9,7 +9,8 @@
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
 import { useAuth } from '../../shared/hooks/useAuth';
-import { Result, Button } from 'antd';
+import Result from 'antd/es/result';
+import Button from 'antd/es/button';
 import { Navigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {

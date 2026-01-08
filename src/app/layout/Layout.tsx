@@ -2,25 +2,25 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 06:33:37
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-07 06:33:57
- * @FilePath: /nove-admin/src/shared/components/Layout.tsx
+ * @LastEditTime: 2026-01-07 15:59:43
+ * @FilePath: /nove-admin/src/app/layout/Layout.tsx
  * @Description:
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
-import { Layout as AntLayout } from 'antd';
+import AntLayout from 'antd/es/layout';
 import type { RouteConfig } from '../../shared/types';
 import { Sidebar } from './Sidebar';
 import { PermissionGuard } from '../guards/PermissionGuard';
 
 const { Header, Content, Sider } = AntLayout;
 
-interface LayoutProps {
+interface AppLayoutProps {
   routes: RouteConfig[];
   children: React.ReactNode;
 }
 
-export function Layout({ routes, children }: LayoutProps) {
+export function Layout({ routes, children }: AppLayoutProps) {
   return (
     <AntLayout style={{ minHeight: '100vh' }}>
       <Sider width={200} theme="light">

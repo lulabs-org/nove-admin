@@ -8,7 +8,7 @@
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
-import { Layout } from 'antd';
+import Layout from 'antd/es/layout';
 import { Outlet } from 'react-router-dom';
 
 const { Content } = Layout;

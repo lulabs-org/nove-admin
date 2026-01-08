@@ -1,5 +1,11 @@
-import { Button, Space, Table, message, Popconfirm, Input, Select } from 'antd';
-import type { TableProps } from 'antd';
+import Button from 'antd/es/button';
+import Space from 'antd/es/space';
+import Table from 'antd/es/table';
+import message from 'antd/es/message';
+import Popconfirm from 'antd/es/popconfirm';
+import Input from 'antd/es/input';
+import Select from 'antd/es/select';
+import type { TableProps } from 'antd/es/table';
 import { Perm } from '../../app/guards/Perm';
 import { PERMISSIONS } from '../../shared/utils/permissions';
 import { useState } from 'react';
