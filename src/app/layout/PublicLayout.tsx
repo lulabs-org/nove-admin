@@ -8,8 +8,9 @@
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
-import Layout from 'antd/es/layout';
+import { Layout } from 'antd';
 import { Outlet } from 'react-router-dom';
+import { layoutStyles } from './layoutTheme';
 
 const { Content } = Layout;
 
@@ -19,16 +20,9 @@ interface PublicLayoutProps {
 
 export function PublicLayout({ children }: PublicLayoutProps) {
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
-      <Content
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '4px',
-        }}
-      >
-        {children || <Outlet />}
+    <Layout style={layoutStyles.publicShell}>
+      <Content style={layoutStyles.publicContent}>
+        <div style={layoutStyles.publicCard}>{children || <Outlet />}</div>
       </Content>
     </Layout>
   );

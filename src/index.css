@@ -52,6 +52,16 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+.ant-btn.sidebar-trigger,
+.ant-btn.sidebar-trigger:hover,
+.ant-btn.sidebar-trigger:focus,
+.ant-btn.sidebar-trigger:focus-visible {
+  border: none;
+  outline: none;
+  box-shadow: none;
+  padding: 0;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
