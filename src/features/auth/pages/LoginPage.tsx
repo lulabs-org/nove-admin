@@ -34,6 +34,7 @@ export function LoginPage() {
         type: 'email_password',
         email: values.email,
         password: values.password,
+        clientType: 'web',
       });
       message.success('登录成功');
       navigate('/');

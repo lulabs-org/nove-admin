@@ -44,8 +44,8 @@ export function Topbar() {
     >
       <Dropdown menu={{ items: menuItems }} placement="bottomRight">
         <Space style={{ cursor: 'pointer' }}>
-          <Avatar icon={<UserOutlined />} />
-          <span>{user?.profile?.name || user?.email || 'Admin'}</span>
+          <Avatar src={user?.avatar} icon={!user?.avatar && <UserOutlined />} />
+          <span>{user?.name || user?.email || 'Admin'}</span>
         </Space>
       </Dropdown>
     </Header>

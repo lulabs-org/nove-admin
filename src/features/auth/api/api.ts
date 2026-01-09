@@ -11,40 +11,22 @@
 import {
   authControllerLogin,
   authControllerLogout,
+  authControllerGetMe,
 } from '../../../shared/lib/api/orval/business/auth';
-import { userControllerGetProfile } from '../../../shared/lib/api/orval/business/user';
 import type { LoginRequest, LoginResponse, User } from '../model/types';
 
 export const login = async (data: LoginRequest): Promise<LoginResponse> => {
   const response = await authControllerLogin(data);
   return {
     accessToken: response.accessToken,
-    refreshToken: response.refreshToken,
+    expiresIn: response.expiresIn,
     user: response.user as unknown as User,
   };
 };
 
 export const getMe = async (): Promise<User> => {
-  const response = await userControllerGetProfile();
-  return {
-    ...response,
-    roles: ['admin'],
-    permissions: [
-      'users:view',
-      'users:list',
-      'users:create',
-      'users:edit',
-      // 'users:delete',
-      'users:audit',
-      'roles:view',
-      'roles:create',
-      'roles:edit',
-      'roles:delete',
-      'dashboard:view',
-      'settings:view',
-      'settings:edit',
-    ],
-  } as User;
+  const response = await authControllerGetMe();
+  return response as unknown as User;
 };
 
 export const logout = async (): Promise<void> => {
