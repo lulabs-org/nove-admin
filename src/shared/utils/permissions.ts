@@ -67,6 +67,13 @@ export const PERMISSIONS = {
     READ: 'dashboard:read',
     MANAGE: 'dashboard:manage',
   },
+  MEETING: {
+    READ: 'meeting:read',
+    CREATE: 'meeting:create',
+    UPDATE: 'meeting:update',
+    DELETE: 'meeting:delete',
+    REPROCESS: 'meeting:reprocess',
+  },
 } as const;
 
 export type Permission =
