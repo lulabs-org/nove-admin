@@ -9,6 +9,7 @@
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
 import type { RouteConfig } from '../../shared/types/index';
+import { SettingOutlined, UserOutlined, SafetyOutlined } from '@ant-design/icons';
 
 export const settingsRoutes: RouteConfig[] = [
   {
@@ -17,12 +18,14 @@ export const settingsRoutes: RouteConfig[] = [
     title: '系统设置',
     menu: true,
     permission: 'system:config',
+    icon: <SettingOutlined />,
     children: [
       {
         path: '/settings/profile',
         element: <div>Profile</div>,
         title: '个人资料',
         menu: true,
+        icon: <UserOutlined />,
       },
       {
         path: '/settings/security',
@@ -30,6 +33,7 @@ export const settingsRoutes: RouteConfig[] = [
         title: '安全设置',
         menu: true,
         permission: 'system:config',
+        icon: <SafetyOutlined />,
       },
     ],
   },

@@ -15,9 +15,10 @@ import type { MenuProps } from 'antd/es/menu';
 
 interface SidebarProps {
   routes: RouteConfig[];
+  collapsed?: boolean;
 }
 
-export function Sidebar({ routes }: SidebarProps) {
+export function Sidebar({ routes, collapsed }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -52,6 +53,7 @@ export function Sidebar({ routes }: SidebarProps) {
       selectedKeys={selectedKeys}
       onClick={handleMenuClick}
       items={menuItems}
+      inlineCollapsed={collapsed}
       style={{ height: '100%', borderRight: 0 }}
     />
   );
