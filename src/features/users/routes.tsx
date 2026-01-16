@@ -10,7 +10,7 @@
  */
 import type { RouteConfig } from '../../shared/types/index';
 import { UserManagement } from './UserManagement';
-
+import { UserOutlined, TeamOutlined, PlusOutlined } from '@ant-design/icons';
 import { Outlet } from 'react-router-dom';
 
 export const userRoutes: RouteConfig[] = [
@@ -20,6 +20,7 @@ export const userRoutes: RouteConfig[] = [
     title: '用户管理',
     menu: true,
     permission: 'user:read',
+    icon: <TeamOutlined />,
     children: [
       {
         path: '/users/list',
@@ -27,6 +28,7 @@ export const userRoutes: RouteConfig[] = [
         title: '用户列表',
         menu: true,
         permission: 'user:read',
+        icon: <UserOutlined />,
       },
       {
         path: '/users/create',
@@ -34,6 +36,7 @@ export const userRoutes: RouteConfig[] = [
         title: '创建用户',
         menu: true,
         permission: 'user:create',
+        icon: <PlusOutlined />,
       },
     ],
   },

@@ -2,13 +2,15 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 07:14:19
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-07 12:51:27
+ * @LastEditTime: 2026-01-11 21:58:42
  * @FilePath: /nove-admin/src/app/layout/AdminLayout.tsx
  * @Description:
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
-import { Layout } from 'antd';
+import { Button, Divider, Layout } from 'antd';
+import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import type { RouteConfig } from '../../shared/types';
 import { Sidebar } from './Sidebar';
@@ -22,23 +24,58 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ routes, children }: AdminLayoutProps) {
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider width={240} theme="light" style={{ borderRight: '1px solid #f0f0f0' }}>
-        <div
-          style={{
-            height: 64,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderBottom: '1px solid #f0f0f0',
-            fontSize: 18,
-            fontWeight: 'bold',
-          }}
-        >
-          Admin System
+      <Sider
+        width={240}
+        theme="light"
+        collapsible
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
+        trigger={null}
+        style={{ borderRight: '1px solid #f0f0f0' }}
+      >
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <div
+            style={{
+              height: 64,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderBottom: '1px solid #f0f0f0',
+              fontSize: 18,
+              fontWeight: 'bold',
+            }}
+          >
+            {collapsed ? 'Nove' : 'Nove System'}
+          </div>
+          <div style={{ flex: 1, overflow: 'hidden' }}>
+            <Sidebar routes={routes} collapsed={collapsed} />
+          </div>
+          <div style={{ padding: '8px 12px 16px' }}>
+            <Divider style={{ margin: '0 0 8px' }} />
+            <Button
+              type="text"
+              block
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed((prev) => !prev)}
+              onMouseDown={(event) => event.preventDefault()}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: collapsed ? 'center' : 'flex-start',
+                padding: collapsed ? '0 8px' : '0 12px',
+                height: 40,
+                boxShadow: 'none',
+                outline: 'none',
+              }}
+            >
+              {collapsed ? null : '收起导航'}
+            </Button>
+          </div>
         </div>
-        <Sidebar routes={routes} />
       </Sider>
       <Layout>
         <Topbar />
