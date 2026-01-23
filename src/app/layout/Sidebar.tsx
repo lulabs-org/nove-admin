@@ -2,16 +2,18 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 06:33:21
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-07 07:21:36
- * @FilePath: /nove-admin/src/shared/components/Sidebar.tsx
+ * @LastEditTime: 2026-01-23 14:26:06
+ * @FilePath: /nove-admin/src/app/layout/Sidebar.tsx
  * @Description:
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
+
 import Menu from 'antd/es/menu';
 import type { RouteConfig } from '../../shared/types';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { MenuProps } from 'antd/es/menu';
+import { useAuth } from '../../shared/hooks/useAuth';
 
 interface SidebarProps {
   routes: RouteConfig[];
@@ -21,13 +23,18 @@ interface SidebarProps {
 export function Sidebar({ routes, collapsed }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { checkPermission } = useAuth();
 
   const menuItems = generateMenuItems(routes);
   const selectedKeys = [location.pathname];
 
   function generateMenuItems(routes: RouteConfig[]): MenuProps['items'] {
     return routes
-      .filter((route) => route.menu && !route.hidden)
+      .filter((route) => {
+        if (!route.menu || route.hidden) return false;
+        if (route.permission && !checkPermission(route.permission)) return false;
+        return true;
+      })
       .map((route) => {
         const item: NonNullable<MenuProps['items']>[number] = {
           key: route.path,

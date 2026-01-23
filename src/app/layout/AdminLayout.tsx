@@ -2,7 +2,7 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 07:14:19
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-11 21:58:42
+ * @LastEditTime: 2026-01-23 13:03:28
  * @FilePath: /nove-admin/src/app/layout/AdminLayout.tsx
  * @Description:
  *
@@ -79,8 +79,8 @@ export function AdminLayout({ routes, children }: AdminLayoutProps) {
       </Sider>
       <Layout>
         <Topbar />
-        <Content style={{ margin: '24px', overflow: 'auto' }}>
-          <div style={{ padding: 24, minHeight: 360, background: '#fff', borderRadius: 8 }}>
+        <Content style={{ margin: '12px', overflow: 'auto' }}>
+          <div style={{ padding: 24, height: '100%', background: '#fff', borderRadius: 8 }}>
             {children || <Outlet />}
           </div>
         </Content>
