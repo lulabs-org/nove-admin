@@ -2,8 +2,8 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 07:27:09
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-07 09:58:28
- * @FilePath: /nove-admin/src/shared/components/Topbar.tsx
+ * @LastEditTime: 2026-01-23 20:40:06
+ * @FilePath: /nove-admin/src/app/layout/Topbar.tsx
  * @Description:
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
@@ -40,6 +40,11 @@ export function Topbar() {
         justifyContent: 'flex-end',
         alignItems: 'center',
         borderBottom: '1px solid #f0f0f0',
+        position: 'fixed',
+        top: 0,
+        right: 0,
+        left: 0,
+        zIndex: 9,
       }}
     >
       <Dropdown menu={{ items: menuItems }} placement="bottomRight">

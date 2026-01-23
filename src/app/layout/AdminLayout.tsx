@@ -2,7 +2,7 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 07:14:19
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-23 13:03:28
+ * @LastEditTime: 2026-01-23 20:38:26
  * @FilePath: /nove-admin/src/app/layout/AdminLayout.tsx
  * @Description:
  *
@@ -35,7 +35,14 @@ export function AdminLayout({ routes, children }: AdminLayoutProps) {
         collapsed={collapsed}
         onCollapse={setCollapsed}
         trigger={null}
-        style={{ borderRight: '1px solid #f0f0f0' }}
+        style={{
+          borderRight: '1px solid #f0f0f0',
+          height: '100vh',
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          zIndex: 10,
+        }}
       >
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
           <div
@@ -77,9 +84,9 @@ export function AdminLayout({ routes, children }: AdminLayoutProps) {
           </div>
         </div>
       </Sider>
-      <Layout>
+      <Layout style={{ marginLeft: collapsed ? 80 : 240 }}>
         <Topbar />
-        <Content style={{ margin: '12px', overflow: 'auto' }}>
+        <Content style={{ margin: '12px', marginTop: '76px', overflow: 'auto' }}>
           <div style={{ padding: 24, height: '100%', background: '#fff', borderRadius: 8 }}>
             {children || <Outlet />}
           </div>
