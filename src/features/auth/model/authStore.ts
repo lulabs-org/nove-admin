@@ -1,3 +1,13 @@
+/*
+ * @Author: 杨仕明 shiming.y@qq.com
+ * @Date: 2026-01-07 14:31:04
+ * @LastEditors: 杨仕明 shiming.y@qq.com
+ * @LastEditTime: 2026-01-23 20:23:05
+ * @FilePath: /nove-admin/src/features/auth/model/authStore.ts
+ * @Description:
+ *
+ * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
+ */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { login, getMe, logout as logoutApi } from '../api/api';
@@ -12,6 +22,7 @@ interface AuthState {
   logout: () => Promise<void>;
   checkPermission: (permission: string) => boolean;
   initialize: () => Promise<void>;
+  clearAuth: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -23,15 +34,9 @@ export const useAuthStore = create<AuthState>()(
 
       initialize: async () => {
         const token = authService.getToken();
-        const cachedUser = authService.getUser();
 
         if (!token) {
-          set({ loading: false });
-          return;
-        }
-
-        if (cachedUser) {
-          set({ user: cachedUser, isAuthenticated: true, loading: false });
+          set({ loading: false, isAuthenticated: false });
           return;
         }
 
@@ -87,6 +92,11 @@ export const useAuthStore = create<AuthState>()(
         }
 
         return false;
+      },
+
+      clearAuth: () => {
+        authService.clear();
+        set({ user: null, isAuthenticated: false });
       },
     }),
     {
