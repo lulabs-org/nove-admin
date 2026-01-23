@@ -141,7 +141,7 @@ export function ApiKeyManagement() {
       render: (_: unknown, record: ApiKey) => (
         <Space>
           <span style={{ fontFamily: 'monospace' }}>
-            {record.prefix}****{record.last4}
+            sk_{record.prefix.slice(0, 4)}******{record.last4}
           </span>
         </Space>
       ),
