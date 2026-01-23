@@ -2,7 +2,7 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 07:29:39
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-07 13:37:17
+ * @LastEditTime: 2026-01-23 20:22:27
  * @FilePath: /nove-admin/src/shared/lib/api/http.ts
  * @Description:
  *
@@ -12,6 +12,7 @@
 import axios from 'axios';
 import { message } from 'antd';
 import { authService } from '../../../features/auth/api/service';
+import { useAuthStore } from '../../../features/auth/model/authStore';
 
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
@@ -78,8 +79,7 @@ http.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return http(originalRequest);
       } catch (refreshError) {
-        authService.clear();
-        window.location.href = '/login';
+        useAuthStore.getState().clearAuth();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
