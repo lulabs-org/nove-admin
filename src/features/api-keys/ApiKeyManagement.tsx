@@ -3,8 +3,6 @@ import Space from 'antd/es/space';
 import Table from 'antd/es/table';
 import message from 'antd/es/message';
 import Popconfirm from 'antd/es/popconfirm';
-import Input from 'antd/es/input';
-import Select from 'antd/es/select';
 import Tag from 'antd/es/tag';
 import Tooltip from 'antd/es/tooltip';
 import type { TableProps } from 'antd/es/table';
@@ -17,29 +15,30 @@ import {
   type TableQueryParams,
 } from '../../shared/hooks/useTableQuery';
 import { apiKeyApi } from './api/apiKeyApi';
-import type { ApiKey, UpdateApiKey, CreateApiKeyResult } from './types';
+import type { ApiKey, UpdateApiKey, CreateApiKeyResult, RotateApiKeyResult } from './types';
 import { CreateApiKeyModal } from './components/CreateApiKeyModal';
 import { EditApiKeyModal } from './components/EditApiKeyModal';
+import { RotateApiKeyModal } from './components/RotateApiKeyModal';
 import { KeyOutlined, RotateRightOutlined } from '@ant-design/icons';
-
-const { Search } = Input;
-const { Option } = Select;
 
 export function ApiKeyManagement() {
   const [filters, setFilters] = useState<TableQueryParams>({
     page: 1,
     pageSize: 10,
-    status: undefined,
+    status: 'ACTIVE',
   });
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
   const [createResult, setCreateResult] = useState<CreateApiKeyResult | undefined>(undefined);
+  const [rotateModalOpen, setRotateModalOpen] = useState(false);
+  const [rotateResult, setRotateResult] = useState<RotateApiKeyResult | undefined>(undefined);
 
   const {
     data: apiKeyList,
     isLoading,
+    isFetching,
     refetch,
   } = useTableQuery<ApiKey>({
     queryKey: 'api-keys',
@@ -66,6 +65,7 @@ export function ApiKeyManagement() {
       message.success('更新 API Key 成功');
       setEditModalOpen(false);
       setEditingKey(null);
+      refetch();
     },
     onError: () => {
       message.error('更新 API Key 失败');
@@ -77,6 +77,7 @@ export function ApiKeyManagement() {
     mutationFn: apiKeyApi.revoke,
     onSuccess: () => {
       message.success('撤销 API Key 成功');
+      refetch();
     },
     onError: () => {
       message.error('撤销 API Key 失败');
@@ -86,8 +87,11 @@ export function ApiKeyManagement() {
   const rotateMutation = useTableMutation({
     queryKey: 'api-keys',
     mutationFn: apiKeyApi.rotate,
-    onSuccess: () => {
+    onSuccess: (result: RotateApiKeyResult) => {
       message.success('轮换 API Key 成功');
+      setRotateResult(result);
+      setRotateModalOpen(true);
+      refetch();
     },
     onError: () => {
       message.error('轮换 API Key 失败');
@@ -111,14 +115,6 @@ export function ApiKeyManagement() {
     rotateMutation.mutate(record.id);
   };
 
-  const handleSearch = (field: string, value: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [field]: value,
-      page: 1,
-    }));
-  };
-
   const handleTableChange: TableProps<ApiKey>['onChange'] = (pagination, _filters, sorter) => {
     setFilters((prev) => ({
       ...prev,
@@ -133,22 +129,11 @@ export function ApiKeyManagement() {
     }));
   };
 
-  const getStatusTag = (status: string) => {
-    const statusMap: Record<string, { color: string; text: string }> = {
-      active: { color: 'green', text: '活跃' },
-      revoked: { color: 'red', text: '已撤销' },
-      expired: { color: 'orange', text: '已过期' },
-    };
-    const config = statusMap[status] || { color: 'default', text: status };
-    return <Tag color={config.color}>{config.text}</Tag>;
-  };
-
   const columns = [
     {
       title: '名称',
       dataIndex: 'name',
       key: 'name',
-      sorter: true,
     },
     {
       title: 'API Key',
@@ -174,17 +159,6 @@ export function ApiKeyManagement() {
           ))}
         </Space>
       ),
-    },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      filters: [
-        { text: '活跃', value: 'active' },
-        { text: '已撤销', value: 'revoked' },
-        { text: '已过期', value: 'expired' },
-      ],
-      render: (status: string) => getStatusTag(status),
     },
     {
       title: '过期时间',
@@ -260,26 +234,9 @@ export function ApiKeyManagement() {
           </Button>
         </Perm>
 
-        <Search
-          placeholder="搜索名称"
-          allowClear
-          style={{ width: 200 }}
-          onSearch={(value) => handleSearch('name', value)}
-          onChange={(e) => !e.target.value && handleSearch('name', '')}
-        />
-
-        <Select
-          placeholder="选择状态"
-          allowClear
-          style={{ width: 120 }}
-          onChange={(value) => handleSearch('status', value)}
-        >
-          <Option value="active">活跃</Option>
-          <Option value="revoked">已撤销</Option>
-          <Option value="expired">已过期</Option>
-        </Select>
-
-        <Button onClick={() => refetch()}>刷新</Button>
+        <Button onClick={() => refetch()} loading={isFetching}>
+          刷新
+        </Button>
       </div>
 
       <Table
@@ -309,6 +266,7 @@ export function ApiKeyManagement() {
         onCopyComplete={() => {
           setCreateModalOpen(false);
           setCreateResult(undefined);
+          refetch();
         }}
       />
 
@@ -324,6 +282,19 @@ export function ApiKeyManagement() {
           loading={updateMutation.isPending}
         />
       )}
+
+      <RotateApiKeyModal
+        open={rotateModalOpen}
+        onCancel={() => {
+          setRotateModalOpen(false);
+          setRotateResult(undefined);
+        }}
+        result={rotateResult}
+        onCopyComplete={() => {
+          setRotateModalOpen(false);
+          setRotateResult(undefined);
+        }}
+      />
     </div>
   );
 }

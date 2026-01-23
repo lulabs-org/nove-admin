@@ -2,7 +2,7 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 13:43:34
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-07 13:47:18
+ * @LastEditTime: 2026-01-23 19:01:53
  * @FilePath: /nove-admin/src/shared/hooks/useTableQuery.ts
  * @Description:
  *
@@ -71,7 +71,7 @@ export function useTableMutation<TData, TError, TVariables, TContext = unknown>(
     mutationKey: [queryKey],
     onSuccess: (...args) => {
       if (invalidateOnSuccess) {
-        queryClient.invalidateQueries({ queryKey: [queryKey] });
+        queryClient.invalidateQueries({ queryKey: [queryKey], exact: false });
       }
       options.onSuccess?.(...args);
     },
@@ -95,7 +95,7 @@ export function useTableDeleteMutation<TError = unknown, TContext = unknown>({
   return useMutation<void, TError, string, TContext>({
     mutationKey: [queryKey, 'delete'],
     onSuccess: (data, variables, context, meta) => {
-      queryClient.invalidateQueries({ queryKey: [queryKey] });
+      queryClient.invalidateQueries({ queryKey: [queryKey], exact: false });
       options.onSuccess?.(data, variables, context, meta);
     },
     ...options,
