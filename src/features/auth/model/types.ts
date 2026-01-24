@@ -21,7 +21,7 @@ export interface LoginRequest {
   email?: string;
   phone?: string;
   countryCode?: string;
-  password: string;
+  password?: string;
   code?: string;
   clientType?: 'web' | 'app';
   deviceInfo?: string;
