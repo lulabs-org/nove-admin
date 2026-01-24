@@ -2,8 +2,8 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 07:29:39
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-23 20:22:27
- * @FilePath: /nove-admin/src/shared/lib/api/http.ts
+ * @LastEditTime: 2026-01-24 09:09:58
+ * @FilePath: /nove_project/nove-admin/src/shared/lib/api/http.ts
  * @Description:
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
@@ -68,7 +68,7 @@ http.interceptors.response.use(
       try {
         const response = await axios.post(
           `${import.meta.env.VITE_API_BASE_URL}/api/auth/refresh-token`,
-          {},
+          { clientType: 'web' },
           { withCredentials: true }
         );
 
