@@ -15,18 +15,29 @@ import {
 } from '../../../shared/lib/api/orval/business/auth';
 import type { LoginRequest, LoginResponse, User } from '../model/types';
 
+type AuthApiUser = Omit<User, 'permissions'> & {
+  perm?: string[];
+};
+
+export function normalizeAuthUser(user: AuthApiUser): User {
+  return {
+    ...user,
+    permissions: user.perm ?? [],
+  };
+}
+
 export const login = async (data: LoginRequest): Promise<LoginResponse> => {
   const response = await authControllerLogin(data);
   return {
     accessToken: response.accessToken,
     expiresIn: response.expiresIn,
-    user: response.user as unknown as User,
+    user: normalizeAuthUser(response.user as unknown as AuthApiUser),
   };
 };
 
 export const getMe = async (): Promise<User> => {
   const response = await authControllerGetMe();
-  return response as unknown as User;
+  return normalizeAuthUser(response as unknown as AuthApiUser);
 };
 
 export const logout = async (): Promise<void> => {
