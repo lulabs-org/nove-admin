@@ -13,6 +13,7 @@ import { Outlet } from 'react-router-dom';
 import { MeetingList } from './pages/MeetingList';
 import { MeetingDetail } from './pages/MeetingDetail';
 import { PERMISSIONS } from '../../shared/utils/permissions';
+import { CalendarOutlined, UnorderedListOutlined } from '@ant-design/icons';
 
 export const meetingRoutes: RouteConfig[] = [
   {
@@ -21,6 +22,7 @@ export const meetingRoutes: RouteConfig[] = [
     title: '会议管理',
     menu: true,
     permission: PERMISSIONS.MEETING.READ,
+    icon: <CalendarOutlined />,
     children: [
       {
         path: '/meetings/list',
@@ -28,6 +30,7 @@ export const meetingRoutes: RouteConfig[] = [
         title: '会议列表',
         menu: true,
         permission: PERMISSIONS.MEETING.READ,
+        icon: <UnorderedListOutlined />,
       },
       {
         path: '/meetings/:id',
