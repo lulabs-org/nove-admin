@@ -21,6 +21,11 @@ import {
   MeetingControllerGetMeetingRecordsPlatform,
   MeetingControllerGetMeetingRecordsStatus,
 } from '../../../shared/lib/api/orval/business/schemas';
+import {
+  formatDateTime,
+  getMeetingPlatformText,
+  getProcessingStatusText,
+} from '../utils/formatters';
 
 const { Search } = Input;
 const { Option } = Select;
@@ -134,31 +139,6 @@ export function MeetingList() {
     }));
   };
 
-  const getStatusText = (status: MeetingControllerGetMeetingRecordsStatus) => {
-    const statusMap: Record<string, { text: string; color: string }> = {
-      PENDING: { text: '待处理', color: 'blue' },
-      PROCESSING: { text: '处理中', color: 'green' },
-      COMPLETED: { text: '已完成', color: 'default' },
-      FAILED: { text: '失败', color: 'red' },
-      SKIPPED: { text: '已跳过', color: 'orange' },
-    };
-    return statusMap[status] || { text: status, color: 'default' };
-  };
-
-  const getMeetingTypeText = (type?: MeetingControllerGetMeetingRecordsPlatform) => {
-    const typeMap: Record<string, string> = {
-      TENCENT_MEETING: '腾讯会议',
-      ZOOM: 'Zoom',
-      TEAMS: 'Teams',
-      DINGTALK: '钉钉',
-      FEISHU: '飞书',
-      WEBEX: 'Webex',
-      VOOV: 'Voov',
-      OTHER: '其他',
-    };
-    return typeMap[type || ''] || type || '-';
-  };
-
   const columns = [
     {
       title: '会议标题',
@@ -167,9 +147,9 @@ export function MeetingList() {
       sorter: true,
     },
     {
-      title: '会议类型',
-      dataIndex: 'meetingType',
-      key: 'meetingType',
+      title: '会议平台',
+      dataIndex: 'platform',
+      key: 'platform',
       filters: [
         { text: '腾讯会议', value: 'TENCENT_MEETING' },
         { text: 'Zoom', value: 'ZOOM' },
@@ -180,36 +160,39 @@ export function MeetingList() {
         { text: 'Voov', value: 'VOOV' },
         { text: '其他', value: 'OTHER' },
       ],
-      render: (type: MeetingControllerGetMeetingRecordsPlatform) => getMeetingTypeText(type),
+      render: (platform: MeetingControllerGetMeetingRecordsPlatform) =>
+        getMeetingPlatformText(platform),
     },
     {
       title: '开始时间',
-      dataIndex: 'startTime',
-      key: 'startTime',
+      dataIndex: 'startAt',
+      key: 'startAt',
       sorter: true,
-      render: (time: string) => new Date(time).toLocaleString('zh-CN'),
+      render: (time: unknown) => formatDateTime(time),
     },
     {
       title: '结束时间',
-      dataIndex: 'endTime',
-      key: 'endTime',
+      dataIndex: 'endAt',
+      key: 'endAt',
       sorter: true,
-      render: (time: string) => new Date(time).toLocaleString('zh-CN'),
+      render: (time: unknown) => formatDateTime(time),
     },
     {
       title: '主持人',
-      dataIndex: 'host',
-      key: 'host',
+      dataIndex: 'hostPlatformUserId',
+      key: 'hostPlatformUserId',
+      render: (host: string | null | undefined) => host || '-',
     },
     {
       title: '参与人数',
-      dataIndex: 'participants',
-      key: 'participants',
+      dataIndex: 'participantCount',
+      key: 'participantCount',
+      render: (count: number | null | undefined) => count ?? '-',
     },
     {
       title: '状态',
-      dataIndex: 'status',
-      key: 'status',
+      dataIndex: 'processingStatus',
+      key: 'processingStatus',
       filters: [
         { text: '待处理', value: 'PENDING' },
         { text: '处理中', value: 'PROCESSING' },
@@ -218,7 +201,7 @@ export function MeetingList() {
         { text: '已跳过', value: 'SKIPPED' },
       ],
       render: (status: MeetingControllerGetMeetingRecordsStatus) => {
-        const { text, color } = getStatusText(status);
+        const { text, color } = getProcessingStatusText(status);
         return <span style={{ color }}>{text}</span>;
       },
     },
@@ -233,7 +216,7 @@ export function MeetingList() {
           <Button type="link" size="small" onClick={() => handleEdit(record)}>
             编辑
           </Button>
-          {record.status === 'COMPLETED' && (
+          {record.processingStatus === 'COMPLETED' && (
             <Button
               type="link"
               size="small"
@@ -274,7 +257,7 @@ export function MeetingList() {
         />
 
         <Select
-          placeholder="选择会议类型"
+          placeholder="选择会议平台"
           allowClear
           style={{ width: 120 }}
           onChange={(value) => handleSearch('platform', value)}
