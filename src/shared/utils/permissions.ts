@@ -74,6 +74,15 @@ export const PERMISSIONS = {
     DELETE: 'meeting:delete',
     REPROCESS: 'meeting:reprocess',
   },
+  TASK: {
+    READ: 'task:read',
+    CREATE: 'task:create',
+    UPDATE: 'task:update',
+    DELETE: 'task:delete',
+    RUN: 'task:run',
+    PAUSE: 'task:pause',
+    RESUME: 'task:resume',
+  },
 } as const;
 
 export type Permission =
