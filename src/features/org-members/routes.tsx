@@ -3,40 +3,41 @@
  * @Date: 2026-01-07 07:12:18
  * @LastEditors: 杨仕明 shiming.y@qq.com
  * @LastEditTime: 2026-01-07 13:11:22
- * @FilePath: /nove-admin/src/features/users/routes.tsx
+ * @FilePath: /nove-admin/src/features/org-members/routes.tsx
  * @Description:
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
 import type { RouteConfig } from '../../shared/types/index';
-import { UserManagement } from './UserManagement';
-import { UserOutlined, TeamOutlined, PlusOutlined } from '@ant-design/icons';
+import { OrgMemberManagement } from './OrgMemberManagement';
+import { RoleManagement } from './RoleManagement';
+import { IdcardOutlined, TeamOutlined, UsergroupAddOutlined } from '@ant-design/icons';
 import { Outlet } from 'react-router-dom';
 
-export const userRoutes: RouteConfig[] = [
+export const orgMemberRoutes: RouteConfig[] = [
   {
     path: '/users',
     element: <Outlet />,
-    title: '用户管理',
+    title: '组织架构',
     menu: true,
     permission: 'user:read',
     icon: <TeamOutlined />,
     children: [
       {
         path: '/users/list',
-        element: <UserManagement />,
-        title: '用户列表',
+        element: <OrgMemberManagement />,
+        title: '成员与部门',
         menu: true,
         permission: 'user:read',
-        icon: <UserOutlined />,
+        icon: <UsergroupAddOutlined />,
       },
       {
-        path: '/users/create',
-        element: <UserManagement />,
-        title: '创建用户',
+        path: '/users/roles',
+        element: <RoleManagement />,
+        title: '角色管理',
         menu: true,
-        permission: 'user:create',
-        icon: <PlusOutlined />,
+        permission: 'role:read',
+        icon: <IdcardOutlined />,
       },
     ],
   },

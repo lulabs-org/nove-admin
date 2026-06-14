@@ -14,10 +14,27 @@ import type { RouteConfig } from '../../shared/types';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { MenuProps } from 'antd/es/menu';
 import { useAuth } from '../../shared/hooks/useAuth';
+import { useState } from 'react';
 
 interface SidebarProps {
   routes: RouteConfig[];
   collapsed?: boolean;
+}
+
+function findActiveParentKeys(
+  routes: RouteConfig[],
+  pathname: string,
+  parentKeys: string[] = []
+): string[] {
+  for (const route of routes) {
+    if (route.path === pathname) return parentKeys;
+    if (route.children?.length) {
+      const childKeys = findActiveParentKeys(route.children, pathname, [...parentKeys, route.path]);
+      if (childKeys.length) return childKeys;
+    }
+  }
+
+  return [];
 }
 
 export function Sidebar({ routes, collapsed }: SidebarProps) {
@@ -27,6 +44,9 @@ export function Sidebar({ routes, collapsed }: SidebarProps) {
 
   const menuItems = generateMenuItems(routes);
   const selectedKeys = [location.pathname];
+  const activeParentKeys = findActiveParentKeys(routes, location.pathname);
+  const [manualOpenKeys, setManualOpenKeys] = useState<string[]>([]);
+  const openKeys = Array.from(new Set([...manualOpenKeys, ...activeParentKeys]));
 
   function generateMenuItems(routes: RouteConfig[]): MenuProps['items'] {
     return routes
@@ -58,6 +78,8 @@ export function Sidebar({ routes, collapsed }: SidebarProps) {
     <Menu
       mode="inline"
       selectedKeys={selectedKeys}
+      openKeys={collapsed ? [] : openKeys}
+      onOpenChange={setManualOpenKeys}
       onClick={handleMenuClick}
       items={menuItems}
       inlineCollapsed={collapsed}
