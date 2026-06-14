@@ -1,6 +1,15 @@
-import { describe, expect, it } from 'vitest';
-import { normalizeAuthUser } from './api';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { User } from '../model/types';
+
+const authApiMock = vi.hoisted(() => ({
+  authControllerGetMe: vi.fn(),
+  authControllerLogin: vi.fn(),
+  authControllerLogout: vi.fn(),
+}));
+
+vi.mock('../../../shared/lib/api/orval/business/auth', () => authApiMock);
+
+import { logout, normalizeAuthUser } from './api';
 
 const baseUser: Omit<User, 'permissions'> = {
   id: 'user-id',
@@ -17,7 +26,11 @@ const baseUser: Omit<User, 'permissions'> = {
   active: true,
 };
 
-describe('normalizeAuthUser', () => {
+describe('auth api helpers', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('maps backend perm field to permissions', () => {
     const user = normalizeAuthUser({
       ...baseUser,
@@ -33,5 +46,15 @@ describe('normalizeAuthUser', () => {
     });
 
     expect(user.permissions).toEqual([]);
+  });
+
+  it('marks logout requests as web clients', async () => {
+    authApiMock.authControllerLogout.mockResolvedValue(undefined);
+
+    await logout();
+
+    expect(authApiMock.authControllerLogout).toHaveBeenCalledWith({
+      clientType: 'web',
+    });
   });
 });

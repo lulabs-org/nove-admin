@@ -9,21 +9,59 @@
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
 
-import axios from 'axios';
+import axios, { type AxiosError, type AxiosRequestConfig } from 'axios';
 import { message } from 'antd';
 import { authService } from '../../../features/auth/api/service';
 import { useAuthStore } from '../../../features/auth/model/authStore';
 
-let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
+type RetryableRequestConfig = AxiosRequestConfig & {
+  _retry?: boolean;
+};
 
-function subscribeTokenRefresh(cb: (token: string) => void) {
-  refreshSubscribers.push(cb);
+type RefreshTokenResponse = {
+  accessToken?: string;
+};
+
+let refreshPromise: Promise<string> | null = null;
+
+function setAuthorizationHeader(config: RetryableRequestConfig, token: string) {
+  config.headers = config.headers ?? {};
+  config.headers.Authorization = `Bearer ${token}`;
 }
 
-function onTokenRefreshed(token: string) {
-  refreshSubscribers.forEach((cb) => cb(token));
-  refreshSubscribers = [];
+function isPublicAuthRequest(config: RetryableRequestConfig) {
+  const url = config.url ?? '';
+
+  return (
+    url.includes('/api/auth/login') ||
+    url.includes('/api/auth/register') ||
+    url.includes('/api/auth/reset-password') ||
+    url.includes('/api/auth/refresh-token')
+  );
+}
+
+function refreshAccessToken() {
+  refreshPromise ??= axios
+    .post<RefreshTokenResponse>(
+      `${import.meta.env.VITE_API_BASE_URL}/api/auth/refresh-token`,
+      { clientType: 'web' },
+      { withCredentials: true }
+    )
+    .then((response) => {
+      const { accessToken } = response.data;
+
+      if (!accessToken) {
+        throw new Error('刷新令牌响应缺少 accessToken');
+      }
+
+      authService.setToken(accessToken);
+      return accessToken;
+    })
+    .finally(() => {
+      refreshPromise = null;
+    });
+
+  return refreshPromise;
 }
 
 export const http = axios.create({
@@ -50,54 +88,39 @@ http.interceptors.request.use(
 http.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
+    const axiosError = error as AxiosError;
+    const originalRequest = axiosError.config as RetryableRequestConfig | undefined;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve) => {
-          subscribeTokenRefresh((token: string) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            resolve(http(originalRequest));
-          });
-        });
-      }
-
+    if (
+      axiosError.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !isPublicAuthRequest(originalRequest)
+    ) {
       originalRequest._retry = true;
-      isRefreshing = true;
 
       try {
-        const response = await axios.post(
-          `${import.meta.env.VITE_API_BASE_URL}/api/auth/refresh-token`,
-          { clientType: 'web' },
-          { withCredentials: true }
-        );
-
-        const { accessToken } = response.data;
-        authService.setToken(accessToken);
-
-        onTokenRefreshed(accessToken);
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        const accessToken = await refreshAccessToken();
+        setAuthorizationHeader(originalRequest, accessToken);
         return http(originalRequest);
       } catch (refreshError) {
         useAuthStore.getState().clearAuth();
         return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
       }
     }
 
-    if (error.response?.status === 403) {
+    if (axiosError.response?.status === 403) {
       message.error('您没有权限执行此操作');
     }
 
-    if (error.response?.status >= 500) {
+    if (axiosError.response?.status && axiosError.response.status >= 500) {
       message.error('服务器错误，请稍后重试');
       console.error('[Server Error]', {
-        url: error.config?.url,
-        method: error.config?.method,
-        status: error.response?.status,
-        requestId: error.config?.headers?.['x-request-id'],
-        message: error.message,
+        url: axiosError.config?.url,
+        method: axiosError.config?.method,
+        status: axiosError.response.status,
+        requestId: axiosError.config?.headers?.['x-request-id'],
+        message: axiosError.message,
       });
     }
 
