@@ -49,6 +49,7 @@ export interface User {
   name: string;
   avatar?: string;
   roles: string[];
+  currentOrgId?: string;
   permissions: string[];
   active: boolean;
   profile?: UserProfile | null;

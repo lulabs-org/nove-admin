@@ -17,12 +17,13 @@ import type { LoginRequest, LoginResponse, User } from '../model/types';
 
 type AuthApiUser = Omit<User, 'permissions'> & {
   perm?: string[];
+  permissions?: string[];
 };
 
 export function normalizeAuthUser(user: AuthApiUser): User {
   return {
     ...user,
-    permissions: user.perm ?? [],
+    permissions: user.permissions ?? user.perm ?? [],
   };
 }
 
