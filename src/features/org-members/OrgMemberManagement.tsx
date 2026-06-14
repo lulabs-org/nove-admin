@@ -540,8 +540,7 @@ export function OrgMemberManagement() {
         <Select
           placeholder="选择部门"
           allowClear
-          showSearch
-          optionFilterProp="label"
+          showSearch={{ optionFilterProp: 'label' }}
           options={departmentOptions}
           style={{ width: 220 }}
           onChange={(value) => handleFilterChange('deptId', value)}
@@ -657,8 +656,7 @@ export function OrgMemberManagement() {
           <Form.Item label="主部门" name="primaryDeptId">
             <Select
               allowClear
-              showSearch
-              optionFilterProp="label"
+              showSearch={{ optionFilterProp: 'label' }}
               options={departmentOptions}
               placeholder="选择主部门"
             />
@@ -668,8 +666,7 @@ export function OrgMemberManagement() {
             <Select
               allowClear
               mode="multiple"
-              showSearch
-              optionFilterProp="label"
+              showSearch={{ optionFilterProp: 'label' }}
               options={departmentOptions}
               placeholder="选择成员所属部门"
             />
@@ -680,8 +677,7 @@ export function OrgMemberManagement() {
               <Select
                 allowClear
                 mode="multiple"
-                showSearch
-                optionFilterProp="label"
+                showSearch={{ optionFilterProp: 'label' }}
                 options={roles.map((role: RoleDto) => ({
                   label: `${role.name} (${role.code})`,
                   value: role.id,

@@ -19,6 +19,7 @@ export default {
       ],
     ],
     'subject-case': [0],
-    'subject-max-length': [2, 'always', 500],
+    'subject-max-length': [2, 'always', 150],
+    'body-max-line-length': [2, 'always', 500],
   },
 };

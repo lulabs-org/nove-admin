@@ -7,7 +7,7 @@ scene: git_message
 
 格式：`<type>(<scope>): <subject>`
 
-不超过 150 字符
+不超过 500 字符
 
 ## Type（必填）
 
