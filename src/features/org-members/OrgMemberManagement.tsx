@@ -1238,10 +1238,6 @@ export function OrgMemberManagement() {
         <>
           <div className="org-toolbar">
             <Space>
-              <Text strong>{orgName}</Text>
-              <Text type="secondary">部门数 {departmentRows.length}</Text>
-            </Space>
-            <Space>
               <Button
                 icon={<ReloadOutlined />}
                 onClick={() => refetchDepartments()}
