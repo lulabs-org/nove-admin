@@ -7,7 +7,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { meetingApi } from '../api/meetingApi';
 import type { Meeting } from '../model/types';
-import { MeetingControllerGetMeetingRecordsStatus } from '../../../shared/lib/api/orval/business/schemas';
+import {
+  formatDateTime,
+  formatDuration,
+  getMeetingPlatformText,
+  getMeetingTypeText,
+  getProcessingStatusText,
+} from '../utils/formatters';
 
 export function MeetingDetail() {
   const navigate = useNavigate();
@@ -60,31 +66,6 @@ export function MeetingDetail() {
     }
   };
 
-  const getStatusText = (status: MeetingControllerGetMeetingRecordsStatus) => {
-    const statusMap: Record<string, { text: string; color: string }> = {
-      PENDING: { text: '待处理', color: 'blue' },
-      PROCESSING: { text: '处理中', color: 'green' },
-      COMPLETED: { text: '已完成', color: 'default' },
-      FAILED: { text: '失败', color: 'red' },
-      SKIPPED: { text: '已跳过', color: 'orange' },
-    };
-    return statusMap[status] || { text: status, color: 'default' };
-  };
-
-  const getMeetingTypeText = (type?: string) => {
-    const typeMap: Record<string, string> = {
-      TENCENT_MEETING: '腾讯会议',
-      ZOOM: 'Zoom',
-      TEAMS: 'Teams',
-      DINGTALK: '钉钉',
-      FEISHU: '飞书',
-      WEBEX: 'Webex',
-      VOOV: 'Voov',
-      OTHER: '其他',
-    };
-    return typeMap[type || ''] || type || '-';
-  };
-
   if (loading) {
     return <div style={{ padding: 24 }}>加载中...</div>;
   }
@@ -93,7 +74,9 @@ export function MeetingDetail() {
     return <div style={{ padding: 24 }}>会议不存在</div>;
   }
 
-  const { text: statusText, color: statusColor } = getStatusText(meeting.status);
+  const { text: statusText, color: statusColor } = getProcessingStatusText(
+    meeting.processingStatus
+  );
 
   return (
     <div style={{ padding: 24 }}>
@@ -105,7 +88,9 @@ export function MeetingDetail() {
             <Button type="primary" onClick={handleEdit}>
               编辑
             </Button>
-            {meeting.status === 'COMPLETED' && <Button onClick={handleReprocess}>重新处理</Button>}
+            {meeting.processingStatus === 'COMPLETED' && (
+              <Button onClick={handleReprocess}>重新处理</Button>
+            )}
             <Button danger onClick={handleDelete}>
               删除
             </Button>
@@ -114,28 +99,25 @@ export function MeetingDetail() {
       >
         <Descriptions column={2} bordered>
           <Descriptions.Item label="会议ID">{meeting.id}</Descriptions.Item>
-          <Descriptions.Item label="会议类型">
-            {getMeetingTypeText(meeting.meetingType)}
+          <Descriptions.Item label="会议平台">
+            {getMeetingPlatformText(meeting.platform)}
           </Descriptions.Item>
+          <Descriptions.Item label="会议类型">{getMeetingTypeText(meeting.type)}</Descriptions.Item>
           <Descriptions.Item label="状态">
             <span style={{ color: statusColor }}>{statusText}</span>
           </Descriptions.Item>
-          <Descriptions.Item label="主持人">{meeting.host || '-'}</Descriptions.Item>
-          <Descriptions.Item label="开始时间">
-            {new Date(meeting.startTime).toLocaleString('zh-CN')}
-          </Descriptions.Item>
-          <Descriptions.Item label="结束时间">
-            {new Date(meeting.endTime).toLocaleString('zh-CN')}
-          </Descriptions.Item>
+          <Descriptions.Item label="主持人">{meeting.hostPlatformUserId || '-'}</Descriptions.Item>
+          <Descriptions.Item label="开始时间">{formatDateTime(meeting.startAt)}</Descriptions.Item>
+          <Descriptions.Item label="结束时间">{formatDateTime(meeting.endAt)}</Descriptions.Item>
           <Descriptions.Item label="时长">
-            {meeting.duration ? `${meeting.duration} 分钟` : '-'}
+            {formatDuration(meeting.durationSeconds)}
           </Descriptions.Item>
-          <Descriptions.Item label="参与人数">{meeting.participants || '-'}</Descriptions.Item>
+          <Descriptions.Item label="参与人数">{meeting.participantCount ?? '-'}</Descriptions.Item>
           <Descriptions.Item label="创建时间" span={2}>
-            {new Date(meeting.createdAt).toLocaleString('zh-CN')}
+            {formatDateTime(meeting.createdAt)}
           </Descriptions.Item>
           <Descriptions.Item label="更新时间" span={2}>
-            {new Date(meeting.updatedAt).toLocaleString('zh-CN')}
+            {formatDateTime(meeting.updatedAt)}
           </Descriptions.Item>
           <Descriptions.Item label="描述" span={2}>
             {meeting.description || '-'}

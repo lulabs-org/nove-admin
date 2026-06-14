@@ -16,21 +16,34 @@ import type {
 
 export interface Meeting {
   id: string;
+  platform: MeetingControllerGetMeetingRecordsPlatform;
+  meetingId: string;
+  subMeetingId?: string | null;
+  externalId?: string | null;
   title: string;
-  description?: string;
-  meetingId?: string;
-  meetingType?: MeetingControllerGetMeetingRecordsPlatform;
-  startTime: string;
-  endTime: string;
-  duration?: number;
-  host?: string;
-  participants?: number;
-  status: MeetingControllerGetMeetingRecordsStatus;
+  description?: string | null;
+  meetingCode?: string | null;
+  type: MeetingControllerGetMeetingRecordsType;
+  language?: string | null;
+  tags?: string[];
+  hostPlatformUserId?: string | null;
+  participantCount?: number | null;
+  scheduledStartAt?: string | null;
+  scheduledEndAt?: string | null;
+  startAt?: string | null;
+  endAt?: string | null;
+  durationSeconds?: number | null;
+  timezone?: string | null;
+  hasRecording: boolean;
+  recordingStatus: MeetingControllerGetMeetingRecordsStatus;
+  processingStatus: MeetingControllerGetMeetingRecordsStatus;
+  metadata?: unknown;
   recordingUrl?: string;
   transcriptUrl?: string;
   summary?: string;
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string | null;
 }
 
 export interface MeetingListParams {
