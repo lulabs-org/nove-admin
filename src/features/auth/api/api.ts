@@ -41,5 +41,11 @@ export const getMe = async (): Promise<User> => {
 };
 
 export const logout = async (): Promise<void> => {
-  await authControllerLogout();
+  const body: NonNullable<Parameters<typeof authControllerLogout>[0]> & {
+    clientType: 'web';
+  } = {
+    clientType: 'web',
+  };
+
+  await authControllerLogout(body);
 };
