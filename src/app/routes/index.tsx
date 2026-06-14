@@ -16,6 +16,7 @@ import { apiKeyRoutes } from '../../features/api-keys/routes';
 import { settingsRoutes } from '../../features/settings/routes';
 import { authRoutes } from '../../features/auth/routes';
 import { meetingRoutes } from '../../features/meetings/routes';
+import { taskRoutes } from '../../features/tasks/routes';
 
 export const routes: RouteConfig[] = [
   ...authRoutes,
@@ -23,5 +24,6 @@ export const routes: RouteConfig[] = [
   ...userRoutes,
   ...apiKeyRoutes,
   ...meetingRoutes,
+  ...taskRoutes,
   ...settingsRoutes,
 ];
