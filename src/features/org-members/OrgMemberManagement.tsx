@@ -386,21 +386,30 @@ export function OrgMemberManagement() {
   const saveDepartmentMutation = useMutation({
     mutationFn: (values: DepartmentFormValues) => {
       if (!currentOrgId) throw new Error('Missing organization');
-      const parentId = values.parentId === ROOT_DEPARTMENT_ID ? undefined : values.parentId;
-      const payload: CreateDepartment | UpdateDepartment = {
-        name: values.name?.trim(),
-        code: values.code?.trim(),
-        parentId,
+      const isRootParent = values.parentId === ROOT_DEPARTMENT_ID || !values.parentId;
+      const name = values.name?.trim() ?? '';
+      const code = values.code?.trim() ?? '';
+      const payloadBase = {
+        name,
+        code,
         leaderUserId: values.leaderUserId?.trim() || undefined,
         description: values.description?.trim() || undefined,
         active: values.active ?? true,
       };
 
       if (departmentModalMode === 'edit' && editingDepartment) {
+        const payload: UpdateDepartment = {
+          ...payloadBase,
+          parentId: isRootParent ? null : values.parentId,
+        };
         return orgMemberApi.updateDepartment(editingDepartment.id, payload);
       }
 
-      return orgMemberApi.createDepartment(currentOrgId, payload as CreateDepartment);
+      const payload: CreateDepartment = {
+        ...payloadBase,
+        parentId: isRootParent ? undefined : values.parentId,
+      };
+      return orgMemberApi.createDepartment(currentOrgId, payload);
     },
     onSuccess: async () => {
       message.success(departmentModalMode === 'edit' ? '部门已更新' : '部门已新建');

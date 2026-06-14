@@ -39,7 +39,9 @@ export type UpdateOrgMember = UpdateOrgMemberDto;
 export type UpdateOrgMemberStatus = UpdateMemberStatusDto;
 export type UpdateOrgMemberDepartments = UpdateMemberDepartmentsDto;
 export type CreateDepartment = CreateDepartmentDto;
-export type UpdateDepartment = UpdateDepartmentDto;
+export type UpdateDepartment = Omit<UpdateDepartmentDto, 'parentId'> & {
+  parentId?: string | null;
+};
 
 export interface OrgMemberListResponse {
   data: OrgMember[];
@@ -103,7 +105,7 @@ export const orgMemberApi = {
   },
 
   updateDepartment(deptId: string, data: UpdateDepartment): Promise<DepartmentDto> {
-    return departmentControllerUpdateDepartment(deptId, data);
+    return departmentControllerUpdateDepartment(deptId, data as UpdateDepartmentDto);
   },
 
   deleteDepartment(deptId: string): Promise<void> {
