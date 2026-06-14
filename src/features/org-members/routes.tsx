@@ -10,7 +10,8 @@
  */
 import type { RouteConfig } from '../../shared/types/index';
 import { OrgMemberManagement } from './OrgMemberManagement';
-import { TeamOutlined, UsergroupAddOutlined } from '@ant-design/icons';
+import { RoleManagement } from './RoleManagement';
+import { IdcardOutlined, TeamOutlined, UsergroupAddOutlined } from '@ant-design/icons';
 import { Outlet } from 'react-router-dom';
 
 export const orgMemberRoutes: RouteConfig[] = [
@@ -29,6 +30,14 @@ export const orgMemberRoutes: RouteConfig[] = [
         menu: true,
         permission: 'user:read',
         icon: <UsergroupAddOutlined />,
+      },
+      {
+        path: '/users/roles',
+        element: <RoleManagement />,
+        title: '角色管理',
+        menu: true,
+        permission: 'role:read',
+        icon: <IdcardOutlined />,
       },
     ],
   },
