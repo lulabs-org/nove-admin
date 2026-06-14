@@ -25,7 +25,7 @@ export const orgMemberRoutes: RouteConfig[] = [
       {
         path: '/users/list',
         element: <OrgMemberManagement />,
-        title: '成员列表',
+        title: '成员与部门',
         menu: true,
         permission: 'user:read',
         icon: <UsergroupAddOutlined />,

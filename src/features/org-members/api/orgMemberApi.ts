@@ -7,15 +7,25 @@ import {
   orgMemberControllerUpdateMemberDepartments,
   orgMemberControllerUpdateMemberStatus,
 } from '../../../shared/lib/api/orval/business/admin-orgmembers';
-import { departmentControllerGetDepartmentTree } from '../../../shared/lib/api/orval/business/admin-departments';
+import {
+  departmentControllerCreateDepartment,
+  departmentControllerDeleteDepartment,
+  departmentControllerGetDepartmentTree,
+  departmentControllerUpdateDepartment,
+} from '../../../shared/lib/api/orval/business/admin-departments';
+import { organizationControllerGetOrganization } from '../../../shared/lib/api/orval/business/admin-organizations';
 import { roleControllerFindAll } from '../../../shared/lib/api/orval/business/admin-roles';
 import type {
+  CreateDepartmentDto,
   CreateOrgMemberDto,
+  DepartmentDto,
   DepartmentTreeDto,
   OrgMemberControllerListMembersParams,
   OrgMemberDetailDto,
   OrgMemberDto,
+  OrganizationDto,
   RoleDto,
+  UpdateDepartmentDto,
   UpdateMemberDepartmentsDto,
   UpdateMemberStatusDto,
   UpdateOrgMemberDto,
@@ -28,6 +38,8 @@ export type CreateOrgMember = CreateOrgMemberDto;
 export type UpdateOrgMember = UpdateOrgMemberDto;
 export type UpdateOrgMemberStatus = UpdateMemberStatusDto;
 export type UpdateOrgMemberDepartments = UpdateMemberDepartmentsDto;
+export type CreateDepartment = CreateDepartmentDto;
+export type UpdateDepartment = UpdateDepartmentDto;
 
 export interface OrgMemberListResponse {
   data: OrgMember[];
@@ -80,5 +92,21 @@ export const orgMemberApi = {
   async roles(): Promise<RoleDto[]> {
     const result = await roleControllerFindAll({ active: true, page: 1, pageSize: 100 });
     return result.items;
+  },
+
+  organization(orgId: string): Promise<OrganizationDto> {
+    return organizationControllerGetOrganization(orgId);
+  },
+
+  createDepartment(orgId: string, data: CreateDepartment): Promise<DepartmentDto> {
+    return departmentControllerCreateDepartment(orgId, data);
+  },
+
+  updateDepartment(deptId: string, data: UpdateDepartment): Promise<DepartmentDto> {
+    return departmentControllerUpdateDepartment(deptId, data);
+  },
+
+  deleteDepartment(deptId: string): Promise<void> {
+    return departmentControllerDeleteDepartment(deptId);
   },
 };
