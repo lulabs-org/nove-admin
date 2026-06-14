@@ -20,6 +20,10 @@
   border-top: 1px solid #eff0f1;
 }
 
+.org-structure-shell--no-aside {
+  grid-template-columns: 1fr;
+}
+
 .org-structure-tree-pane {
   display: flex;
   flex-direction: column;

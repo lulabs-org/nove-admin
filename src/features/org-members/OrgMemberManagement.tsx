@@ -1312,47 +1312,51 @@ export function OrgMemberManagement() {
         ]}
       />
 
-      <div className="org-structure-shell">
-        <aside className="org-structure-tree-pane">
-          <Search
-            allowClear
-            prefix={<SearchOutlined />}
-            placeholder="请输入姓名、邮箱..."
-            value={deptKeyword}
-            onChange={(event) => setDeptKeyword(event.target.value)}
-          />
-          <div className="org-tree-list">
-            <div className={`org-dept-node ${!selectedDeptId ? 'is-active' : ''}`}>
-              <button
-                type="button"
-                className="org-dept-node-main"
-                onClick={() => handleSelectDepartment(undefined)}
-              >
-                <BankOutlined />
-                <span>{orgName}</span>
-              </button>
-              <Dropdown
-                trigger={['click']}
-                menu={{
-                  items: [{ key: 'create', label: '新建部门', icon: <PlusOutlined /> }],
-                  onClick: () => openCreateDepartmentModal(undefined),
-                }}
-              >
-                <Button type="text" size="small" icon={<EllipsisOutlined />} />
-              </Dropdown>
+      <div
+        className={`org-structure-shell${activeTab !== 'members' ? ' org-structure-shell--no-aside' : ''}`}
+      >
+        {activeTab === 'members' && (
+          <aside className="org-structure-tree-pane">
+            <Search
+              allowClear
+              prefix={<SearchOutlined />}
+              placeholder="请输入姓名、邮箱..."
+              value={deptKeyword}
+              onChange={(event) => setDeptKeyword(event.target.value)}
+            />
+            <div className="org-tree-list">
+              <div className={`org-dept-node ${!selectedDeptId ? 'is-active' : ''}`}>
+                <button
+                  type="button"
+                  className="org-dept-node-main"
+                  onClick={() => handleSelectDepartment(undefined)}
+                >
+                  <BankOutlined />
+                  <span>{orgName}</span>
+                </button>
+                <Dropdown
+                  trigger={['click']}
+                  menu={{
+                    items: [{ key: 'create', label: '新建部门', icon: <PlusOutlined /> }],
+                    onClick: () => openCreateDepartmentModal(undefined),
+                  }}
+                >
+                  <Button type="text" size="small" icon={<EllipsisOutlined />} />
+                </Dropdown>
+              </div>
+              {renderDepartmentNodes(filteredDepartmentTree)}
             </div>
-            {renderDepartmentNodes(filteredDepartmentTree)}
-          </div>
-          <Button
-            block
-            icon={<PlusOutlined />}
-            className="org-new-dept-button"
-            onClick={() => openCreateDepartmentModal()}
-            disabled={!currentOrgId}
-          >
-            新建部门
-          </Button>
-        </aside>
+            <Button
+              block
+              icon={<PlusOutlined />}
+              className="org-new-dept-button"
+              onClick={() => openCreateDepartmentModal()}
+              disabled={!currentOrgId}
+            >
+              新建部门
+            </Button>
+          </aside>
+        )}
 
         <main className="org-structure-content">
           <div className="org-scope-header">
