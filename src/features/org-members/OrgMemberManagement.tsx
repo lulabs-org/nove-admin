@@ -26,9 +26,12 @@ import {
   BankOutlined,
   CheckCircleFilled,
   DeleteOutlined,
+  DragOutlined,
   EditOutlined,
   EllipsisOutlined,
   IdcardOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
   PlusOutlined,
   ReloadOutlined,
   SearchOutlined,
@@ -36,7 +39,7 @@ import {
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { useMemo, useState, type Key } from 'react';
+import { useMemo, useState, type CSSProperties, type Key } from 'react';
 import { Perm } from '../../app/guards/Perm';
 import { useAuth } from '../../shared/hooks/useAuth';
 import {
@@ -106,6 +109,10 @@ interface BatchDepartmentValues {
 }
 
 const ROOT_DEPARTMENT_ID = '__root__';
+const TREE_PANE_DEFAULT_WIDTH = 276;
+const TREE_PANE_MIN_WIDTH = 220;
+const TREE_PANE_MAX_WIDTH = 420;
+const TREE_PANE_COLLAPSED_WIDTH = 48;
 
 const MEMBER_TYPE_OPTIONS: Array<{ label: string; value: MemberType }> = [
   { label: '正式', value: 'INTERNAL' },
@@ -227,6 +234,10 @@ function getSelectedDepartmentName(
   return selectedDeptId ? departmentIndex.get(selectedDeptId)?.name || '部门' : orgName;
 }
 
+function clampNumber(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
 export function OrgMemberManagement() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -258,6 +269,8 @@ export function OrgMemberManagement() {
   const [detailMember, setDetailMember] = useState<OrgMemberDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailEditing, setDetailEditing] = useState(false);
+  const [treePaneWidth, setTreePaneWidth] = useState(TREE_PANE_DEFAULT_WIDTH);
+  const [treePaneCollapsed, setTreePaneCollapsed] = useState(false);
 
   const { data: organization } = useQuery({
     queryKey: ['org-member-organization', currentOrgId],
@@ -295,6 +308,11 @@ export function OrgMemberManagement() {
     [departmentTree, deptKeyword]
   );
   const selectedScopeName = getSelectedDepartmentName(selectedDeptId, departmentIndex, orgName);
+  const treePaneColumnWidth = treePaneCollapsed ? TREE_PANE_COLLAPSED_WIDTH : treePaneWidth;
+  const structureShellStyle =
+    activeTab === 'members'
+      ? ({ '--org-tree-pane-width': `${treePaneColumnWidth}px` } as CSSProperties)
+      : undefined;
   const memberQueryKey = currentOrgId
     ? `org-members-${currentOrgId}-${activeTab}`
     : 'org-members-no-org';
@@ -609,6 +627,37 @@ export function OrgMemberManagement() {
     setDetailEditing(false);
     setDetailMember(null);
     detailEditForm.resetFields();
+  };
+
+  const handleTreePaneResizeStart = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (treePaneCollapsed) return;
+    event.preventDefault();
+
+    const startX = event.clientX;
+    const startWidth = treePaneWidth;
+    const previousCursor = document.body.style.cursor;
+    const previousUserSelect = document.body.style.userSelect;
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const nextWidth = clampNumber(
+        startWidth + moveEvent.clientX - startX,
+        TREE_PANE_MIN_WIDTH,
+        TREE_PANE_MAX_WIDTH
+      );
+      setTreePaneWidth(nextWidth);
+    };
+
+    const stopResize = () => {
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.body.style.cursor = previousCursor;
+      document.body.style.userSelect = previousUserSelect;
+    };
+
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerup', stopResize, { once: true });
   };
 
   const openCreateDepartmentModal = (parentId = selectedDeptId) => {
@@ -1319,47 +1368,74 @@ export function OrgMemberManagement() {
 
       <div
         className={`org-structure-shell${activeTab !== 'members' ? ' org-structure-shell--no-aside' : ''}`}
+        style={structureShellStyle}
       >
         {activeTab === 'members' && (
-          <aside className="org-structure-tree-pane">
-            <Search
-              allowClear
-              prefix={<SearchOutlined />}
-              placeholder="请输入姓名、邮箱..."
-              value={deptKeyword}
-              onChange={(event) => setDeptKeyword(event.target.value)}
-            />
-            <div className="org-tree-list">
-              <div className={`org-dept-node ${!selectedDeptId ? 'is-active' : ''}`}>
+          <aside className={`org-structure-tree-pane${treePaneCollapsed ? ' is-collapsed' : ''}`}>
+            <div className="org-tree-pane-topbar">
+              {!treePaneCollapsed && (
+                <Search
+                  allowClear
+                  prefix={<SearchOutlined />}
+                  placeholder="请输入姓名、邮箱..."
+                  value={deptKeyword}
+                  onChange={(event) => setDeptKeyword(event.target.value)}
+                />
+              )}
+              <Tooltip title={treePaneCollapsed ? '展开部门树' : '收起部门树'}>
+                <Button
+                  type="text"
+                  size="small"
+                  className="org-tree-collapse-button"
+                  aria-label={treePaneCollapsed ? '展开部门树' : '收起部门树'}
+                  icon={treePaneCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                  onClick={() => setTreePaneCollapsed((collapsed) => !collapsed)}
+                />
+              </Tooltip>
+            </div>
+            {!treePaneCollapsed && (
+              <>
+                <div className="org-tree-list">
+                  <div className={`org-dept-node ${!selectedDeptId ? 'is-active' : ''}`}>
+                    <button
+                      type="button"
+                      className="org-dept-node-main"
+                      onClick={() => handleSelectDepartment(undefined)}
+                    >
+                      <BankOutlined />
+                      <span>{orgName}</span>
+                    </button>
+                    <Dropdown
+                      trigger={['click']}
+                      menu={{
+                        items: [{ key: 'create', label: '新建部门', icon: <PlusOutlined /> }],
+                        onClick: () => openCreateDepartmentModal(undefined),
+                      }}
+                    >
+                      <Button type="text" size="small" icon={<EllipsisOutlined />} />
+                    </Dropdown>
+                  </div>
+                  {renderDepartmentNodes(filteredDepartmentTree)}
+                </div>
+                <Button
+                  block
+                  icon={<PlusOutlined />}
+                  className="org-new-dept-button"
+                  onClick={() => openCreateDepartmentModal()}
+                  disabled={!currentOrgId}
+                >
+                  新建部门
+                </Button>
                 <button
                   type="button"
-                  className="org-dept-node-main"
-                  onClick={() => handleSelectDepartment(undefined)}
+                  className="org-tree-resize-handle"
+                  aria-label="调整部门树宽度"
+                  onPointerDown={handleTreePaneResizeStart}
                 >
-                  <BankOutlined />
-                  <span>{orgName}</span>
+                  <DragOutlined />
                 </button>
-                <Dropdown
-                  trigger={['click']}
-                  menu={{
-                    items: [{ key: 'create', label: '新建部门', icon: <PlusOutlined /> }],
-                    onClick: () => openCreateDepartmentModal(undefined),
-                  }}
-                >
-                  <Button type="text" size="small" icon={<EllipsisOutlined />} />
-                </Dropdown>
-              </div>
-              {renderDepartmentNodes(filteredDepartmentTree)}
-            </div>
-            <Button
-              block
-              icon={<PlusOutlined />}
-              className="org-new-dept-button"
-              onClick={() => openCreateDepartmentModal()}
-              disabled={!currentOrgId}
-            >
-              新建部门
-            </Button>
+              </>
+            )}
           </aside>
         )}
 

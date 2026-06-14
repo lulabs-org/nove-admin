@@ -15,7 +15,7 @@
 
 .org-structure-shell {
   display: grid;
-  grid-template-columns: 276px minmax(0, 1fr);
+  grid-template-columns: var(--org-tree-pane-width, 276px) minmax(0, 1fr);
   min-height: calc(100vh - 242px);
   border-top: 1px solid #eff0f1;
 }
@@ -25,11 +25,40 @@
 }
 
 .org-structure-tree-pane {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
   padding: 16px 16px 0 0;
   border-right: 1px solid #eff0f1;
+}
+
+.org-structure-tree-pane.is-collapsed {
+  align-items: center;
+  gap: 0;
+  padding: 16px 6px 0 0;
+}
+
+.org-tree-pane-topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.org-tree-pane-topbar .ant-input-search {
+  flex: 1;
+  min-width: 0;
+}
+
+.org-tree-collapse-button {
+  flex: 0 0 auto;
+}
+
+.org-structure-tree-pane.is-collapsed .org-tree-pane-topbar {
+  justify-content: center;
+  width: 100%;
 }
 
 .org-tree-list {
@@ -82,6 +111,57 @@
 
 .org-new-dept-button {
   margin-bottom: 16px;
+}
+
+.org-tree-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -7px;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #8f959e;
+  cursor: col-resize;
+}
+
+.org-tree-resize-handle::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 6px;
+  width: 1px;
+  background: transparent;
+  content: '';
+}
+
+.org-tree-resize-handle .anticon {
+  position: relative;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+  opacity: 0.65;
+}
+
+.org-tree-resize-handle:hover,
+.org-tree-resize-handle:focus-visible {
+  color: #3370ff;
+  outline: none;
+}
+
+.org-tree-resize-handle:hover::before,
+.org-tree-resize-handle:focus-visible::before {
+  background: #3370ff;
+}
+
+.org-tree-resize-handle:hover .anticon,
+.org-tree-resize-handle:focus-visible .anticon {
+  opacity: 1;
 }
 
 .org-structure-content {
@@ -205,8 +285,17 @@
     padding-right: 0;
   }
 
+  .org-structure-tree-pane.is-collapsed {
+    align-items: flex-start;
+    padding: 12px 0;
+  }
+
   .org-tree-list {
     max-height: 260px;
+  }
+
+  .org-tree-resize-handle {
+    display: none;
   }
 
   .org-structure-content {
