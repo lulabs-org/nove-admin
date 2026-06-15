@@ -1,0 +1,127 @@
+import type { TableQueryParams } from '../../shared/hooks/useTableQuery';
+
+export type Currency =
+  | 'CNY'
+  | 'USD'
+  | 'EUR'
+  | 'GBP'
+  | 'JPY'
+  | 'HKD'
+  | 'TWD'
+  | 'SGD'
+  | 'AUD'
+  | 'CAD';
+
+export type OrderStatus = 'UNPAID' | 'PAID' | 'CANCELLED' | 'REFUNDED' | 'COMPLETED';
+
+export type PaymentProvider =
+  | 'STRIPE'
+  | 'PAYPAL'
+  | 'WECHAT'
+  | 'ALIPAY'
+  | 'APPLE_PAY'
+  | 'GOOGLE_PAY'
+  | 'OTHER';
+
+export interface OrderRelation {
+  id: string | number;
+  code?: string | null;
+  name?: string | null;
+  email?: string | null;
+}
+
+export interface Order {
+  id: string;
+  orderCode: string;
+  orderNumber: string;
+  externalId: string | null;
+  metadata: Record<string, unknown> | null;
+  productId: string | null;
+  productName: string | null;
+  purchaserId: string | null;
+  channelId: number | null;
+  email: string | null;
+  phone: string | null;
+  phoneCode: string | null;
+  currentOwnerId: string | null;
+  financialCloserId: string | null;
+  financialClosedAt: string | null;
+  amount: number;
+  currency: Currency;
+  amountCny: number | null;
+  fxRateToCny: string | null;
+  fxLockedAt: string | null;
+  status: OrderStatus;
+  paidAt: string | null;
+  cancelledAt: string | null;
+  refundedAt: string | null;
+  completedAt: string | null;
+  effectiveAt: string | null;
+  benefitStart: string | null;
+  benefitEnd: string | null;
+  paymentProvider: PaymentProvider | null;
+  providerTradeNo: string | null;
+  product: OrderRelation | null;
+  purchaser: OrderRelation | null;
+  channel: OrderRelation | null;
+  currentOwner: OrderRelation | null;
+  financialCloser: OrderRelation | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+export interface CreateOrder {
+  orderCode?: string;
+  orderNumber?: string;
+  externalId?: string;
+  productId?: string;
+  productName?: string;
+  purchaserId?: string;
+  channelId?: number;
+  email?: string;
+  phone?: string;
+  phoneCode?: string;
+  currentOwnerId?: string;
+  financialCloserId?: string;
+  financialClosedAt?: string;
+  amount: number;
+  currency?: Currency;
+  amountCny?: number;
+  status?: OrderStatus;
+  paidAt?: string;
+  cancelledAt?: string;
+  refundedAt?: string;
+  completedAt?: string;
+  effectiveAt?: string;
+  benefitStart?: string;
+  benefitEnd?: string;
+  paymentProvider?: PaymentProvider;
+  providerTradeNo?: string;
+}
+
+export type UpdateOrder = Partial<CreateOrder>;
+
+export interface OrderListParams extends TableQueryParams {
+  keyword?: string;
+  status?: OrderStatus;
+  currency?: Currency;
+  paymentProvider?: PaymentProvider;
+  channelId?: number;
+  productId?: string;
+  purchaserId?: string;
+  currentOwnerId?: string;
+  paidFrom?: string;
+  paidTo?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  includeDeleted?: boolean;
+}
+
+export interface OrderListData {
+  data: Order[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
