@@ -10,19 +10,20 @@
  */
 import type { RouteConfig } from '../../shared/types/index';
 import { SettingOutlined, UserOutlined, SafetyOutlined } from '@ant-design/icons';
+import { Outlet } from 'react-router-dom';
+import { ProfilePage } from './ProfilePage';
 
 export const settingsRoutes: RouteConfig[] = [
   {
     path: '/settings',
-    element: <div>Settings</div>,
+    element: <Outlet />,
     title: '系统设置',
     menu: true,
-    permission: 'system:config',
     icon: <SettingOutlined />,
     children: [
       {
         path: '/settings/profile',
-        element: <div>Profile</div>,
+        element: <ProfilePage />,
         title: '个人资料',
         menu: true,
         icon: <UserOutlined />,
