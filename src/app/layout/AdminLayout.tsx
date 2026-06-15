@@ -17,6 +17,7 @@ import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 
 const { Content, Sider } = Layout;
+const MOBILE_SIDER_QUERY = '(max-width: 760px)';
 
 interface AdminLayoutProps {
   routes: RouteConfig[];
@@ -24,7 +25,10 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ routes, children }: AdminLayoutProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia(MOBILE_SIDER_QUERY).matches;
+  });
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
