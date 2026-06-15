@@ -12,6 +12,7 @@
 import type { RouteConfig } from '../../shared/types';
 import { dashboardRoutes } from '../../features/dashboard/routes';
 import { orgMemberRoutes } from '../../features/org-members/routes';
+import { permissionRoutes } from '../../features/permissions';
 import { apiKeyRoutes } from '../../features/api-keys/routes';
 import { settingsRoutes } from '../../features/settings/routes';
 import { authRoutes } from '../../features/auth/routes';
@@ -22,6 +23,7 @@ export const routes: RouteConfig[] = [
   ...authRoutes,
   ...dashboardRoutes,
   ...orgMemberRoutes,
+  ...permissionRoutes,
   ...apiKeyRoutes,
   ...meetingRoutes,
   ...taskRoutes,
