@@ -178,6 +178,69 @@
   font-weight: 600;
 }
 
+.org-role-permission-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.org-role-permission-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.org-role-permission-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 22px;
+}
+
+.org-role-permission-tree {
+  max-height: 440px;
+  overflow: auto;
+  border: 1px solid #eff0f1;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.org-role-permission-node {
+  min-width: 0;
+}
+
+.org-role-permission-node-main {
+  display: grid;
+  grid-template-columns: auto minmax(96px, 0.8fr) minmax(120px, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 12px;
+  border-bottom: 1px solid #f2f3f5;
+  cursor: pointer;
+}
+
+.org-role-permission-node-main:hover {
+  background: #f7f8fa;
+}
+
+.org-role-permission-name {
+  overflow: hidden;
+  color: #1f2329;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.org-role-permission-code {
+  overflow: hidden;
+  color: #646a73;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 900px) {
   .org-role-shell {
     grid-template-columns: 1fr;
@@ -202,5 +265,17 @@
 
   .org-role-member-search {
     width: 100%;
+  }
+
+  .org-role-permission-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .org-role-permission-node-main {
+    grid-template-columns: auto minmax(90px, 1fr) auto;
+  }
+
+  .org-role-permission-code {
+    display: none;
   }
 }

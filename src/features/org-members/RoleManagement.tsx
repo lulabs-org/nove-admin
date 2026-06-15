@@ -1,6 +1,7 @@
 import Alert from 'antd/es/alert';
 import Avatar from 'antd/es/avatar';
 import Button from 'antd/es/button';
+import Checkbox from 'antd/es/checkbox';
 import Dropdown from 'antd/es/dropdown';
 import Empty from 'antd/es/empty';
 import Form from 'antd/es/form';
@@ -24,6 +25,7 @@ import {
   ExportOutlined,
   ImportOutlined,
   PlusOutlined,
+  SafetyCertificateOutlined,
   SearchOutlined,
   UserOutlined,
   UserSwitchOutlined,
@@ -40,6 +42,10 @@ import {
   type Role,
   type UpdateRole,
 } from './api/roleManagementApi';
+import {
+  permissionManagementApi,
+  type PermissionItem,
+} from '../permissions/api/permissionManagementApi';
 import './RoleManagement.css';
 
 const { TextArea } = Input;
@@ -59,9 +65,21 @@ interface AddMemberFormValues {
   membershipIds?: string[];
 }
 
+interface FlatPermission extends PermissionItem {
+  depth: number;
+}
+
 const ROLE_TYPE_META: Record<string, { label: string; color: string }> = {
   SYSTEM: { label: '系统角色', color: 'blue' },
   CUSTOM: { label: '自定义', color: 'default' },
+};
+
+const PERMISSION_TYPE_META: Record<string, { label: string; color: string }> = {
+  MENU: { label: '菜单', color: 'processing' },
+  BUTTON: { label: '按钮', color: 'purple' },
+  API: { label: '接口', color: 'blue' },
+  DATA: { label: '数据', color: 'cyan' },
+  FIELD: { label: '字段', color: 'gold' },
 };
 
 const AVATAR_COLORS = ['#3370ff', '#00a870', '#ff8800', '#7b61ff', '#e65050', '#14a9a0'];
@@ -112,6 +130,39 @@ function getDepartmentText(member: OrgMemberDetail) {
   return member.primaryDept?.name || '-';
 }
 
+function flattenPermissionTree(tree: PermissionItem[], depth = 0): FlatPermission[] {
+  return tree.flatMap((permission) => [
+    { ...permission, depth },
+    ...flattenPermissionTree(permission.children || [], depth + 1),
+  ]);
+}
+
+function collectPermissionIds(permission: PermissionItem): string[] {
+  return [
+    permission.id,
+    ...(permission.children || []).flatMap((child) => collectPermissionIds(child)),
+  ];
+}
+
+function filterPermissionTree(tree: PermissionItem[], keyword: string): PermissionItem[] {
+  const value = keyword.trim().toLowerCase();
+  if (!value) return tree;
+
+  return tree.reduce<PermissionItem[]>((matchedPermissions, permission) => {
+    const children = filterPermissionTree(permission.children || [], keyword);
+    const matched =
+      permission.name.toLowerCase().includes(value) ||
+      permission.code.toLowerCase().includes(value) ||
+      permission.resource.toLowerCase().includes(value);
+
+    if (matched || children.length) {
+      matchedPermissions.push({ ...permission, children });
+    }
+
+    return matchedPermissions;
+  }, []);
+}
+
 function downloadCsv(filename: string, rows: string[][]) {
   const csv = rows
     .map((row) =>
@@ -146,6 +197,9 @@ export function RoleManagement() {
   const [roleModalMode, setRoleModalMode] = useState<RoleModalMode>('create');
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [addMemberOpen, setAddMemberOpen] = useState(false);
+  const [permissionModalOpen, setPermissionModalOpen] = useState(false);
+  const [permissionKeyword, setPermissionKeyword] = useState('');
+  const [permissionCheckedKeys, setPermissionCheckedKeys] = useState<string[]>([]);
 
   const [roleForm] = Form.useForm<RoleFormValues>();
   const [addMemberForm] = Form.useForm<AddMemberFormValues>();
@@ -178,8 +232,23 @@ export function RoleManagement() {
     enabled: !!currentOrgId,
   });
 
+  const permissionTreeQuery = useQuery({
+    queryKey: ['role-management-permission-tree'],
+    queryFn: permissionManagementApi.permissionTree,
+  });
+
   const roles = rolesQuery.data?.data || [];
   const selectedRole = roles.find((role) => role.id === selectedRoleId) || roles[0];
+  const permissionTree = permissionTreeQuery.data || [];
+  const flatPermissions = useMemo(() => flattenPermissionTree(permissionTree), [permissionTree]);
+  const filteredPermissionTree = useMemo(
+    () => filterPermissionTree(permissionTree, permissionKeyword),
+    [permissionKeyword, permissionTree]
+  );
+  const checkedPermissionSet = useMemo(
+    () => new Set(permissionCheckedKeys),
+    [permissionCheckedKeys]
+  );
 
   const roleMembers = useMemo(() => {
     if (!selectedRole) return [];
@@ -273,6 +342,20 @@ export function RoleManagement() {
     },
   });
 
+  const updateRolePermissionsMutation = useMutation({
+    mutationFn: ({ roleId, permissionIds }: { roleId: string; permissionIds: string[] }) =>
+      roleManagementApi.update(roleId, { permissionIds }),
+    onSuccess: async () => {
+      message.success('角色权限已更新');
+      setPermissionModalOpen(false);
+      setPermissionKeyword('');
+      await queryClient.invalidateQueries({ queryKey: ['role-management-roles'] });
+    },
+    onError: () => {
+      message.error('更新角色权限失败');
+    },
+  });
+
   const handleOpenCreateRole = () => {
     setRoleModalMode('create');
     setEditingRole(null);
@@ -297,6 +380,33 @@ export function RoleManagement() {
       active: role.active,
     });
     setRoleModalOpen(true);
+  };
+
+  const handleOpenPermissionModal = () => {
+    if (!selectedRole) return;
+    setPermissionCheckedKeys(selectedRole.permissionIds || []);
+    setPermissionKeyword('');
+    setPermissionModalOpen(true);
+  };
+
+  const handlePermissionCheck = (permission: PermissionItem, checked: boolean) => {
+    const ids = collectPermissionIds(permission);
+    setPermissionCheckedKeys((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => {
+        if (checked) next.add(id);
+        else next.delete(id);
+      });
+      return Array.from(next);
+    });
+  };
+
+  const handleSaveRolePermissions = () => {
+    if (!selectedRole) return;
+    updateRolePermissionsMutation.mutate({
+      roleId: selectedRole.id,
+      permissionIds: permissionCheckedKeys,
+    });
   };
 
   const handleRoleMenuClick = (key: string, role: Role) => {
@@ -473,6 +583,41 @@ export function RoleManagement() {
     });
   };
 
+  const renderPermissionNodes = (nodes: PermissionItem[], depth = 0) => {
+    if (!nodes.length) {
+      return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无权限" />;
+    }
+
+    return nodes.map((permission) => {
+      const ids = collectPermissionIds(permission);
+      const checkedCount = ids.filter((id) => checkedPermissionSet.has(id)).length;
+      const checked = checkedPermissionSet.has(permission.id);
+      const indeterminate = !checked && checkedCount > 0;
+      const typeMeta = PERMISSION_TYPE_META[permission.type] || {
+        label: permission.type,
+        color: 'default',
+      };
+
+      return (
+        <div key={permission.id} className="org-role-permission-node">
+          <label className="org-role-permission-node-main" style={{ paddingLeft: depth * 20 }}>
+            <Checkbox
+              checked={checked}
+              indeterminate={indeterminate}
+              onChange={(event) => handlePermissionCheck(permission, event.target.checked)}
+            />
+            <span className="org-role-permission-name">{permission.name}</span>
+            <span className="org-role-permission-code">{permission.code}</span>
+            <Tag color={typeMeta.color}>{typeMeta.label}</Tag>
+          </label>
+          {permission.children?.length
+            ? renderPermissionNodes(permission.children, depth + 1)
+            : null}
+        </div>
+      );
+    });
+  };
+
   return (
     <div className="org-role-page">
       {!currentOrgId && (
@@ -538,6 +683,19 @@ export function RoleManagement() {
                   onChange={(event) => setMemberKeyword(event.target.value)}
                 />
                 <Space size="small" wrap>
+                  <Perm permission={PERMISSIONS.ROLE.ASSIGN_PERMISSION}>
+                    <Tooltip title={selectedRole.type === 'SYSTEM' ? '系统角色不可配置权限' : ''}>
+                      <span>
+                        <Button
+                          icon={<SafetyCertificateOutlined />}
+                          onClick={handleOpenPermissionModal}
+                          disabled={selectedRole.type === 'SYSTEM'}
+                        >
+                          配置权限
+                        </Button>
+                      </span>
+                    </Tooltip>
+                  </Perm>
                   <Perm permission={PERMISSIONS.ROLE.UPDATE}>
                     <Button
                       type="primary"
@@ -675,6 +833,54 @@ export function RoleManagement() {
             />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title={`配置 ${selectedRole?.name || '角色'} 权限`}
+        open={permissionModalOpen}
+        onOk={handleSaveRolePermissions}
+        onCancel={() => {
+          setPermissionModalOpen(false);
+          setPermissionKeyword('');
+        }}
+        okText="保存"
+        cancelText="取消"
+        width={760}
+        confirmLoading={updateRolePermissionsMutation.isPending}
+        destroyOnHidden
+      >
+        <div className="org-role-permission-modal">
+          <div className="org-role-permission-toolbar">
+            <Input
+              allowClear
+              prefix={<SearchOutlined />}
+              placeholder="搜索权限名称、编码或资源"
+              value={permissionKeyword}
+              onChange={(event) => setPermissionKeyword(event.target.value)}
+            />
+            <Space size="small">
+              <Button
+                onClick={() => setPermissionCheckedKeys(flatPermissions.map((item) => item.id))}
+                disabled={!flatPermissions.length}
+              >
+                全选
+              </Button>
+              <Button onClick={() => setPermissionCheckedKeys([])}>清空</Button>
+            </Space>
+          </div>
+          <div className="org-role-permission-summary">
+            <Text type="secondary">
+              已选择 {permissionCheckedKeys.length} / {flatPermissions.length} 项权限
+            </Text>
+          </div>
+          <div className="org-role-permission-tree">
+            {permissionTreeQuery.isLoading ? (
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="权限加载中" />
+            ) : (
+              renderPermissionNodes(filteredPermissionTree)
+            )}
+          </div>
+        </div>
       </Modal>
     </div>
   );
