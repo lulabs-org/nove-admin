@@ -41,24 +41,24 @@ export const taskApi = {
   createOnce: (data: CreateOnceTask): Promise<ScheduledTask> => {
     return tasksControllerCreateOnce(
       data as unknown as Record<string, unknown>
-    ) as Promise<ScheduledTask>;
+    ) as unknown as Promise<ScheduledTask>;
   },
 
   createCron: (data: CreateCronTask): Promise<ScheduledTask> => {
     return tasksControllerCreateCron(
       data as unknown as Record<string, unknown>
-    ) as Promise<ScheduledTask>;
+    ) as unknown as Promise<ScheduledTask>;
   },
 
   update: (id: string, data: UpdateTask): Promise<ScheduledTask> => {
     return tasksControllerUpdate(
       id,
       data as unknown as Record<string, unknown>
-    ) as Promise<ScheduledTask>;
+    ) as unknown as Promise<ScheduledTask>;
   },
 
   delete: (id: string): Promise<void> => {
-    return tasksControllerRemove(id) as Promise<void>;
+    return tasksControllerRemove(id) as unknown as Promise<void>;
   },
 
   pauseQueue: (): Promise<{ ok: true }> => {
@@ -70,6 +70,6 @@ export const taskApi = {
   },
 
   runNow: (id: string): Promise<RunNowResult> => {
-    return tasksControllerRunNow(id) as Promise<RunNowResult>;
+    return tasksControllerRunNow(id) as unknown as Promise<RunNowResult>;
   },
 };

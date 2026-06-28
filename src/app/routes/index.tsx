@@ -19,6 +19,7 @@ import { authRoutes } from '../../features/auth/routes';
 import { meetingRoutes } from '../../features/meetings/routes';
 import { taskRoutes } from '../../features/tasks/routes';
 import { orderRoutes } from '../../features/orders/routes';
+import { integrationsRoutes } from '../../features/integrations/routes';
 
 export const routes: RouteConfig[] = [
   ...authRoutes,
@@ -29,5 +30,6 @@ export const routes: RouteConfig[] = [
   ...orderRoutes,
   ...meetingRoutes,
   ...taskRoutes,
+  ...integrationsRoutes,
   ...settingsRoutes,
 ];

@@ -6,7 +6,6 @@ import {
   meetingControllerDeleteMeetingRecord,
   meetingControllerGetMeetingStats,
   meetingControllerReprocessMeetingRecord,
-  meetingControllerHealthCheck,
 } from '../../../shared/lib/api/orval/business/meet';
 import type {
   Meeting,
@@ -47,11 +46,7 @@ export const meetingApi = {
     return meetingControllerGetMeetingStats() as unknown as Promise<MeetingStats>;
   },
 
-  reprocess: (id: string): Promise<Meeting> => {
-    return meetingControllerReprocessMeetingRecord(id) as unknown as Promise<Meeting>;
-  },
-
-  health: (): Promise<{ status: string }> => {
-    return meetingControllerHealthCheck() as unknown as Promise<{ status: string }>;
+  reprocess: (id: string): Promise<void> => {
+    return meetingControllerReprocessMeetingRecord(id) as unknown as Promise<void>;
   },
 };
