@@ -20,6 +20,7 @@ import { meetingRoutes } from '../../features/meetings/routes';
 import { taskRoutes } from '../../features/tasks/routes';
 import { orderRoutes } from '../../features/orders/routes';
 import { integrationsRoutes } from '../../features/integrations/routes';
+import { webhookLogsRoutes } from '../../features/webhook-logs/routes';
 
 export const routes: RouteConfig[] = [
   ...authRoutes,
@@ -31,5 +32,6 @@ export const routes: RouteConfig[] = [
   ...meetingRoutes,
   ...taskRoutes,
   ...integrationsRoutes,
+  ...webhookLogsRoutes,
   ...settingsRoutes,
 ];
