@@ -294,14 +294,15 @@ export function OrgMemberManagement() {
   });
 
   const orgName = organization?.name || '当前组织';
-  const departmentRows = useMemo(() => flattenDepartments(departmentTree), [departmentTree]);
+  const allDepartments = useMemo(() => flattenDepartments(departmentTree), [departmentTree]);
+  const departmentRows = useMemo(() => departmentTree, [departmentTree]);
   const departmentOptions = useMemo(
     () => flattenDepartmentOptions(departmentTree),
     [departmentTree]
   );
   const departmentIndex = useMemo(
-    () => new Map(departmentRows.map((dept) => [dept.id, dept])),
-    [departmentRows]
+    () => new Map(allDepartments.map((dept) => [dept.id, dept])),
+    [allDepartments]
   );
   const filteredDepartmentTree = useMemo(
     () => filterDepartmentTree(departmentTree, deptKeyword),
@@ -698,7 +699,7 @@ export function OrgMemberManagement() {
     const values = await departmentForm.validateFields();
     const code = values.code?.trim();
     const duplicateDepartment = code
-      ? departmentRows.find(
+      ? allDepartments.find(
           (department) => department.code === code && department.id !== editingDepartment?.id
         )
       : undefined;
@@ -835,12 +836,12 @@ export function OrgMemberManagement() {
     },
   ];
 
-  const departmentColumns: TableProps<DepartmentRow>['columns'] = [
+  const departmentColumns: TableProps<DepartmentTreeDto>['columns'] = [
     {
       title: '部门名称',
       key: 'name',
       render: (_, record) => (
-        <Space size="small" style={{ paddingLeft: record.depth * 18 }}>
+        <Space size="small">
           <ApartmentOutlined />
           <Text strong>{record.name}</Text>
         </Space>
@@ -1445,7 +1446,7 @@ export function OrgMemberManagement() {
               <Title level={4}>{selectedScopeName}</Title>
               <Text type="secondary">
                 {activeTab === 'departments'
-                  ? `部门数 ${departmentRows.length}`
+                  ? `部门数 ${allDepartments.length}`
                   : `总人数 ${memberList?.total || 0}`}
               </Text>
             </Space>
