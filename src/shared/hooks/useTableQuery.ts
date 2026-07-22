@@ -63,19 +63,20 @@ export interface UseTableMutationOptions<TData, TError, TVariables, TContext> ex
 export function useTableMutation<TData, TError, TVariables, TContext = unknown>({
   queryKey,
   invalidateOnSuccess = true,
+  onSuccess,
   ...options
 }: UseTableMutationOptions<TData, TError, TVariables, TContext>) {
   const queryClient = useQueryClient();
 
   return useMutation<TData, TError, TVariables, TContext>({
     mutationKey: [queryKey],
+    ...options,
     onSuccess: (...args) => {
       if (invalidateOnSuccess) {
         queryClient.invalidateQueries({ queryKey: [queryKey], exact: false });
       }
-      options.onSuccess?.(...args);
+      onSuccess?.(...args);
     },
-    ...options,
   });
 }
 
@@ -88,16 +89,17 @@ export interface UseTableDeleteMutationOptions<TError, TContext> extends Omit<
 
 export function useTableDeleteMutation<TError = unknown, TContext = unknown>({
   queryKey,
+  onSuccess,
   ...options
 }: UseTableDeleteMutationOptions<TError, TContext>) {
   const queryClient = useQueryClient();
 
   return useMutation<void, TError, string, TContext>({
     mutationKey: [queryKey, 'delete'],
+    ...options,
     onSuccess: (data, variables, context, meta) => {
       queryClient.invalidateQueries({ queryKey: [queryKey], exact: false });
-      options.onSuccess?.(data, variables, context, meta);
+      onSuccess?.(data, variables, context, meta);
     },
-    ...options,
   });
 }
