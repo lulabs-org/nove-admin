@@ -1309,6 +1309,9 @@ export function OrgMemberManagement() {
             dataSource={departmentRows}
             rowKey="id"
             pagination={false}
+            rowClassName={(record) =>
+              !record.children || !record.children.length ? 'org-dept-row-no-children' : ''
+            }
             locale={{
               emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无部门" />,
             }}

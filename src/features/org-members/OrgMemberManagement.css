@@ -274,6 +274,10 @@
   white-space: nowrap;
 }
 
+.org-dept-row-no-children .ant-table-row-expand-icon {
+  visibility: hidden;
+}
+
 @media (max-width: 980px) {
   .org-structure-shell {
     grid-template-columns: 1fr;
