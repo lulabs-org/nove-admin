@@ -139,7 +139,7 @@ export function ProfilePage() {
   const user = useAuthStore((state) => state.user);
 
   const profileQuery = useQuery({
-    queryKey: ['settings-profile'],
+    queryKey: ['settings-profile', user?.id],
     queryFn: ({ signal }) => userControllerGetProfile(signal),
   });
 
