@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://noveapi.proflu.cn/api/:path*"
+    },
+    {
       "source": "/((?!api|assets|\\.well-known).*)",
       "destination": "/index.html"
     }
