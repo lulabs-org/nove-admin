@@ -68,7 +68,7 @@ const { Search } = Input;
 const { Text, Title } = Typography;
 
 type MemberType = 'INTERNAL' | 'EXTERNAL';
-type MemberStatus = 'INVITED' | 'ACTIVE' | 'SUSPENDED' | 'LEFT';
+type MemberStatus = 'PENDING' | 'INVITED' | 'AGREED' | 'ACTIVE' | 'SUSPENDED' | 'LEFT';
 type OrgMemberTab = 'members' | 'departments' | 'left';
 type DepartmentModalMode = 'create' | 'edit';
 
@@ -126,7 +126,9 @@ const MEMBER_TYPE_OPTIONS: Array<{ label: string; value: MemberType }> = [
 ];
 
 const MEMBER_STATUS_META: Record<MemberStatus, { label: string; color: string }> = {
+  PENDING: { label: '已邀请', color: 'processing' },
   INVITED: { label: '已邀请', color: 'processing' },
+  AGREED: { label: '已同意', color: 'success' },
   ACTIVE: { label: '正常', color: 'success' },
   SUSPENDED: { label: '已停用', color: 'warning' },
   LEFT: { label: '已离职', color: 'default' },

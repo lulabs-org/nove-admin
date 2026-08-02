@@ -55,12 +55,12 @@ export interface AddMember {
   primaryDeptId: string;
   type?: MemberType;
   title?: string;
+  employeeNo?: string;
   roleIds?: string[];
 }
 
 export interface AddMemberResponse {
   member: OrgMemberDetail;
-  isNewUser: boolean;
   emailSent: boolean;
 }
 
