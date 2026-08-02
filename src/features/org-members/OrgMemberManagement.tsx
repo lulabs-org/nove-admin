@@ -361,9 +361,7 @@ export function OrgMemberManagement() {
     mutationFn: (data: AddMember) => orgMemberApi.add(currentOrgId!, data),
     onSuccess: (response) => {
       setAddResult(response);
-      if (response.isNewUser && response.password) {
-        message.success('成员已添加，初始密码已生成');
-      } else if (!response.emailSent) {
+      if (!response.emailSent) {
         message.warning('成员已添加，但邮件发送失败');
       } else {
         message.success('成员已添加');
