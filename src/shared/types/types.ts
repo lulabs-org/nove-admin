@@ -20,4 +20,5 @@ export interface RouteConfig {
   children?: RouteConfig[];
   redirect?: string;
   hidden?: boolean;
+  public?: boolean;
 }

@@ -15,6 +15,7 @@ import {
 } from '../../../shared/lib/api/orval/business/admin-departments';
 import { organizationControllerGetOrganization } from '../../../shared/lib/api/orval/business/admin-organizations';
 import { roleControllerFindAll } from '../../../shared/lib/api/orval/business/admin-roles';
+import { mutator } from '../../../shared/lib/api/mutator';
 import type {
   CreateDepartmentDto,
   CreateOrgMemberDto,
@@ -43,6 +44,26 @@ export type UpdateDepartment = Omit<UpdateDepartmentDto, 'parentId'> & {
   parentId?: string | null;
 };
 
+export type MemberType = 'INTERNAL' | 'EXTERNAL';
+
+export interface AddMember {
+  name: string;
+  phone: string;
+  countryCode?: string;
+  email: string;
+  departmentIds: string[];
+  primaryDeptId: string;
+  type?: MemberType;
+  title?: string;
+  roleIds?: string[];
+}
+
+export interface AddMemberResponse {
+  member: OrgMemberDetail;
+  isNewUser: boolean;
+  emailSent: boolean;
+}
+
 export interface OrgMemberListResponse {
   data: OrgMember[];
   total: number;
@@ -65,6 +86,24 @@ export const orgMemberApi = {
 
   create(orgId: string, data: CreateOrgMember): Promise<OrgMemberDetail> {
     return orgMemberControllerCreateMember(orgId, data);
+  },
+
+  add(orgId: string, data: AddMember): Promise<AddMemberResponse> {
+    return mutator<AddMemberResponse>({
+      url: `/admin/orgs/${orgId}/members/add`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data,
+    });
+  },
+
+  acceptInvitation(memberId: string, token: string): Promise<void> {
+    return mutator<void>({
+      url: `/admin/members/${memberId}/accept`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: { token },
+    });
   },
 
   getById(memberId: string): Promise<OrgMemberDetail> {

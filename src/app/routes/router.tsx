@@ -36,21 +36,20 @@ export function generateRoutes(routeConfigs: RouteConfig[]): RouteObject[] {
 }
 
 export function createAppRouter(routeConfigs: RouteConfig[]) {
-  const publicRoutes = routeConfigs.filter((route) => route.path === '/login');
-  const adminRoutes = routeConfigs.filter((route) => route.path !== '/login');
+  const publicRoutes = routeConfigs.filter((route) => route.public);
+  const adminRoutes = routeConfigs.filter((route) => !route.public);
+
+  const publicRouteObjects: RouteObject[] = publicRoutes.map((config) => ({
+    path: config.path,
+    element: (
+      <PublicRoute>
+        <PublicLayout>{config.element}</PublicLayout>
+      </PublicRoute>
+    ),
+  }));
 
   const routes: RouteObject[] = [
-    {
-      path: '/login',
-      element: (
-        <PublicRoute>
-          <PublicLayout>
-            <Outlet />
-          </PublicLayout>
-        </PublicRoute>
-      ),
-      children: generateRoutes(publicRoutes),
-    },
+    ...publicRouteObjects,
     {
       path: '/',
       element: (

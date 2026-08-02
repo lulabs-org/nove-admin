@@ -52,7 +52,8 @@ import { PERMISSIONS } from '../../shared/utils/permissions';
 import {
   orgMemberApi,
   type CreateDepartment,
-  type CreateOrgMember,
+  type AddMember,
+  type AddMemberResponse,
   type OrgMember,
   type OrgMemberDetail,
   type OrgMemberListParams,
@@ -82,15 +83,20 @@ interface DepartmentRow extends DepartmentTreeDto {
 }
 
 interface MemberFormValues {
-  userId?: string;
+  name?: string;
+  phone?: string;
+  countryCode?: string;
+  email?: string;
   type?: MemberType;
-  orgDisplayName?: string;
   employeeNo?: string;
   primaryDeptId?: string;
   departmentIds?: string[];
   roleIds?: string[];
-  externalCompany?: string;
   title?: string;
+  // 旧字段（编辑详情时仍会用到）
+  userId?: string;
+  orgDisplayName?: string;
+  externalCompany?: string;
   joinedAt?: dayjs.Dayjs;
 }
 
@@ -271,6 +277,7 @@ export function OrgMemberManagement() {
   const [detailEditing, setDetailEditing] = useState(false);
   const [treePaneWidth, setTreePaneWidth] = useState(TREE_PANE_DEFAULT_WIDTH);
   const [treePaneCollapsed, setTreePaneCollapsed] = useState(false);
+  const [addResult, setAddResult] = useState<AddMemberResponse | null>(null);
 
   const { data: organization } = useQuery({
     queryKey: ['org-member-organization', currentOrgId],
@@ -349,11 +356,18 @@ export function OrgMemberManagement() {
     enabled: !!currentOrgId && activeTab !== 'departments',
   });
 
-  const createMemberMutation = useTableMutation({
+  const addMemberMutation = useTableMutation({
     queryKey: memberQueryKey,
-    mutationFn: (data: CreateOrgMember) => orgMemberApi.create(currentOrgId!, data),
-    onSuccess: () => {
-      message.success('成员已添加');
+    mutationFn: (data: AddMember) => orgMemberApi.add(currentOrgId!, data),
+    onSuccess: (response) => {
+      setAddResult(response);
+      if (response.isNewUser && response.password) {
+        message.success('成员已添加，初始密码已生成');
+      } else if (!response.emailSent) {
+        message.warning('成员已添加，但邮件发送失败');
+      } else {
+        message.success('成员已添加');
+      }
       closeMemberModal();
     },
     onError: () => {
@@ -480,7 +494,7 @@ export function OrgMemberManagement() {
   });
 
   const submittingMember =
-    createMemberMutation.isPending ||
+    addMemberMutation.isPending ||
     updateMemberMutation.isPending ||
     updateDepartmentMutation.isPending;
 
@@ -516,16 +530,16 @@ export function OrgMemberManagement() {
   const openCreateMemberModal = () => {
     const defaultDepartmentIds = selectedDeptId ? [selectedDeptId] : [];
     memberForm.setFieldsValue({
-      userId: '',
+      name: '',
+      phone: '',
+      countryCode: '+86',
+      email: '',
       type: 'INTERNAL',
-      orgDisplayName: '',
       employeeNo: '',
       primaryDeptId: selectedDeptId,
       departmentIds: defaultDepartmentIds,
       roleIds: [],
-      externalCompany: '',
       title: '',
-      joinedAt: undefined,
     });
     setMemberModalOpen(true);
   };
@@ -535,21 +549,31 @@ export function OrgMemberManagement() {
     memberForm.resetFields();
   };
 
+  const closeAddResult = () => {
+    setAddResult(null);
+  };
+
   const handleCreateMember = async () => {
     if (!currentOrgId) return;
     const values = await memberForm.validateFields();
     const departmentIds = normalizeDepartmentIds(values.primaryDeptId, values.departmentIds);
 
-    await createMemberMutation.mutateAsync({
-      userId: values.userId!,
-      type: values.type,
-      orgDisplayName: values.orgDisplayName || undefined,
-      employeeNo: values.employeeNo || undefined,
-      primaryDeptId: values.primaryDeptId || undefined,
+    if (!values.primaryDeptId) {
+      message.error('请选择主部门');
+      return;
+    }
+
+    await addMemberMutation.mutateAsync({
+      name: values.name!.trim(),
+      phone: values.phone!.trim(),
+      countryCode: values.countryCode || '+86',
+      email: values.email!.trim(),
       departmentIds,
+      primaryDeptId: values.primaryDeptId!,
+      type: values.type || 'INTERNAL',
+      title: values.title?.trim() || undefined,
+      employeeNo: values.employeeNo?.trim() || undefined,
       roleIds: values.roleIds,
-      externalCompany: values.externalCompany || undefined,
-      title: values.title || undefined,
     });
   };
 
@@ -1260,11 +1284,7 @@ export function OrgMemberManagement() {
           批量变更部门
         </Button>
         <Perm permission={PERMISSIONS.USER.CREATE}>
-          <Button
-            icon={<UserAddOutlined />}
-            onClick={openCreateMemberModal}
-            disabled={!currentOrgId}
-          >
+          <Button icon={<UserAddOutlined />} disabled title="功能开发中，敬请期待">
             邀请成员
           </Button>
         </Perm>
@@ -1352,7 +1372,7 @@ export function OrgMemberManagement() {
         <Alert
           type="warning"
           showIcon
-          message="当前账号未关联组织"
+          title="当前账号未关联组织"
           description="请联系管理员将账号加入组织后再管理组织用户。"
           style={{ marginBottom: 16 }}
         />
@@ -1472,14 +1492,77 @@ export function OrgMemberManagement() {
       >
         <Form form={memberForm} layout="vertical">
           <Form.Item
-            label="用户 ID"
-            name="userId"
-            rules={[{ required: true, message: '请输入已有用户 ID' }]}
+            label="姓名"
+            name="name"
+            rules={[
+              { required: true, whitespace: true, message: '请输入姓名' },
+              { min: 1, max: 50, message: '姓名长度为 1-50 个字符' },
+            ]}
           >
-            <Input placeholder="输入已有用户 ID" prefix={<IdcardOutlined />} />
+            <Input placeholder="请输入姓名" prefix={<UserAddOutlined />} />
           </Form.Item>
-          <Form.Item label="姓名" name="orgDisplayName">
-            <Input placeholder="成员在组织内显示的名称" />
+          <Form.Item
+            label="手机号"
+            required
+            rules={[
+              { required: true, message: '请输入手机号' },
+              { pattern: /^\d{7,15}$/, message: '手机号必须为 7-15 位纯数字' },
+            ]}
+          >
+            <Input.Group style={{ display: 'flex', gap: 8 }} compact>
+              <Form.Item
+                name="countryCode"
+                noStyle
+                rules={[{ pattern: /^\+\d{1,4}$/, message: '国家代码格式不正确' }]}
+              >
+                <Input style={{ width: 90 }} placeholder="+86" />
+              </Form.Item>
+              <Form.Item
+                name="phone"
+                noStyle
+                rules={[
+                  { required: true, message: '请输入手机号' },
+                  { pattern: /^\d{7,15}$/, message: '手机号必须为 7-15 位纯数字' },
+                ]}
+              >
+                <Input style={{ flex: 1 }} placeholder="请输入手机号" />
+              </Form.Item>
+            </Input.Group>
+          </Form.Item>
+          <Form.Item
+            label="工作邮箱"
+            name="email"
+            rules={[
+              { required: true, message: '请输入工作邮箱' },
+              { type: 'email', message: '邮箱格式不正确' },
+            ]}
+          >
+            <Input placeholder="请输入工作邮箱" prefix={<IdcardOutlined />} />
+          </Form.Item>
+          <Form.Item
+            label="部门"
+            name="departmentIds"
+            rules={[{ required: true, message: '请选择部门' }]}
+          >
+            <Select
+              allowClear
+              mode="multiple"
+              showSearch={{ optionFilterProp: 'label' }}
+              options={departmentOptions}
+              placeholder="请选择部门（至少 1 个）"
+            />
+          </Form.Item>
+          <Form.Item
+            label="主部门"
+            name="primaryDeptId"
+            rules={[{ required: true, message: '请选择主部门' }]}
+          >
+            <Select
+              allowClear
+              showSearch={{ optionFilterProp: 'label' }}
+              options={departmentOptions}
+              placeholder="主部门必须在所选部门中"
+            />
           </Form.Item>
           <Form.Item
             label="成员类型"
@@ -1488,28 +1571,11 @@ export function OrgMemberManagement() {
           >
             <Select options={MEMBER_TYPE_OPTIONS} />
           </Form.Item>
-          <Form.Item label="部门" name="departmentIds">
-            <Select
-              allowClear
-              mode="multiple"
-              showSearch={{ optionFilterProp: 'label' }}
-              options={departmentOptions}
-              placeholder="请选择部门"
-            />
-          </Form.Item>
-          <Form.Item label="主部门" name="primaryDeptId">
-            <Select
-              allowClear
-              showSearch={{ optionFilterProp: 'label' }}
-              options={departmentOptions}
-              placeholder="请选择主部门"
-            />
-          </Form.Item>
           <Form.Item label="职位" name="title">
             <Input placeholder="请输入职位" />
           </Form.Item>
           <Form.Item label="工号" name="employeeNo">
-            <Input placeholder="请输入工号" />
+            <Input placeholder="选填，由后续业务系统按需填写" />
           </Form.Item>
           <Form.Item label="角色" name="roleIds">
             <Select
@@ -1524,6 +1590,40 @@ export function OrgMemberManagement() {
             />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title="成员添加成功"
+        open={!!addResult}
+        onOk={closeAddResult}
+        onCancel={closeAddResult}
+        okText="知道了"
+        cancelButtonProps={{ style: { display: 'none' } }}
+        width={520}
+        destroyOnHidden
+      >
+        {addResult && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Alert
+              type="success"
+              showIcon
+              title={`成员「${
+                addResult.member.orgDisplayName ||
+                addResult.member.user?.profile?.displayName ||
+                addResult.member.user?.email ||
+                addResult.member.id
+              }」已添加到组织`}
+            />
+            {!addResult.emailSent && (
+              <Alert
+                type="error"
+                showIcon
+                title="邮件发送失败"
+                description="成员已创建，但邮件未能送达。请通过其他方式通知成员。"
+              />
+            )}
+          </div>
+        )}
       </Modal>
 
       <Modal
