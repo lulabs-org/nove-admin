@@ -1,7 +1,9 @@
+import Alert from 'antd/es/alert';
 import Button from 'antd/es/button';
 import DatePicker from 'antd/es/date-picker';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
+import InputNumber from 'antd/es/input-number';
 import message from 'antd/es/message';
 import Modal from 'antd/es/modal';
 import Popconfirm from 'antd/es/popconfirm';
@@ -29,6 +31,8 @@ import {
   type TableQueryParams,
 } from '../../../shared/hooks/useTableQuery';
 import { taskApi } from '../api/taskApi';
+import { CronScheduleEditor } from '../components/CronScheduleEditor';
+import { describeCronExpression, getCronError } from '../lib/taskScheduling';
 import type { CreateCronTask, CreateOnceTask, ScheduledTask, TaskStatus, TaskType } from '../types';
 
 const { Search, TextArea } = Input;
@@ -39,17 +43,56 @@ type TaskFormMode = 'create' | 'edit';
 interface TaskFormValues {
   type: TaskType;
   name: string;
+  handler: string;
   runAt?: dayjs.Dayjs;
   cron?: string;
   timezone?: string;
   status?: TaskStatus;
   jobIdHint?: string;
-  payloadText: string;
+  httpUrl?: string;
+  httpMethod?: string;
+  httpTimeout?: number;
+  httpHeadersText?: string;
+  httpDataText?: string;
+  customPayloadText?: string;
 }
 
 const TASK_TYPE_OPTIONS: Array<{ label: string; value: TaskType }> = [
   { label: '一次性', value: 'ONCE' },
   { label: 'CRON', value: 'CRON' },
+];
+
+const TASK_HANDLER_OPTIONS = [
+  {
+    label: '同步手机号哈希',
+    value: 'migrate_phone_hashes',
+    description: '重新计算用户手机号哈希，无需额外参数',
+  },
+  {
+    label: '调用 HTTP 接口',
+    value: 'invoke_http',
+    description: '按计划向指定地址发起 HTTP 请求',
+  },
+];
+
+const COMMON_TIMEZONE_OPTIONS = [
+  { label: '中国标准时间（Asia/Shanghai）', value: 'Asia/Shanghai' },
+  { label: '协调世界时（UTC）', value: 'UTC' },
+  { label: '日本标准时间（Asia/Tokyo）', value: 'Asia/Tokyo' },
+  { label: '美国东部时间（America/New_York）', value: 'America/New_York' },
+  { label: '英国时间（Europe/London）', value: 'Europe/London' },
+];
+
+const supportedTimezones =
+  (Intl as unknown as { supportedValuesOf?: (key: 'timeZone') => string[] }).supportedValuesOf?.(
+    'timeZone'
+  ) ?? [];
+
+const TIMEZONE_OPTIONS = [
+  ...COMMON_TIMEZONE_OPTIONS,
+  ...supportedTimezones
+    .filter((timezone) => !COMMON_TIMEZONE_OPTIONS.some((item) => item.value === timezone))
+    .map((timezone) => ({ label: timezone, value: timezone })),
 ];
 
 const TASK_STATUS_OPTIONS: Array<{ label: string; value: TaskStatus }> = [
@@ -79,14 +122,38 @@ function formatPayload(payload: Record<string, unknown>) {
   return JSON.stringify(payload ?? {}, null, 2);
 }
 
-function parsePayload(text: string): Record<string, unknown> {
+function parsePayload(text: string, label = 'Payload'): Record<string, unknown> {
   const parsed: unknown = JSON.parse(text || '{}');
 
   if (parsed === null || Array.isArray(parsed) || typeof parsed !== 'object') {
-    throw new Error('payload 必须是 JSON 对象');
+    throw new Error(`${label} 必须是 JSON 对象`);
   }
 
   return parsed as Record<string, unknown>;
+}
+
+function buildHandlerPayload(values: TaskFormValues): Record<string, unknown> {
+  if (values.handler === 'migrate_phone_hashes') return {};
+
+  if (values.handler === 'invoke_http') {
+    return {
+      url: values.httpUrl,
+      method: values.httpMethod || 'POST',
+      timeout: values.httpTimeout || 10000,
+      headers: parsePayload(values.httpHeadersText || '{}', '请求头'),
+      data: parsePayload(values.httpDataText || '{}', '请求体'),
+    };
+  }
+
+  return parsePayload(values.customPayloadText || '{}');
+}
+
+function getApiErrorMessage(error: unknown, fallback: string): string {
+  const responseMessage = (error as { response?: { data?: { message?: string | string[] } } })
+    ?.response?.data?.message;
+
+  if (Array.isArray(responseMessage)) return responseMessage.join('；');
+  return responseMessage || fallback;
 }
 
 function getOrderDir(order: 'ascend' | 'descend' | null | undefined) {
@@ -114,6 +181,8 @@ export function TaskManagement() {
   const [editingTask, setEditingTask] = useState<ScheduledTask | null>(null);
   const [form] = Form.useForm<TaskFormValues>();
   const watchedType = Form.useWatch('type', form);
+  const watchedHandler = Form.useWatch('handler', form);
+  const watchedTimezone = Form.useWatch('timezone', form) || 'Asia/Shanghai';
 
   const {
     data: taskList,
@@ -133,8 +202,8 @@ export function TaskManagement() {
       message.success('创建一次性任务成功');
       closeModal();
     },
-    onError: () => {
-      message.error('创建一次性任务失败');
+    onError: (error) => {
+      message.error(getApiErrorMessage(error, '创建一次性任务失败'));
     },
   });
 
@@ -145,8 +214,8 @@ export function TaskManagement() {
       message.success('创建 CRON 任务成功');
       closeModal();
     },
-    onError: () => {
-      message.error('创建 CRON 任务失败');
+    onError: (error) => {
+      message.error(getApiErrorMessage(error, '创建 CRON 任务失败'));
     },
   });
 
@@ -158,8 +227,8 @@ export function TaskManagement() {
       message.success('更新任务成功');
       closeModal();
     },
-    onError: () => {
-      message.error('更新任务失败');
+    onError: (error) => {
+      message.error(getApiErrorMessage(error, '更新任务失败'));
     },
   });
 
@@ -217,12 +286,18 @@ export function TaskManagement() {
       form.setFieldsValue({
         type: 'ONCE',
         name: '',
+        handler: 'migrate_phone_hashes',
         runAt: dayjs().add(1, 'hour'),
-        cron: '0 9 * * *',
+        cron: '0 0 9 * * *',
         timezone: 'Asia/Shanghai',
         status: undefined,
         jobIdHint: '',
-        payloadText: '{}',
+        httpUrl: '',
+        httpMethod: 'POST',
+        httpTimeout: 10000,
+        httpHeadersText: '{}',
+        httpDataText: '{}',
+        customPayloadText: '{}',
       });
       return;
     }
@@ -232,12 +307,28 @@ export function TaskManagement() {
     form.setFieldsValue({
       type: editingTask.type,
       name: editingTask.name,
+      handler: editingTask.handler,
       runAt: editingTask.runAt ? dayjs(editingTask.runAt) : undefined,
       cron: editingTask.cron ?? undefined,
       timezone: editingTask.timezone ?? 'Asia/Shanghai',
       status: editingTask.status,
       jobIdHint: editingTask.jobId ?? '',
-      payloadText: formatPayload(editingTask.payload),
+      httpUrl: typeof editingTask.payload.url === 'string' ? editingTask.payload.url : '',
+      httpMethod:
+        typeof editingTask.payload.method === 'string' ? editingTask.payload.method : 'POST',
+      httpTimeout:
+        typeof editingTask.payload.timeout === 'number' ? editingTask.payload.timeout : 10000,
+      httpHeadersText: formatPayload(
+        typeof editingTask.payload.headers === 'object' && editingTask.payload.headers
+          ? (editingTask.payload.headers as Record<string, unknown>)
+          : {}
+      ),
+      httpDataText: formatPayload(
+        typeof editingTask.payload.data === 'object' && editingTask.payload.data
+          ? (editingTask.payload.data as Record<string, unknown>)
+          : {}
+      ),
+      customPayloadText: formatPayload(editingTask.payload),
     });
   }, [editingTask, form, formMode, modalOpen]);
 
@@ -300,10 +391,15 @@ export function TaskManagement() {
     let payload: Record<string, unknown>;
 
     try {
-      payload = parsePayload(values.payloadText);
+      payload = buildHandlerPayload(values);
     } catch (error) {
-      const description = error instanceof Error ? error.message : 'payload JSON 解析失败';
-      form.setFields([{ name: 'payloadText', errors: [description] }]);
+      const description = error instanceof Error ? error.message : 'JSON 解析失败';
+      const fieldName = description.startsWith('请求头')
+        ? 'httpHeadersText'
+        : description.startsWith('请求体')
+          ? 'httpDataText'
+          : 'customPayloadText';
+      form.setFields([{ name: fieldName, errors: [description] }]);
       return;
     }
 
@@ -312,6 +408,7 @@ export function TaskManagement() {
         id: editingTask.id,
         data: {
           name: values.name,
+          handler: values.handler,
           cron: values.type === 'CRON' ? values.cron : undefined,
           timezone: values.type === 'CRON' ? values.timezone : undefined,
           status: values.status,
@@ -324,6 +421,7 @@ export function TaskManagement() {
     if (values.type === 'CRON') {
       const data: CreateCronTask = {
         name: values.name,
+        handler: values.handler,
         cron: values.cron ?? '',
         timezone: values.timezone || 'Asia/Shanghai',
         payload,
@@ -334,6 +432,7 @@ export function TaskManagement() {
 
     const data: CreateOnceTask = {
       name: values.name,
+      handler: values.handler,
       runAt: values.runAt?.toISOString() ?? '',
       payload,
       jobIdHint: values.jobIdHint || undefined,
@@ -374,7 +473,9 @@ export function TaskManagement() {
         if (record.type === 'CRON') {
           return (
             <Space orientation="vertical" size={0}>
-              <span>{record.cron || '-'}</span>
+              <Tooltip title={`Cron：${record.cron || '-'}`}>
+                <span>{describeCronExpression(record.cron)}</span>
+              </Tooltip>
               <span style={{ color: '#8c8c8c', fontSize: 12 }}>
                 {record.timezone || 'Asia/Shanghai'}
               </span>
@@ -567,18 +668,52 @@ export function TaskManagement() {
             <Input placeholder="任务名称" />
           </Form.Item>
 
+          <Form.Item
+            name="handler"
+            label="任务处理器"
+            rules={[{ required: true, message: '请选择任务处理器' }]}
+            extra={
+              formMode === 'edit'
+                ? '为避免已调度任务与数据库状态不一致，任务创建后不可更换处理器'
+                : TASK_HANDLER_OPTIONS.find((item) => item.value === watchedHandler)?.description
+            }
+          >
+            <Select
+              disabled={formMode === 'edit'}
+              options={TASK_HANDLER_OPTIONS.map(({ label, value }) => ({ label, value }))}
+              placeholder="请选择任务处理器"
+            />
+          </Form.Item>
+
           {watchedType === 'CRON' ? (
             <>
               <Form.Item
                 name="cron"
-                label="CRON 表达式"
-                rules={[{ required: true, message: '请输入 CRON 表达式' }]}
+                label="执行计划"
+                dependencies={['timezone']}
+                rules={[
+                  {
+                    validator: (_, value: string) => {
+                      const error = getCronError(value, watchedTimezone);
+                      return error ? Promise.reject(new Error(error)) : Promise.resolve();
+                    },
+                  },
+                ]}
               >
-                <Input placeholder="0 9 * * *" />
+                <CronScheduleEditor timezone={watchedTimezone} />
               </Form.Item>
 
-              <Form.Item name="timezone" label="时区">
-                <Input placeholder="Asia/Shanghai" />
+              <Form.Item
+                name="timezone"
+                label="时区"
+                rules={[{ required: true, message: '请选择时区' }]}
+              >
+                <Select
+                  showSearch
+                  options={TIMEZONE_OPTIONS}
+                  placeholder="请选择时区"
+                  optionFilterProp="label"
+                />
               </Form.Item>
             </>
           ) : (
@@ -604,6 +739,61 @@ export function TaskManagement() {
             </>
           )}
 
+          {watchedHandler === 'migrate_phone_hashes' ? (
+            <Alert
+              type="info"
+              showIcon
+              title="同步手机号哈希"
+              description="该处理器无需额外参数，将为所有存在手机号的用户重新计算并写入哈希。"
+              style={{ marginBottom: 24 }}
+            />
+          ) : null}
+
+          {watchedHandler === 'invoke_http' ? (
+            <>
+              <Form.Item
+                name="httpUrl"
+                label="请求地址"
+                rules={[{ required: true, message: '请输入请求地址' }]}
+                extra="支持完整 URL，也支持以 / 开头的本服务接口路径"
+              >
+                <Input placeholder="例如：https://example.com/webhook" />
+              </Form.Item>
+
+              <Space size="middle" style={{ width: '100%' }} align="start">
+                <Form.Item name="httpMethod" label="请求方法" style={{ width: 180 }}>
+                  <Select
+                    options={['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map((method) => ({
+                      label: method,
+                      value: method,
+                    }))}
+                  />
+                </Form.Item>
+                <Form.Item name="httpTimeout" label="超时时间（毫秒）" style={{ flex: 1 }}>
+                  <InputNumber min={1000} max={120000} step={1000} style={{ width: '100%' }} />
+                </Form.Item>
+              </Space>
+
+              <Form.Item name="httpHeadersText" label="请求头（JSON）">
+                <TextArea rows={3} spellCheck={false} style={{ fontFamily: 'monospace' }} />
+              </Form.Item>
+
+              <Form.Item name="httpDataText" label="请求体（JSON）">
+                <TextArea rows={4} spellCheck={false} style={{ fontFamily: 'monospace' }} />
+              </Form.Item>
+            </>
+          ) : null}
+
+          {watchedHandler && !TASK_HANDLER_OPTIONS.some((item) => item.value === watchedHandler) ? (
+            <Form.Item
+              name="customPayloadText"
+              label="Payload（JSON）"
+              rules={[{ required: true, message: '请输入 Payload' }]}
+            >
+              <TextArea rows={8} spellCheck={false} style={{ fontFamily: 'monospace' }} />
+            </Form.Item>
+          ) : null}
+
           {formMode === 'edit' ? (
             <Form.Item name="status" label="任务状态">
               <Select>
@@ -615,14 +805,6 @@ export function TaskManagement() {
               </Select>
             </Form.Item>
           ) : null}
-
-          <Form.Item
-            name="payloadText"
-            label="Payload"
-            rules={[{ required: true, message: '请输入 Payload' }]}
-          >
-            <TextArea rows={8} spellCheck={false} style={{ fontFamily: 'monospace' }} />
-          </Form.Item>
         </Form>
       </Modal>
     </div>

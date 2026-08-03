@@ -7,6 +7,7 @@ export type TaskStatus = 'PENDING' | 'SCHEDULED' | 'RUNNING' | 'COMPLETED' | 'FA
 export interface ScheduledTask {
   id: string;
   name: string;
+  handler: string;
   type: TaskType;
   queueName: string;
   jobId: string | null;
@@ -35,6 +36,7 @@ export type TaskListData = TableQueryResult<ScheduledTask>;
 
 export interface CreateOnceTask {
   name: string;
+  handler: string;
   runAt: string;
   payload: Record<string, unknown>;
   jobIdHint?: string;
@@ -42,6 +44,7 @@ export interface CreateOnceTask {
 
 export interface CreateCronTask {
   name: string;
+  handler: string;
   cron: string;
   timezone?: string;
   payload: Record<string, unknown>;
@@ -49,6 +52,7 @@ export interface CreateCronTask {
 
 export interface UpdateTask {
   name?: string;
+  handler?: string;
   cron?: string;
   timezone?: string;
   payload?: Record<string, unknown>;
