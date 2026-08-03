@@ -145,6 +145,10 @@
   border-top: 1px solid #eff0f1;
 }
 
+.profile-reset-password-action {
+  margin-top: 16px;
+}
+
 .profile-role-list {
   display: flex;
   flex-direction: column;

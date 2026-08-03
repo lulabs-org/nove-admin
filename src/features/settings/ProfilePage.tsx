@@ -14,6 +14,7 @@ import axios from 'axios';
 import {
   ClockCircleOutlined,
   IdcardOutlined,
+  LockOutlined,
   MailOutlined,
   PhoneOutlined,
   ReloadOutlined,
@@ -24,7 +25,7 @@ import {
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { getMe } from '../auth/api/api';
 import { authService } from '../auth/api/service';
 import { useAuthStore } from '../auth/model/authStore';
@@ -37,6 +38,7 @@ import type {
   UpdateProfileDto,
   UserProfileResponseDto,
 } from '../../shared/lib/api/orval/business/schemas';
+import { ResetPasswordModal } from './components/ResetPasswordModal';
 import './ProfilePage.css';
 
 const { Text, Title } = Typography;
@@ -137,6 +139,7 @@ export function ProfilePage() {
   const queryClient = useQueryClient();
   const [form] = Form.useForm<ProfileFormValues>();
   const user = useAuthStore((state) => state.user);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
 
   const profileQuery = useQuery({
     queryKey: ['settings-profile', user?.id],
@@ -369,6 +372,12 @@ export function ProfilePage() {
             />
           </div>
 
+          <div className="profile-reset-password-action">
+            <Button icon={<LockOutlined />} onClick={() => setResetPasswordOpen(true)} block>
+              重置密码
+            </Button>
+          </div>
+
           <div className="profile-section-heading profile-section-heading-spaced">
             <TeamOutlined />
             <span>组织身份</span>
@@ -400,6 +409,8 @@ export function ProfilePage() {
           </div>
         </aside>
       </div>
+
+      <ResetPasswordModal open={resetPasswordOpen} onClose={() => setResetPasswordOpen(false)} />
     </div>
   );
 }
