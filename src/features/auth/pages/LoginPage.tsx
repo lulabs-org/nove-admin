@@ -11,7 +11,7 @@ import message from 'antd/es/message';
 import Tabs from 'antd/es/tabs';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../shared/hooks/useAuth';
+import { useAuth, useCountdown } from '../../../shared/hooks';
 import { verificationControllerSend } from '../../../shared/lib/api/orval/business/auth';
 import './LoginPage.css';
 
@@ -29,10 +29,10 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [form] = Form.useForm<LoginValues>();
   const { login } = useAuth();
+  const { countdown, start: startCountdown } = useCountdown();
   const [loading, setLoading] = useState(false);
   const [loginType, setLoginType] = useState<LoginType>('password');
   const [sendingCode, setSendingCode] = useState(false);
-  const [countdown, setCountdown] = useState(0);
 
   const onFinish = async (values: LoginValues) => {
     setLoading(true);
@@ -71,16 +71,7 @@ export function LoginPage() {
     try {
       await verificationControllerSend({ target: email, type: 'login' });
       message.success('验证码已发送');
-      setCountdown(60);
-      const timer = window.setInterval(() => {
-        setCountdown((previous) => {
-          if (previous <= 1) {
-            window.clearInterval(timer);
-            return 0;
-          }
-          return previous - 1;
-        });
-      }, 1000);
+      startCountdown(60);
     } catch {
       message.error('验证码发送失败');
     } finally {
