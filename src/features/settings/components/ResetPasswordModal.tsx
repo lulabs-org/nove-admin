@@ -5,9 +5,7 @@ import Input from 'antd/es/input';
 import message from 'antd/es/message';
 import Modal from 'antd/es/modal';
 import Result from 'antd/es/result';
-import Steps from 'antd/es/steps';
 import Typography from 'antd/es/typography';
-import { CheckCircleOutlined, MailOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -33,9 +31,9 @@ function maskEmail(email: string): string {
   if (atIndex <= 0) return email;
   const local = email.slice(0, atIndex);
   const domain = email.slice(atIndex);
-  if (local.length <= 1) return email;
-  const maskedLength = Math.min(local.length - 1, 3);
-  return `${local[0]}${'*'.repeat(maskedLength)}${domain}`;
+  // 保留前2位 + 后2位，中间用 * 脱敏
+  if (local.length <= 4) return `${local[0]}***${local.at(-1)}${domain}`;
+  return `${local.slice(0, 2)}${'*'.repeat(local.length - 4)}${local.slice(-2)}${domain}`;
 }
 
 function getPasswordError(value: string): string | null {
@@ -88,27 +86,16 @@ export function ResetPasswordModal({ open, onClose }: ResetPasswordModalProps) {
     }
   };
 
-  const handleNextFromVerify = async () => {
-    try {
-      await form.validateFields(['code']);
-      setCurrent(1);
-    } catch {
-      // 校验失败由 Form 提示
-    }
-  };
-
   const handleSubmitReset = async () => {
     try {
-      const values = await form.validateFields(['newPassword', 'confirmPassword']);
+      const values = await form.validateFields();
       setSubmitting(true);
-      const code = form.getFieldValue('code');
-      await resetPassword(email, code, values.newPassword);
-      setCurrent(2);
+      await resetPassword(email, values.code, values.newPassword);
+      setCurrent(1);
     } catch (error) {
-      // 验证码错误或过期，回退到步骤 1
+      // 验证码错误或过期，清空验证码，留在当前页面，新密码保留
       if (axios.isAxiosError(error) && error.response?.status === 400) {
         message.error('验证码错误或已过期，请重新获取');
-        setCurrent(0);
         form.setFieldValue('code', '');
         return;
       }
@@ -125,7 +112,7 @@ export function ResetPasswordModal({ open, onClose }: ResetPasswordModalProps) {
   };
 
   const handleClose = () => {
-    const isSuccess = current === 2;
+    const isSuccess = current === 1;
     onClose();
     if (isSuccess) {
       // 清除本地凭证并跳转登录页，引导用户重新登录
@@ -134,20 +121,8 @@ export function ResetPasswordModal({ open, onClose }: ResetPasswordModalProps) {
     }
   };
 
-  const stepsItems = [{ title: '验证身份' }, { title: '设置新密码' }, { title: '完成' }];
-
   const footerButtons = () => {
     if (current === 0) {
-      return (
-        <>
-          <Button onClick={handleClose}>取消</Button>
-          <Button type="primary" onClick={handleNextFromVerify}>
-            下一步
-          </Button>
-        </>
-      );
-    }
-    if (current === 1) {
       return (
         <>
           <Button onClick={handleClose}>取消</Button>
@@ -173,13 +148,11 @@ export function ResetPasswordModal({ open, onClose }: ResetPasswordModalProps) {
       destroyOnClose
       footer={footerButtons()}
     >
-      <Steps current={current} size="small" style={{ marginBottom: 24 }} items={stepsItems} />
-
       {current === 0 ? (
         <Form form={form} layout="vertical" requiredMark={false}>
-          <Form.Item label="验证邮箱">
-            <Input prefix={<MailOutlined />} value={maskEmail(email)} readOnly />
-          </Form.Item>
+          <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+            验证码将发送至 <Text strong>{maskEmail(email)}</Text>
+          </Text>
           <Form.Item
             name="code"
             label="邮箱验证码"
@@ -206,11 +179,6 @@ export function ResetPasswordModal({ open, onClose }: ResetPasswordModalProps) {
               }
             />
           </Form.Item>
-        </Form>
-      ) : null}
-
-      {current === 1 ? (
-        <Form form={form} layout="vertical" requiredMark={false}>
           <Form.Item
             name="newPassword"
             label="新密码"
@@ -250,12 +218,17 @@ export function ResetPasswordModal({ open, onClose }: ResetPasswordModalProps) {
               autoComplete="new-password"
             />
           </Form.Item>
+          <Alert
+            type="info"
+            showIcon
+            message="验证码 5 分钟内有效，请注意查收。"
+            style={{ marginTop: 8 }}
+          />
         </Form>
       ) : null}
 
-      {current === 2 ? (
+      {current === 1 ? (
         <Result
-          icon={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
           status="success"
           title="密码重置成功"
           subTitle={
@@ -265,15 +238,6 @@ export function ResetPasswordModal({ open, onClose }: ResetPasswordModalProps) {
               <Text type="secondary">建议重新登录以刷新会话凭证。</Text>
             </div>
           }
-        />
-      ) : null}
-
-      {current === 0 ? (
-        <Alert
-          type="info"
-          showIcon
-          message="验证码将发送至你的注册邮箱，5 分钟内有效。"
-          style={{ marginTop: 8 }}
         />
       ) : null}
     </Modal>
