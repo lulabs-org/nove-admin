@@ -18,7 +18,7 @@ import Tabs from 'antd/es/tabs';
 import { LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { useAuth } from '../../../shared/hooks/useAuth';
+import { useAuth, useCountdown } from '../../../shared/hooks';
 import { verificationControllerSend } from '../../../shared/lib/api/orval/business/auth';
 
 const { Title, Text } = Typography;
@@ -27,10 +27,10 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const { login } = useAuth();
+  const { countdown, start: startCountdown } = useCountdown();
   const [loading, setLoading] = useState(false);
   const [loginType, setLoginType] = useState<'password' | 'code'>('password');
   const [sendingCode, setSendingCode] = useState(false);
-  const [countdown, setCountdown] = useState(0);
 
   const onFinish = async (values: { email: string; password?: string; code?: string }) => {
     setLoading(true);
@@ -72,16 +72,7 @@ export function LoginPage() {
         type: 'login',
       });
       message.success('验证码已发送');
-      setCountdown(60);
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      startCountdown(60);
     } catch {
       message.error('验证码发送失败');
     } finally {
