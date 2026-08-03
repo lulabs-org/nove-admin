@@ -14,6 +14,7 @@ import axios from 'axios';
 import {
   ClockCircleOutlined,
   IdcardOutlined,
+  KeyOutlined,
   MailOutlined,
   PhoneOutlined,
   ReloadOutlined,
@@ -24,7 +25,7 @@ import {
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { getMe } from '../auth/api/api';
 import { authService } from '../auth/api/service';
 import { useAuthStore } from '../auth/model/authStore';
@@ -37,6 +38,7 @@ import type {
   UpdateProfileDto,
   UserProfileResponseDto,
 } from '../../shared/lib/api/orval/business/schemas';
+import { ChangePasswordModal } from './components/ChangePasswordModal';
 import './ProfilePage.css';
 
 const { Text, Title } = Typography;
@@ -136,6 +138,7 @@ function DetailItem({ icon, label, value }: DetailItemProps) {
 export function ProfilePage() {
   const queryClient = useQueryClient();
   const [form] = Form.useForm<ProfileFormValues>();
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const user = useAuthStore((state) => state.user);
 
   const profileQuery = useQuery({
@@ -369,6 +372,12 @@ export function ProfilePage() {
             />
           </div>
 
+          <div className="profile-side-actions">
+            <Button icon={<KeyOutlined />} onClick={() => setPasswordModalOpen(true)}>
+              修改密码
+            </Button>
+          </div>
+
           <div className="profile-section-heading profile-section-heading-spaced">
             <TeamOutlined />
             <span>组织身份</span>
@@ -400,6 +409,8 @@ export function ProfilePage() {
           </div>
         </aside>
       </div>
+
+      <ChangePasswordModal open={passwordModalOpen} onClose={() => setPasswordModalOpen(false)} />
     </div>
   );
 }
