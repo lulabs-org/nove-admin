@@ -16,7 +16,7 @@ import {
   type TableQueryParams,
 } from '../../../shared/hooks/useTableQuery';
 import { meetingApi } from '../api/meetingApi';
-import type { Meeting, MeetingListParams } from '../model/types';
+import type { MeetingListItem, MeetingListParams } from '../model/types';
 import {
   MeetingControllerGetMeetingRecordsPlatform,
   MeetingControllerGetMeetingRecordsStatus,
@@ -45,7 +45,7 @@ export function MeetingList() {
     data: meetingList,
     isLoading,
     refetch,
-  } = useTableQuery<Meeting>({
+  } = useTableQuery<MeetingListItem>({
     queryKey: 'meetings',
     queryFn: (params) => {
       const { pageSize, ...restParams } = params;
@@ -83,19 +83,19 @@ export function MeetingList() {
     message.info('点击了新增会议按钮');
   };
 
-  const handleView = (record: Meeting) => {
+  const handleView = (record: MeetingListItem) => {
     navigate(`/meetings/${record.id}`);
   };
 
-  const handleEdit = (record: Meeting) => {
+  const handleEdit = (record: MeetingListItem) => {
     message.info(`编辑会议: ${record.title}`);
   };
 
-  const handleDelete = (record: Meeting) => {
+  const handleDelete = (record: MeetingListItem) => {
     deleteMutation.mutate(record.id);
   };
 
-  const handleReprocess = (record: Meeting) => {
+  const handleReprocess = (record: MeetingListItem) => {
     reprocessMutation.mutate(record.id);
   };
 
@@ -125,7 +125,11 @@ export function MeetingList() {
     }
   };
 
-  const handleTableChange: TableProps<Meeting>['onChange'] = (pagination, _filters, sorter) => {
+  const handleTableChange: TableProps<MeetingListItem>['onChange'] = (
+    pagination,
+    _filters,
+    sorter
+  ) => {
     setFilters((prev: TableQueryParams) => ({
       ...prev,
       page: pagination.current,
@@ -208,7 +212,7 @@ export function MeetingList() {
     {
       title: '操作',
       key: 'action',
-      render: (_: unknown, record: Meeting) => (
+      render: (_: unknown, record: MeetingListItem) => (
         <Space size="small">
           <Button type="link" size="small" onClick={() => handleView(record)}>
             查看

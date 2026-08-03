@@ -57,8 +57,10 @@ export interface MeetingListParams {
   endDate?: string;
 }
 
+export type MeetingListItem = Omit<Meeting, 'metadata'>;
+
 export interface MeetingListResponse {
-  data: Meeting[];
+  data: MeetingListItem[];
   total: number;
   page: number;
   limit: number;
