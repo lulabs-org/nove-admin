@@ -4,7 +4,7 @@ import Card from 'antd/es/card';
 import Button from 'antd/es/button';
 import Spin from 'antd/es/spin';
 import Result from 'antd/es/result';
-import { orgMemberApi } from '../../org-members/api/orgMemberApi';
+import { orgMemberApi } from './api/orgMemberApi';
 
 type PageState = 'loading' | 'success' | 'error';
 

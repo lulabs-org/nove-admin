@@ -11,10 +11,18 @@
 import type { RouteConfig } from '../../shared/types/index';
 import { OrgMemberManagement } from './OrgMemberManagement';
 import { RoleManagement } from './RoleManagement';
+import { InviteAcceptPage } from './InviteAcceptPage';
 import { IdcardOutlined, TeamOutlined, UsergroupAddOutlined } from '@ant-design/icons';
 import { Outlet } from 'react-router-dom';
 
 export const orgMemberRoutes: RouteConfig[] = [
+  {
+    path: '/invite/accept',
+    element: <InviteAcceptPage />,
+    title: '接受邀请',
+    hidden: true,
+    public: true,
+  },
   {
     path: '/users',
     element: <Outlet />,

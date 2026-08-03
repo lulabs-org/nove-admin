@@ -10,20 +10,12 @@
  */
 import type { RouteConfig } from '../../shared/types/index';
 import { LoginPage } from './pages/LoginPage';
-import { InviteAcceptPage } from './pages/InviteAcceptPage';
 
 export const authRoutes: RouteConfig[] = [
   {
     path: '/login',
     element: <LoginPage />,
     title: '登录',
-    hidden: true,
-    public: true,
-  },
-  {
-    path: '/invite/accept',
-    element: <InviteAcceptPage />,
-    title: '接受邀请',
     hidden: true,
     public: true,
   },
