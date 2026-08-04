@@ -11,8 +11,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   useTableQuery,
-  useTableMutation,
   useTableDeleteMutation,
+  // useTableMutation, // 后端 reprocess 接口暂时禁用，见 PR #321
   type TableQueryParams,
 } from '../../../shared/hooks/useTableQuery';
 import { meetingApi } from '../api/meetingApi';
@@ -68,16 +68,17 @@ export function MeetingList() {
     },
   });
 
-  const reprocessMutation = useTableMutation({
-    queryKey: 'meetings',
-    mutationFn: (id: string) => meetingApi.reprocess(id),
-    onSuccess: () => {
-      message.success('重新处理会议成功');
-    },
-    onError: () => {
-      message.error('重新处理会议失败');
-    },
-  });
+  // 后端 reprocess 接口暂时禁用，见 PR #321
+  // const reprocessMutation = useTableMutation({
+  //   queryKey: 'meetings',
+  //   mutationFn: (id: string) => meetingApi.reprocess(id),
+  //   onSuccess: () => {
+  //     message.success('重新处理会议成功');
+  //   },
+  //   onError: () => {
+  //     message.error('重新处理会议失败');
+  //   },
+  // });
 
   const handleCreate = () => {
     message.info('点击了新增会议按钮');
@@ -95,9 +96,10 @@ export function MeetingList() {
     deleteMutation.mutate(record.id);
   };
 
-  const handleReprocess = (record: MeetingListItem) => {
-    reprocessMutation.mutate(record.id);
-  };
+  // 后端 reprocess 接口暂时禁用，见 PR #321
+  // const handleReprocess = (record: MeetingListItem) => {
+  //   reprocessMutation.mutate(record.id);
+  // };
 
   const handleSearch = (field: string, value: string) => {
     setFilters((prev: TableQueryParams) => ({
@@ -220,6 +222,7 @@ export function MeetingList() {
           <Button type="link" size="small" onClick={() => handleEdit(record)}>
             编辑
           </Button>
+          {/* 后端 reprocess 接口暂时禁用，见 PR #321
           {record.processingStatus === 'COMPLETED' && (
             <Button
               type="link"
@@ -230,6 +233,7 @@ export function MeetingList() {
               重新处理
             </Button>
           )}
+          */}
           <Popconfirm
             title="确定要删除吗？"
             onConfirm={() => handleDelete(record)}
