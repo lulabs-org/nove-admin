@@ -14,6 +14,22 @@ import type {
   MeetingControllerGetMeetingRecordsType,
 } from '../../../shared/lib/api/orval/business/schemas';
 
+export interface MeetingRecording {
+  id: string;
+  externalId?: string | null;
+  source?: string;
+  status?: string;
+  startAt?: string | null;
+  endAt?: string | null;
+}
+
+export interface TranscriptSegment {
+  speakerName?: string;
+  startTime?: string;
+  endTime?: string;
+  text?: string;
+}
+
 export interface Meeting {
   id: string;
   platform: MeetingControllerGetMeetingRecordsPlatform;
@@ -37,6 +53,7 @@ export interface Meeting {
   hasRecording: boolean;
   recordingStatus: MeetingControllerGetMeetingRecordsStatus;
   processingStatus: MeetingControllerGetMeetingRecordsStatus;
+  recordings?: MeetingRecording[];
   metadata?: unknown;
   recordingUrl?: string;
   transcriptUrl?: string;

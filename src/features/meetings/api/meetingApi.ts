@@ -5,6 +5,7 @@ import {
   meetingControllerUpdateMeetingRecord,
   meetingControllerDeleteMeetingRecord,
   meetingControllerGetMeetingStats,
+  meetingControllerGetTranscriptByRecordingId,
   // meetingControllerReprocessMeetingRecord, // 后端接口暂时禁用，见 PR #321
 } from '../../../shared/lib/api/orval/business/meet';
 import type {
@@ -14,6 +15,7 @@ import type {
   CreateMeetingDto,
   UpdateMeetingDto,
   MeetingStats,
+  TranscriptSegment,
 } from '../model/types';
 
 export const meetingApi = {
@@ -44,6 +46,13 @@ export const meetingApi = {
 
   getStats: (): Promise<MeetingStats> => {
     return meetingControllerGetMeetingStats() as unknown as Promise<MeetingStats>;
+  },
+
+  getTranscript: async (recordingId: string): Promise<TranscriptSegment[]> => {
+    const response = (await meetingControllerGetTranscriptByRecordingId(recordingId, {
+      format: 'json',
+    })) as { data?: TranscriptSegment[] };
+    return response.data || [];
   },
 
   // 后端接口暂时禁用，见 PR #321

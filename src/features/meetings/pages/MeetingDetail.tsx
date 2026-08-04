@@ -2,11 +2,12 @@ import Button from 'antd/es/button';
 import Space from 'antd/es/space';
 import Descriptions from 'antd/es/descriptions';
 import Card from 'antd/es/card';
+import Drawer from 'antd/es/drawer';
 import message from 'antd/es/message';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { meetingApi } from '../api/meetingApi';
-import type { Meeting } from '../model/types';
+import type { Meeting, TranscriptSegment } from '../model/types';
 import {
   formatDateTime,
   formatDuration,
@@ -14,12 +15,19 @@ import {
   getMeetingTypeText,
   getProcessingStatusText,
 } from '../utils/formatters';
+import './MeetingDetail.css';
 
 export function MeetingDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [loading, setLoading] = useState(false);
+  const [transcripts, setTranscripts] = useState<Record<string, TranscriptSegment[]>>({});
+  const [transcriptLoading, setTranscriptLoading] = useState(false);
+  const [transcriptError, setTranscriptError] = useState<string | null>(null);
+  const [transcriptDrawerRecordingId, setTranscriptDrawerRecordingId] = useState<string | null>(
+    null
+  );
 
   const fetchMeetingDetail = useCallback(async () => {
     if (!id) return;
@@ -27,6 +35,30 @@ export function MeetingDetail() {
     try {
       const data = await meetingApi.getById(id);
       setMeeting(data);
+      setLoading(false);
+      setTranscriptDrawerRecordingId(null);
+      const recordings = data.recordings || [];
+      setTranscripts({});
+      setTranscriptError(null);
+
+      if (recordings.length) {
+        setTranscriptLoading(true);
+        try {
+          const results: Array<[string, TranscriptSegment[]]> = await Promise.all(
+            recordings.map(
+              async (recording): Promise<[string, TranscriptSegment[]]> => [
+                recording.id,
+                await meetingApi.getTranscript(recording.id),
+              ]
+            )
+          );
+          setTranscripts(Object.fromEntries(results));
+        } catch {
+          setTranscriptError('获取转写记录失败');
+        } finally {
+          setTranscriptLoading(false);
+        }
+      }
     } catch {
       message.error('获取会议详情失败');
     } finally {
@@ -78,6 +110,12 @@ export function MeetingDetail() {
   const { text: statusText, color: statusColor } = getProcessingStatusText(
     meeting.processingStatus
   );
+  const transcriptDrawerRecording = meeting.recordings?.find(
+    (recording) => recording.id === transcriptDrawerRecordingId
+  );
+  const transcriptDrawerSegments = transcriptDrawerRecording
+    ? transcripts[transcriptDrawerRecording.id] || []
+    : [];
 
   return (
     <div style={{ padding: 24 }}>
@@ -130,6 +168,69 @@ export function MeetingDetail() {
           </Descriptions.Item>
         </Descriptions>
 
+        {meeting.recordings?.length ? (
+          <section className="meeting-transcripts">
+            <h3 className="meeting-transcripts-title">录制与转写</h3>
+            <Space direction="vertical" size={12} style={{ width: '100%' }}>
+              {meeting.recordings.map((recording, index) => {
+                const segments = transcripts[recording.id] || [];
+                return (
+                  <Card
+                    key={recording.id}
+                    className="meeting-recording-card"
+                    size="small"
+                    title={`录制 ${index + 1}${recording.startAt ? ` · ${formatDateTime(recording.startAt)}` : ''}`}
+                    extra={
+                      <Button
+                        type="link"
+                        size="small"
+                        onClick={() => setTranscriptDrawerRecordingId(recording.id)}
+                      >
+                        查看完整转写
+                      </Button>
+                    }
+                  >
+                    {transcriptLoading ? (
+                      <span>正在加载转写记录...</span>
+                    ) : transcriptError ? (
+                      <span>{transcriptError}</span>
+                    ) : segments.length ? (
+                      <div className="meeting-transcript-preview">
+                        <div className="meeting-transcript-count">
+                          共 {segments.length} 条转写记录
+                        </div>
+                        {segments.slice(0, 3).map((segment, segmentIndex) => (
+                          <div
+                            className="meeting-transcript-segment"
+                            key={`${recording.id}-${segmentIndex}`}
+                          >
+                            <div className="meeting-transcript-meta">
+                              <strong>{segment.speakerName || '未知发言人'}</strong>
+                              {segment.startTime ? <span>{segment.startTime}</span> : null}
+                            </div>
+                            <div className="meeting-transcript-text">{segment.text}</div>
+                          </div>
+                        ))}
+                        {segments.length > 3 ? (
+                          <Button
+                            type="link"
+                            size="small"
+                            onClick={() => setTranscriptDrawerRecordingId(recording.id)}
+                          >
+                            还有 {segments.length - 3} 条记录，查看全部
+                          </Button>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <span>暂无转写记录</span>
+                    )}
+                  </Card>
+                );
+              })}
+            </Space>
+          </section>
+        ) : null}
+
         {meeting.recordingUrl && (
           <div style={{ marginTop: 16 }}>
             <h3>会议录制</h3>
@@ -148,6 +249,40 @@ export function MeetingDetail() {
           </div>
         )}
       </Card>
+
+      <Drawer
+        title={
+          transcriptDrawerRecording
+            ? `完整转写${transcriptDrawerRecording.startAt ? ` · ${formatDateTime(transcriptDrawerRecording.startAt)}` : ''}`
+            : '完整转写'
+        }
+        open={Boolean(transcriptDrawerRecording)}
+        onClose={() => setTranscriptDrawerRecordingId(null)}
+        width={760}
+      >
+        {transcriptLoading ? (
+          <span>正在加载转写记录...</span>
+        ) : transcriptError ? (
+          <span>{transcriptError}</span>
+        ) : transcriptDrawerSegments.length ? (
+          <div className="meeting-transcript-drawer-list">
+            {transcriptDrawerSegments.map((segment, segmentIndex) => (
+              <div
+                className="meeting-transcript-segment"
+                key={`${transcriptDrawerRecording?.id}-${segmentIndex}`}
+              >
+                <div className="meeting-transcript-meta">
+                  <strong>{segment.speakerName || '未知发言人'}</strong>
+                  {segment.startTime ? <span>{segment.startTime}</span> : null}
+                </div>
+                <div className="meeting-transcript-text">{segment.text}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <span>暂无转写记录</span>
+        )}
+      </Drawer>
     </div>
   );
 }

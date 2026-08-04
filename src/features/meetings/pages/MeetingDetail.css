@@ -1,0 +1,67 @@
+.meeting-transcripts {
+  margin-top: 16px;
+}
+
+.meeting-transcripts-title {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.meeting-recording-card .ant-card-body {
+  padding: 12px 16px;
+}
+
+.meeting-transcript-preview {
+  display: grid;
+  gap: 8px;
+}
+
+.meeting-transcript-count {
+  color: #8f959e;
+  font-size: 12px;
+}
+
+.meeting-transcript-segment {
+  padding: 8px 0;
+}
+
+.meeting-transcript-preview .meeting-transcript-segment {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.meeting-transcript-preview .meeting-transcript-segment:last-of-type {
+  border-bottom: 0;
+}
+
+.meeting-transcript-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: #1f2329;
+  line-height: 20px;
+}
+
+.meeting-transcript-meta span {
+  color: #8f959e;
+  font-size: 12px;
+}
+
+.meeting-transcript-text {
+  margin-top: 4px;
+  color: #4e5969;
+  line-height: 22px;
+  white-space: pre-wrap;
+}
+
+.meeting-transcript-drawer-list {
+  display: grid;
+  gap: 4px;
+}
+
+.meeting-transcript-drawer-list .meeting-transcript-segment {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.meeting-transcript-drawer-list .meeting-transcript-segment:last-child {
+  border-bottom: 0;
+}
