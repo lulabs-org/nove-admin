@@ -5,7 +5,6 @@ import {
   meetingControllerUpdateMeetingRecord,
   meetingControllerDeleteMeetingRecord,
   meetingControllerGetMeetingStats,
-  meetingControllerReprocessMeetingRecord,
 } from '../../../shared/lib/api/orval/business/meet';
 import type {
   Meeting,
@@ -44,9 +43,5 @@ export const meetingApi = {
 
   getStats: (): Promise<MeetingStats> => {
     return meetingControllerGetMeetingStats() as unknown as Promise<MeetingStats>;
-  },
-
-  reprocess: (id: string): Promise<Meeting> => {
-    return meetingControllerReprocessMeetingRecord(id) as unknown as Promise<Meeting>;
   },
 };

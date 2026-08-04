@@ -44,17 +44,6 @@ export function MeetingDetail() {
     message.info('编辑会议功能');
   };
 
-  const handleReprocess = async () => {
-    if (!id) return;
-    try {
-      await meetingApi.reprocess(id);
-      message.success('重新处理会议成功');
-      fetchMeetingDetail();
-    } catch {
-      message.error('重新处理会议失败');
-    }
-  };
-
   const handleDelete = async () => {
     if (!id) return;
     try {
@@ -88,9 +77,6 @@ export function MeetingDetail() {
             <Button type="primary" onClick={handleEdit}>
               编辑
             </Button>
-            {meeting.processingStatus === 'COMPLETED' && (
-              <Button onClick={handleReprocess}>重新处理</Button>
-            )}
             <Button danger onClick={handleDelete}>
               删除
             </Button>

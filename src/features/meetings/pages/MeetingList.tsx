@@ -11,7 +11,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   useTableQuery,
-  useTableMutation,
   useTableDeleteMutation,
   type TableQueryParams,
 } from '../../../shared/hooks/useTableQuery';
@@ -68,17 +67,6 @@ export function MeetingList() {
     },
   });
 
-  const reprocessMutation = useTableMutation({
-    queryKey: 'meetings',
-    mutationFn: (id: string) => meetingApi.reprocess(id),
-    onSuccess: () => {
-      message.success('重新处理会议成功');
-    },
-    onError: () => {
-      message.error('重新处理会议失败');
-    },
-  });
-
   const handleCreate = () => {
     message.info('点击了新增会议按钮');
   };
@@ -93,10 +81,6 @@ export function MeetingList() {
 
   const handleDelete = (record: MeetingListItem) => {
     deleteMutation.mutate(record.id);
-  };
-
-  const handleReprocess = (record: MeetingListItem) => {
-    reprocessMutation.mutate(record.id);
   };
 
   const handleSearch = (field: string, value: string) => {
@@ -220,16 +204,6 @@ export function MeetingList() {
           <Button type="link" size="small" onClick={() => handleEdit(record)}>
             编辑
           </Button>
-          {record.processingStatus === 'COMPLETED' && (
-            <Button
-              type="link"
-              size="small"
-              onClick={() => handleReprocess(record)}
-              loading={reprocessMutation.isPending}
-            >
-              重新处理
-            </Button>
-          )}
           <Popconfirm
             title="确定要删除吗？"
             onConfirm={() => handleDelete(record)}
