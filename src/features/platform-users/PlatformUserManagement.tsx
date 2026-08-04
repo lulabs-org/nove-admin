@@ -470,11 +470,28 @@ export function PlatformUserManagement() {
           <Form.Item label="显示名称" name="displayName">
             <Input placeholder="请输入显示名称" />
           </Form.Item>
-          <Form.Item label="国家代码" name="countryCode">
-            <Input placeholder="如 +86" style={{ width: 120 }} />
-          </Form.Item>
-          <Form.Item label="手机号" name="phone">
-            <Input placeholder="请输入手机号" />
+          <Form.Item label="手机号" style={{ marginBottom: 0 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Form.Item name="countryCode" noStyle>
+                <Select placeholder="区号" allowClear style={{ width: 180 }}>
+                  <Option value="+86">🇨🇳 +86 中国大陆</Option>
+                  <Option value="+852">🇭🇰 +852 香港</Option>
+                  <Option value="+853">🇲🇴 +853 澳门</Option>
+                  <Option value="+886">🇹🇼 +886 台湾</Option>
+                  <Option value="+1">🇺🇸 +1 美国/加拿大</Option>
+                  <Option value="+44">🇬🇧 +44 英国</Option>
+                  <Option value="+81">🇯🇵 +81 日本</Option>
+                  <Option value="+82">🇰🇷 +82 韩国</Option>
+                  <Option value="+65">🇸🇬 +65 新加坡</Option>
+                  <Option value="+61">🇦🇺 +61 澳大利亚</Option>
+                  <Option value="+49">🇩🇪 +49 德国</Option>
+                  <Option value="+33">🇫🇷 +33 法国</Option>
+                </Select>
+              </Form.Item>
+              <Form.Item name="phone" noStyle>
+                <Input placeholder="请输入手机号" style={{ flex: 1 }} />
+              </Form.Item>
+            </div>
           </Form.Item>
           <Form.Item label="关联本地用户" name="localUserId">
             <Select
@@ -486,7 +503,7 @@ export function PlatformUserManagement() {
               notFoundContent={searchingUsers ? '搜索中...' : '无匹配结果'}
               options={localUsers.map((u) => ({
                 value: u.id,
-                label: `${u.profile?.displayName || u.username || ''} (${u.email || u.phone || u.id})`,
+                label: `${u.name || ''} (${u.email || u.id})`,
               }))}
             />
           </Form.Item>

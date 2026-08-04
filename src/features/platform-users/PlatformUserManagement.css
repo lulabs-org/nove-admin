@@ -53,6 +53,10 @@
   padding: 0;
 }
 
+.platform-user-name-cell .ant-avatar {
+  flex: 0 0 auto;
+}
+
 .platform-user-name-cell span {
   overflow: hidden;
   text-overflow: ellipsis;
