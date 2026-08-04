@@ -785,6 +785,7 @@ export function PermissionManagement() {
           dataSource={permissionListQuery.data?.data || []}
           rowKey="id"
           loading={permissionListQuery.isLoading}
+          expandable={{ showExpandColumn: false }}
           pagination={{
             current: permissionFilters.page,
             pageSize: permissionFilters.pageSize,
