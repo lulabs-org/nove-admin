@@ -5,6 +5,7 @@ import {
   meetingControllerUpdateMeetingRecord,
   meetingControllerDeleteMeetingRecord,
   meetingControllerGetMeetingStats,
+  // meetingControllerReprocessMeetingRecord, // 后端接口暂时禁用，见 PR #321
 } from '../../../shared/lib/api/orval/business/meet';
 import type {
   Meeting,
@@ -44,4 +45,9 @@ export const meetingApi = {
   getStats: (): Promise<MeetingStats> => {
     return meetingControllerGetMeetingStats() as unknown as Promise<MeetingStats>;
   },
+
+  // 后端接口暂时禁用，见 PR #321
+  // reprocess: (id: string): Promise<Meeting> => {
+  //   return meetingControllerReprocessMeetingRecord(id) as unknown as Promise<Meeting>;
+  // },
 };
