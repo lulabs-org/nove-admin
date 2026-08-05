@@ -487,13 +487,6 @@ export function TaskManagement() {
       },
     },
     {
-      title: '队列',
-      dataIndex: 'queueName',
-      key: 'queueName',
-      width: 120,
-      ellipsis: true,
-    },
-    {
       title: '最近错误',
       dataIndex: 'lastError',
       key: 'lastError',
