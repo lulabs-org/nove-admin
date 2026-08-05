@@ -23,6 +23,11 @@ export interface MeetingRecording {
   endAt?: string | null;
 }
 
+export interface MeetingHost {
+  id: string;
+  displayName?: string | null;
+}
+
 export interface TranscriptSegment {
   speakerName?: string;
   startTime?: string;
@@ -43,6 +48,7 @@ export interface Meeting {
   language?: string | null;
   tags?: string[];
   hostPlatformUserId?: string | null;
+  host?: MeetingHost | null;
   participantCount?: number | null;
   scheduledStartAt?: string | null;
   scheduledEndAt?: string | null;

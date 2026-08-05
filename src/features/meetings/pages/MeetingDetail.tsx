@@ -116,6 +116,7 @@ export function MeetingDetail() {
   const transcriptDrawerSegments = transcriptDrawerRecording
     ? transcripts[transcriptDrawerRecording.id] || []
     : [];
+  const hostDisplayName = meeting.host?.displayName || meeting.hostPlatformUserId || '-';
 
   return (
     <div style={{ padding: 24 }}>
@@ -147,7 +148,7 @@ export function MeetingDetail() {
           <Descriptions.Item label="状态">
             <span style={{ color: statusColor }}>{statusText}</span>
           </Descriptions.Item>
-          <Descriptions.Item label="主持人">{meeting.hostPlatformUserId || '-'}</Descriptions.Item>
+          <Descriptions.Item label="主持人">{hostDisplayName}</Descriptions.Item>
           <Descriptions.Item label="开始时间">{formatDateTime(meeting.startAt)}</Descriptions.Item>
           <Descriptions.Item label="结束时间">{formatDateTime(meeting.endAt)}</Descriptions.Item>
           <Descriptions.Item label="时长">

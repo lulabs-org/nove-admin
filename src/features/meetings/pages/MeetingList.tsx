@@ -6,6 +6,7 @@ import Popconfirm from 'antd/es/popconfirm';
 import Input from 'antd/es/input';
 import Select from 'antd/es/select';
 import DatePicker from 'antd/es/date-picker';
+import Tag from 'antd/es/tag';
 import type { TableProps } from 'antd/es/table';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -17,15 +18,8 @@ import {
 } from '../../../shared/hooks/useTableQuery';
 import { meetingApi } from '../api/meetingApi';
 import type { MeetingListItem, MeetingListParams } from '../model/types';
-import {
-  MeetingControllerGetMeetingRecordsPlatform,
-  MeetingControllerGetMeetingRecordsStatus,
-} from '../../../shared/lib/api/orval/business/schemas';
-import {
-  formatDateTime,
-  getMeetingPlatformText,
-  getProcessingStatusText,
-} from '../utils/formatters';
+import { MeetingControllerGetMeetingRecordsPlatform } from '../../../shared/lib/api/orval/business/schemas';
+import { formatDateTime, getMeetingPlatformText } from '../utils/formatters';
 
 const { Search } = Input;
 const { Option } = Select;
@@ -37,7 +31,6 @@ export function MeetingList() {
     page: 1,
     pageSize: 10,
     search: '',
-    status: undefined,
     platform: undefined,
   });
 
@@ -185,9 +178,9 @@ export function MeetingList() {
     },
     {
       title: '主持人',
-      dataIndex: 'hostPlatformUserId',
-      key: 'hostPlatformUserId',
-      render: (host: string | null | undefined) => host || '-',
+      key: 'host',
+      render: (_: unknown, record: MeetingListItem) =>
+        record.host?.displayName || record.hostPlatformUserId || '-',
     },
     {
       title: '参与人数',
@@ -196,20 +189,12 @@ export function MeetingList() {
       render: (count: number | null | undefined) => count ?? '-',
     },
     {
-      title: '状态',
-      dataIndex: 'processingStatus',
-      key: 'processingStatus',
-      filters: [
-        { text: '待处理', value: 'PENDING' },
-        { text: '处理中', value: 'PROCESSING' },
-        { text: '已完成', value: 'COMPLETED' },
-        { text: '失败', value: 'FAILED' },
-        { text: '已跳过', value: 'SKIPPED' },
-      ],
-      render: (status: MeetingControllerGetMeetingRecordsStatus) => {
-        const { text, color } = getProcessingStatusText(status);
-        return <span style={{ color }}>{text}</span>;
-      },
+      title: '是否有录制',
+      dataIndex: 'hasRecording',
+      key: 'hasRecording',
+      render: (hasRecording: boolean) => (
+        <Tag color={hasRecording ? 'success' : 'default'}>{hasRecording ? '有录制' : '无录制'}</Tag>
+      ),
     },
     {
       title: '操作',
@@ -278,19 +263,6 @@ export function MeetingList() {
           <Option value="WEBEX">Webex</Option>
           <Option value="VOOV">Voov</Option>
           <Option value="OTHER">其他</Option>
-        </Select>
-
-        <Select
-          placeholder="选择状态"
-          allowClear
-          style={{ width: 120 }}
-          onChange={(value) => handleSearch('status', value)}
-        >
-          <Option value="PENDING">待处理</Option>
-          <Option value="PROCESSING">处理中</Option>
-          <Option value="COMPLETED">已完成</Option>
-          <Option value="FAILED">失败</Option>
-          <Option value="SKIPPED">已跳过</Option>
         </Select>
 
         <RangePicker placeholder={['开始日期', '结束日期']} onChange={handleDateRangeChange} />
