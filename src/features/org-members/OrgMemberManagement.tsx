@@ -29,7 +29,6 @@ import {
   DragOutlined,
   EditOutlined,
   EllipsisOutlined,
-  IdcardOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   PlusOutlined,
@@ -61,6 +60,13 @@ import {
   type UpdateOrgMemberDepartments,
 } from './api/orgMemberApi';
 import type { DepartmentTreeDto, RoleDto } from '../../shared/lib/api/orval/business/schemas';
+import {
+  buildCreateMemberPayload,
+  DEFAULT_MEMBER_COUNTRY_CODE,
+  getMemberApiErrorMessage,
+  hasMemberContact,
+  type CreateMemberFormValues,
+} from './lib/memberCreation';
 import './OrgMemberManagement.css';
 
 const { Search } = Input;
@@ -81,16 +87,9 @@ interface DepartmentRow extends DepartmentTreeDto {
   pathName: string;
 }
 
-interface MemberFormValues {
-  userId?: string;
-  type?: MemberType;
-  orgDisplayName?: string;
-  employeeNo?: string;
+interface MemberFormValues extends CreateMemberFormValues {
   primaryDeptId?: string;
   departmentIds?: string[];
-  roleIds?: string[];
-  externalCompany?: string;
-  title?: string;
   joinedAt?: dayjs.Dayjs;
 }
 
@@ -150,14 +149,19 @@ function getMemberName(member: OrgMember | OrgMemberDetail) {
     getProfileDisplayName(member.user?.profile) ||
     displayString(member.user?.username) ||
     displayString(member.user?.email) ||
+    displayString(member.user?.phone) ||
     member.userId
   );
 }
 
 function getMemberContact(member: OrgMember | OrgMemberDetail) {
   const email = displayString(member.user?.email);
+  const phone = displayString(member.user?.phone);
+  const phoneWithCountryCode = phone
+    ? `${displayString(member.user?.countryCode)} ${phone}`.trim()
+    : '';
   const username = displayString(member.user?.username);
-  return email || username || '-';
+  return email || phoneWithCountryCode || username || '-';
 }
 
 function getMemberTypeLabel(type?: string) {
@@ -257,6 +261,7 @@ export function OrgMemberManagement() {
 
   const [memberForm] = Form.useForm<MemberFormValues>();
   const [detailEditForm] = Form.useForm<MemberFormValues>();
+  const createMemberType = Form.useWatch('type', memberForm);
   const [departmentForm] = Form.useForm<DepartmentFormValues>();
   const [batchDepartmentForm] = Form.useForm<BatchDepartmentValues>();
 
@@ -301,7 +306,7 @@ export function OrgMemberManagement() {
 
   const orgName = organization?.name || '当前组织';
   const allDepartments = useMemo(() => flattenDepartments(departmentTree), [departmentTree]);
-  const departmentRows = useMemo(() => departmentTree, [departmentTree]);
+  const departmentRows = allDepartments;
   const departmentOptions = useMemo(
     () => flattenDepartmentOptions(departmentTree),
     [departmentTree]
@@ -384,8 +389,8 @@ export function OrgMemberManagement() {
       message.success('成员已添加');
       closeMemberModal();
     },
-    onError: () => {
-      message.error('添加成员失败');
+    onError: (error) => {
+      message.error(getMemberApiErrorMessage(error, '添加成员失败'));
     },
   });
 
@@ -544,7 +549,9 @@ export function OrgMemberManagement() {
   const openCreateMemberModal = () => {
     const defaultDepartmentIds = selectedDeptId ? [selectedDeptId] : [];
     memberForm.setFieldsValue({
-      userId: '',
+      email: '',
+      countryCode: DEFAULT_MEMBER_COUNTRY_CODE,
+      phone: '',
       type: 'INTERNAL',
       orgDisplayName: '',
       employeeNo: '',
@@ -568,17 +575,7 @@ export function OrgMemberManagement() {
     const values = await memberForm.validateFields();
     const departmentIds = normalizeDepartmentIds(values.primaryDeptId, values.departmentIds);
 
-    await createMemberMutation.mutateAsync({
-      userId: values.userId!,
-      type: values.type,
-      orgDisplayName: values.orgDisplayName || undefined,
-      employeeNo: values.employeeNo || undefined,
-      primaryDeptId: values.primaryDeptId || undefined,
-      departmentIds,
-      roleIds: values.roleIds,
-      externalCompany: values.externalCompany || undefined,
-      title: values.title || undefined,
-    });
+    await createMemberMutation.mutateAsync(buildCreateMemberPayload(values, departmentIds));
   };
 
   const openDetailDrawer = async (record: OrgMember, edit = false) => {
@@ -865,7 +862,7 @@ export function OrgMemberManagement() {
     },
   ];
 
-  const departmentColumns: TableProps<DepartmentTreeDto>['columns'] = [
+  const departmentColumns: TableProps<DepartmentRow>['columns'] = [
     {
       title: '部门名称',
       key: 'name',
@@ -1096,6 +1093,14 @@ export function OrgMemberManagement() {
                   <DetailField
                     label="登录邮箱"
                     value={displayString(detailMember.user?.email) || '-'}
+                  />
+                  <DetailField
+                    label="登录手机号"
+                    value={
+                      detailMember.user?.phone
+                        ? `${displayString(detailMember.user.countryCode)} ${displayString(detailMember.user.phone)}`.trim()
+                        : '-'
+                    }
                   />
                   <DetailField label="部门" value={departmentText} />
                   <DetailField label="隐藏手机号" value="手机号可见" />
@@ -1501,13 +1506,62 @@ export function OrgMemberManagement() {
       >
         <Form form={memberForm} layout="vertical">
           <Form.Item
-            label="用户 ID"
-            name="userId"
-            rules={[{ required: true, message: '请输入已有用户 ID' }]}
+            label="邮箱"
+            name="email"
+            dependencies={['phone']}
+            rules={[
+              { type: 'email', message: '请输入正确的邮箱' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  return hasMemberContact(value, getFieldValue('phone'))
+                    ? Promise.resolve()
+                    : Promise.reject(new Error('手机号与邮箱至少填写一个'));
+                },
+              }),
+            ]}
           >
-            <Input placeholder="输入已有用户 ID" prefix={<IdcardOutlined />} />
+            <Input placeholder="请输入邮箱" />
           </Form.Item>
-          <Form.Item label="姓名" name="orgDisplayName">
+          <Space align="start" size="middle" style={{ width: '100%' }}>
+            <Form.Item
+              label="国家代码"
+              name="countryCode"
+              dependencies={['phone']}
+              rules={[
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    return !getFieldValue('phone') || value
+                      ? Promise.resolve()
+                      : Promise.reject(new Error('填写手机号时必须提供国家代码'));
+                  },
+                }),
+              ]}
+            >
+              <Input placeholder="+86" style={{ width: 120 }} />
+            </Form.Item>
+            <Form.Item
+              label="手机号"
+              name="phone"
+              dependencies={['email']}
+              rules={[
+                { pattern: /^[\d\s()-]+$/, message: '请输入正确的手机号' },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    return hasMemberContact(getFieldValue('email'), value)
+                      ? Promise.resolve()
+                      : Promise.reject(new Error('手机号与邮箱至少填写一个'));
+                  },
+                }),
+              ]}
+            >
+              <Input placeholder="请输入手机号" style={{ width: 300 }} />
+            </Form.Item>
+          </Space>
+          <Form.Item
+            label="姓名"
+            name="orgDisplayName"
+            rules={[{ required: true, message: '请输入姓名' }]}
+          >
             <Input placeholder="成员在组织内显示的名称" />
           </Form.Item>
           <Form.Item
@@ -1540,6 +1594,11 @@ export function OrgMemberManagement() {
           <Form.Item label="工号" name="employeeNo">
             <Input placeholder="请输入工号" />
           </Form.Item>
+          {createMemberType === 'EXTERNAL' && (
+            <Form.Item label="外部公司" name="externalCompany">
+              <Input placeholder="请输入外部公司名称" />
+            </Form.Item>
+          )}
           <Form.Item label="角色" name="roleIds">
             <Select
               allowClear
