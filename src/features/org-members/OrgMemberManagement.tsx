@@ -293,12 +293,40 @@ export function OrgMemberManagement() {
     queryFn: orgMemberApi.roles,
   });
 
+  const { data: leaderMemberList, isFetching: leaderMembersFetching } = useQuery({
+    queryKey: ['org-department-leaders', currentOrgId],
+    queryFn: () => orgMemberApi.list(currentOrgId!, { page: 1, pageSize: 1000 }),
+    enabled: !!currentOrgId && departmentModalOpen,
+  });
+
   const orgName = organization?.name || '当前组织';
   const allDepartments = useMemo(() => flattenDepartments(departmentTree), [departmentTree]);
   const departmentRows = useMemo(() => departmentTree, [departmentTree]);
   const departmentOptions = useMemo(
     () => flattenDepartmentOptions(departmentTree),
     [departmentTree]
+  );
+  const parentDepartmentOptions = useMemo(
+    () =>
+      allDepartments.map((department) => ({
+        label: department.pathName,
+        value: department.id,
+      })),
+    [allDepartments]
+  );
+  const leaderOptions = useMemo(
+    () =>
+      (leaderMemberList?.data || [])
+        .filter((member) => member.status === 'INVITED' || member.status === 'ACTIVE')
+        .map((member) => {
+          const name = getMemberName(member);
+          const contact = getMemberContact(member);
+          return {
+            label: contact === '-' ? name : `${name}（${contact}）`,
+            value: member.userId,
+          };
+        }),
+    [leaderMemberList]
   );
   const departmentIndex = useMemo(
     () => new Map(allDepartments.map((dept) => [dept.id, dept])),
@@ -407,11 +435,9 @@ export function OrgMemberManagement() {
       if (!currentOrgId) throw new Error('Missing organization');
       const isRootParent = values.parentId === ROOT_DEPARTMENT_ID || !values.parentId;
       const name = values.name?.trim() ?? '';
-      const code = values.code?.trim() ?? '';
       const payloadBase = {
         name,
-        code,
-        leaderUserId: values.leaderUserId?.trim() || undefined,
+        leaderUserId: values.leaderUserId || undefined,
         description: values.description?.trim() || undefined,
         active: values.active ?? true,
       };
@@ -419,6 +445,8 @@ export function OrgMemberManagement() {
       if (departmentModalMode === 'edit' && editingDepartment) {
         const payload: UpdateDepartment = {
           ...payloadBase,
+          code: values.code?.trim(),
+          leaderUserId: values.leaderUserId || null,
           parentId: isRootParent ? null : values.parentId,
         };
         return orgMemberApi.updateDepartment(editingDepartment.id, payload);
@@ -666,7 +694,7 @@ export function OrgMemberManagement() {
     setEditingDepartment(null);
     departmentForm.setFieldsValue({
       name: '',
-      code: '',
+      code: undefined,
       parentId: parentId || ROOT_DEPARTMENT_ID,
       leaderUserId: '',
       description: '',
@@ -698,17 +726,18 @@ export function OrgMemberManagement() {
   const handleSaveDepartment = async () => {
     const values = await departmentForm.validateFields();
     const code = values.code?.trim();
-    const duplicateDepartment = code
-      ? allDepartments.find(
-          (department) => department.code === code && department.id !== editingDepartment?.id
-        )
-      : undefined;
+    const duplicateDepartment =
+      departmentModalMode === 'edit' && code
+        ? allDepartments.find(
+            (department) => department.code === code && department.id !== editingDepartment?.id
+          )
+        : undefined;
 
     if (duplicateDepartment) {
       departmentForm.setFields([
         {
           name: 'code',
-          errors: [`部门 ID/编码已存在：${duplicateDepartment.name}`],
+          errors: [`部门编码已存在：${duplicateDepartment.name}`],
         },
       ]);
       return;
@@ -717,7 +746,7 @@ export function OrgMemberManagement() {
     await saveDepartmentMutation.mutateAsync({
       ...values,
       name: values.name?.trim(),
-      code,
+      code: departmentModalMode === 'edit' ? code : undefined,
     });
   };
 
@@ -848,7 +877,7 @@ export function OrgMemberManagement() {
       ),
     },
     {
-      title: '部门 ID/编码',
+      title: '部门编码',
       dataIndex: 'code',
       key: 'code',
       width: 180,
@@ -1547,23 +1576,37 @@ export function OrgMemberManagement() {
           >
             <Input placeholder="请输入部门名称" />
           </Form.Item>
-          <Form.Item
-            label="部门 ID/编码"
-            name="code"
-            rules={[{ required: true, whitespace: true, message: '请输入部门 ID/编码' }]}
-          >
-            <Input placeholder="请输入部门名或部门 ID" />
-          </Form.Item>
+          {departmentModalMode === 'edit' ? (
+            <Form.Item label="部门编码" name="code">
+              <Input disabled />
+            </Form.Item>
+          ) : (
+            <Form.Item label="部门编码">
+              <Input value="创建后自动生成（如 DEPT-0001）" disabled />
+            </Form.Item>
+          )}
           <Form.Item label="上级部门" name="parentId">
             <Select
               options={[
                 { label: orgName, value: ROOT_DEPARTMENT_ID },
-                ...departmentOptions.filter((option) => option.value !== editingDepartment?.id),
+                ...parentDepartmentOptions.filter(
+                  (option) => option.value !== editingDepartment?.id
+                ),
               ]}
+              labelRender={({ value }) => {
+                if (value === ROOT_DEPARTMENT_ID) return orgName;
+                return departmentIndex.get(String(value))?.pathName || '已删除部门';
+              }}
             />
           </Form.Item>
           <Form.Item label="部门负责人" name="leaderUserId">
-            <Input placeholder="请输入负责人用户 ID" />
+            <Select
+              allowClear
+              showSearch={{ optionFilterProp: 'label' }}
+              options={leaderOptions}
+              loading={leaderMembersFetching}
+              placeholder="搜索或选择现有成员"
+            />
           </Form.Item>
           <Form.Item label="部门描述" name="description">
             <Input.TextArea placeholder="请输入部门描述" rows={3} />
