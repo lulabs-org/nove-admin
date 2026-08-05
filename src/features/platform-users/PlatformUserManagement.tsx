@@ -34,6 +34,7 @@ import {
   type PlatformUserListParams,
   type UpdatePlatformUser,
   type LocalUserOption,
+  type Platform,
 } from './api/platformUserApi';
 import './PlatformUserManagement.css';
 
@@ -43,23 +44,15 @@ const { Option } = Select;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type PlatformEnum =
-  | 'FEISHU'
-  | 'TENCENT_MEETING'
-  | 'WECHAT'
-  | 'DINGTALK'
-  | 'ZOOM'
-  | 'SLACK'
-  | 'TEAMS';
-
-const PLATFORM_LABELS: Record<PlatformEnum, { label: string; color: string }> = {
+const PLATFORM_LABELS: Record<Platform, { label: string; color: string }> = {
   FEISHU: { label: '飞书', color: '#3370ff' },
   TENCENT_MEETING: { label: '腾讯会议', color: '#07c160' },
-  WECHAT: { label: '微信', color: '#07c160' },
   DINGTALK: { label: '钉钉', color: '#ff6a00' },
   ZOOM: { label: 'Zoom', color: '#2d8cff' },
-  SLACK: { label: 'Slack', color: '#4a154b' },
   TEAMS: { label: 'Teams', color: '#464eb8' },
+  WEBEX: { label: 'Webex', color: '#00bceb' },
+  VOOV: { label: 'VooV Meeting', color: '#00a4ff' },
+  OTHER: { label: '其他', color: '#8f959e' },
 };
 
 interface EditFormValues {
@@ -92,7 +85,7 @@ export function PlatformUserManagement() {
 
   const [localUsers, setLocalUsers] = useState<LocalUserOption[]>([]);
   const [searchingUsers, setSearchingUsers] = useState(false);
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [searchTimeout, setSearchTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Data fetching ─────────────────────────────────────────────────────────
   const { data, isFetching } = useQuery({
@@ -154,7 +147,7 @@ export function PlatformUserManagement() {
   const handleSearch = (keyword: string) =>
     setFilters((f) => ({ ...f, keyword: keyword || undefined, page: 1 }));
 
-  const handlePlatformChange = (val: PlatformEnum | undefined) =>
+  const handlePlatformChange = (val: Platform | undefined) =>
     setFilters((f) => ({ ...f, platform: val, page: 1 }));
 
   const handleActiveChange = (val: boolean | undefined) =>
@@ -200,7 +193,7 @@ export function PlatformUserManagement() {
       const payload: UpdatePlatformUser = { ...vals };
       if (vals.localUserId === undefined && 'localUserId' in vals) {
         // If it was cleared, it might be undefined in vals, but we should send null to backend to unlink
-        payload.localUserId = null as unknown as string;
+        payload.localUserId = null;
       }
 
       updateMutation.mutate({ id: editTarget.id, data: payload });
@@ -214,7 +207,7 @@ export function PlatformUserManagement() {
       dataIndex: 'platform',
       key: 'platform',
       width: 130,
-      render: (platform: PlatformEnum) => {
+      render: (platform: Platform) => {
         const info = PLATFORM_LABELS[platform] ?? { label: platform, color: '#8f959e' };
         return (
           <Tag color={info.color} style={{ margin: 0 }}>
@@ -388,7 +381,7 @@ export function PlatformUserManagement() {
             prefix={<SearchOutlined />}
             onSearch={handleSearch}
           />
-          <Select<PlatformEnum | undefined>
+          <Select<Platform | undefined>
             allowClear
             placeholder="平台类型"
             style={{ width: 150 }}
@@ -530,7 +523,7 @@ function DetailPanel({ detail, loading }: { detail: PlatformUserDetail | null; l
     );
   }
 
-  const platform = detail.platform as PlatformEnum;
+  const platform = detail.platform as Platform;
   const platformInfo = PLATFORM_LABELS[platform] ?? { label: platform, color: '#8f959e' };
 
   return (

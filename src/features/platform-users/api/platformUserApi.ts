@@ -6,8 +6,8 @@ import {
   platformUserControllerUpdate,
 } from '../../../shared/lib/api/orval/business/platform-users';
 import { mutator } from '../../../shared/lib/api/mutator';
-import type { Platform } from '../../../shared/lib/api/orval/business/schemas';
 import type {
+  PlatformUserControllerListPlatform,
   PlatformUserDto,
   PlatformUserWithProfileDto,
   UpdatePlatformUserDto,
@@ -17,7 +17,10 @@ import type {
 
 export type PlatformUser = PlatformUserDto;
 export type PlatformUserDetail = PlatformUserWithProfileDto;
-export type UpdatePlatformUser = UpdatePlatformUserDto;
+export type UpdatePlatformUser = Omit<UpdatePlatformUserDto, 'localUserId'> & {
+  localUserId?: string | null;
+};
+export type Platform = PlatformUserControllerListPlatform;
 
 export interface PlatformUserListParams {
   platform?: Platform;
@@ -70,7 +73,7 @@ export const platformUserApi = {
 
   /** 更新平台用户字段 */
   update(id: string, data: UpdatePlatformUser): Promise<PlatformUser> {
-    return platformUserControllerUpdate(id, data);
+    return platformUserControllerUpdate(id, data as unknown as UpdatePlatformUserDto);
   },
 
   /** 激活平台用户 */
