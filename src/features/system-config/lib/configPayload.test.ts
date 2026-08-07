@@ -25,4 +25,17 @@ describe('system config payloads', () => {
       })
     ).toEqual({ appId: 'wx123', webhookToken: 'new-token' });
   });
+
+  it('keeps the API mask in the update payload so the server preserves the secret', () => {
+    expect(
+      buildMailConfigPayload({
+        host: 'smtp.example.com',
+        port: 465,
+        secure: true,
+        user: 'noreply@example.com',
+        pass: '********',
+        from: 'noreply@example.com',
+      })
+    ).toHaveProperty('pass', '********');
+  });
 });

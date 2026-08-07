@@ -28,7 +28,7 @@ export function SystemConfigManagement() {
     try {
       const config = await systemConfigApi.getMailConfig();
       if (config) {
-        mailForm.setFieldsValue({ ...config, pass: undefined });
+        mailForm.setFieldsValue(config);
       } else {
         mailForm.resetFields();
       }
@@ -44,12 +44,7 @@ export function SystemConfigManagement() {
     try {
       const config = await systemConfigApi.getWechatShopConfig();
       if (config) {
-        wechatShopForm.setFieldsValue({
-          ...config,
-          appSecret: undefined,
-          webhookToken: undefined,
-          encodingAesKey: undefined,
-        });
+        wechatShopForm.setFieldsValue(config);
       } else {
         wechatShopForm.resetFields();
       }
@@ -108,7 +103,7 @@ export function SystemConfigManagement() {
                 }
               >
                 <p style={{ color: '#666', marginTop: 0 }}>
-                  密码不会回显；留空并保存会保留当前已配置的密码。
+                  密码以 ******** 掩码显示；留空或保留掩码并保存，都会保留当前已配置的密码。
                 </p>
                 <Form
                   form={mailForm}
@@ -159,7 +154,11 @@ export function SystemConfigManagement() {
                     </Col>
                   </Row>
                   <Form.Item label="密码" name="pass">
-                    <Input.Password autoComplete="new-password" placeholder="已配置则留空以保留" />
+                    <Input.Password
+                      autoComplete="new-password"
+                      placeholder="输入新密码以替换"
+                      visibilityToggle={false}
+                    />
                   </Form.Item>
                   <Form.Item label="使用 SSL/TLS" name="secure" valuePropName="checked">
                     <Switch checkedChildren="启用" unCheckedChildren="关闭" />
@@ -193,7 +192,7 @@ export function SystemConfigManagement() {
                 }
               >
                 <p style={{ color: '#666', marginTop: 0 }}>
-                  所有密钥均加密保存且不回显；若不修改，请留空。
+                  所有密钥均以 ******** 掩码显示；留空或保留掩码并保存，都会保留当前值。
                 </p>
                 <Form form={wechatShopForm} layout="vertical" onFinish={saveWechatShopConfig}>
                   <Form.Item
@@ -204,13 +203,25 @@ export function SystemConfigManagement() {
                     <Input placeholder="wx1234567890abcdef" />
                   </Form.Item>
                   <Form.Item label="App Secret" name="appSecret">
-                    <Input.Password autoComplete="new-password" placeholder="已配置则留空以保留" />
+                    <Input.Password
+                      autoComplete="new-password"
+                      placeholder="输入新 App Secret 以替换"
+                      visibilityToggle={false}
+                    />
                   </Form.Item>
                   <Form.Item label="Webhook Token" name="webhookToken">
-                    <Input.Password autoComplete="new-password" placeholder="已配置则留空以保留" />
+                    <Input.Password
+                      autoComplete="new-password"
+                      placeholder="输入新 Webhook Token 以替换"
+                      visibilityToggle={false}
+                    />
                   </Form.Item>
                   <Form.Item label="Encoding AES Key" name="encodingAesKey">
-                    <Input.Password autoComplete="new-password" placeholder="已配置则留空以保留" />
+                    <Input.Password
+                      autoComplete="new-password"
+                      placeholder="输入新 Encoding AES Key 以替换"
+                      visibilityToggle={false}
+                    />
                   </Form.Item>
                   <Form.Item
                     label="API Base URL"
