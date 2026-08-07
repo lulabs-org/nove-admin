@@ -13,6 +13,7 @@ import { persist } from 'zustand/middleware';
 import { login, getMe, logout as logoutApi } from '../api/api';
 import { authService } from '../api/service';
 import type { LoginRequest, User } from './types';
+import { canAccessPermission } from './permissions';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -79,19 +80,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       checkPermission: (permission: string) => {
-        const { user } = get();
-        if (!user || !user.permissions) return false;
-
-        const hasExactPermission = user.permissions.includes(permission);
-        if (hasExactPermission) return true;
-
-        const parts = permission.split(':');
-        if (parts.length === 2) {
-          const wildcardPermission = `${parts[0]}:*`;
-          return user.permissions.includes(wildcardPermission);
-        }
-
-        return false;
+        return canAccessPermission(get().user, permission);
       },
 
       clearAuth: () => {

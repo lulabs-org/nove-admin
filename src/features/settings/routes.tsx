@@ -12,6 +12,7 @@ import type { RouteConfig } from '../../shared/types/index';
 import { SettingOutlined, UserOutlined, SafetyOutlined } from '@ant-design/icons';
 import { Outlet } from 'react-router-dom';
 import { ProfilePage } from './ProfilePage';
+import { systemConfigRoutes } from '../system-config';
 
 export const settingsRoutes: RouteConfig[] = [
   {
@@ -36,6 +37,7 @@ export const settingsRoutes: RouteConfig[] = [
         permission: 'system:config',
         icon: <SafetyOutlined />,
       },
+      ...systemConfigRoutes,
     ],
   },
   {
