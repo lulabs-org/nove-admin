@@ -61,7 +61,8 @@ export const PERMISSIONS = {
   SYSTEM: {
     MONITOR: 'system:monitor',
     LOG: 'system:log',
-    CONFIG: 'system:config',
+    CONFIG_READ: 'system:config:read',
+    CONFIG_WRITE: 'system:config:write',
   },
   DASHBOARD: {
     READ: 'dashboard:read',
