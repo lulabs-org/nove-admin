@@ -6,6 +6,7 @@ import Divider from 'antd/es/divider';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
 import InputNumber from 'antd/es/input-number';
+import Popconfirm from 'antd/es/popconfirm';
 import Row from 'antd/es/row';
 import Switch from 'antd/es/switch';
 import Tabs from 'antd/es/tabs';
@@ -22,6 +23,7 @@ export function SystemConfigManagement() {
   const [wechatShopForm] = Form.useForm<WechatShopConfig>();
   const [loading, setLoading] = useState({ mail: false, wechatShop: false });
   const [saving, setSaving] = useState({ mail: false, wechatShop: false });
+  const [deleting, setDeleting] = useState({ mail: false, wechatShop: false });
 
   const loadMailConfig = useCallback(async () => {
     setLoading((current) => ({ ...current, mail: true }));
@@ -82,6 +84,32 @@ export function SystemConfigManagement() {
       message.error('保存微信小店配置失败');
     } finally {
       setSaving((current) => ({ ...current, wechatShop: false }));
+    }
+  };
+
+  const deleteMailConfig = async () => {
+    setDeleting((current) => ({ ...current, mail: true }));
+    try {
+      await systemConfigApi.deleteConfig('mail');
+      mailForm.resetFields();
+      message.success('邮件配置已删除');
+    } catch {
+      message.error('删除邮件配置失败');
+    } finally {
+      setDeleting((current) => ({ ...current, mail: false }));
+    }
+  };
+
+  const deleteWechatShopConfig = async () => {
+    setDeleting((current) => ({ ...current, wechatShop: true }));
+    try {
+      await systemConfigApi.deleteConfig('wechat-shop');
+      wechatShopForm.resetFields();
+      message.success('微信小店配置已删除');
+    } catch {
+      message.error('删除微信小店配置失败');
+    } finally {
+      setDeleting((current) => ({ ...current, wechatShop: false }));
     }
   };
 
@@ -164,7 +192,7 @@ export function SystemConfigManagement() {
                     <Switch checkedChildren="启用" unCheckedChildren="关闭" />
                   </Form.Item>
                   <Divider />
-                  <Perm permission={PERMISSIONS.SYSTEM.CONFIG}>
+                  <Perm permission={PERMISSIONS.SYSTEM.CONFIG_WRITE}>
                     <Button
                       type="primary"
                       htmlType="submit"
@@ -173,6 +201,20 @@ export function SystemConfigManagement() {
                     >
                       保存邮件配置
                     </Button>
+                  </Perm>
+                  <Perm permission={PERMISSIONS.SYSTEM.CONFIG_WRITE}>
+                    <Popconfirm
+                      title="删除邮件配置？"
+                      description="删除后邮件服务将无法使用，直到重新配置。"
+                      okText="删除"
+                      cancelText="取消"
+                      okButtonProps={{ danger: true, loading: deleting.mail }}
+                      onConfirm={deleteMailConfig}
+                    >
+                      <Button danger loading={deleting.mail} style={{ marginLeft: 8 }}>
+                        删除配置
+                      </Button>
+                    </Popconfirm>
                   </Perm>
                 </Form>
               </Card>
@@ -231,7 +273,7 @@ export function SystemConfigManagement() {
                     <Input placeholder="https://api.weixin.qq.com" />
                   </Form.Item>
                   <Divider />
-                  <Perm permission={PERMISSIONS.SYSTEM.CONFIG}>
+                  <Perm permission={PERMISSIONS.SYSTEM.CONFIG_WRITE}>
                     <Button
                       type="primary"
                       htmlType="submit"
@@ -240,6 +282,20 @@ export function SystemConfigManagement() {
                     >
                       保存微信小店配置
                     </Button>
+                  </Perm>
+                  <Perm permission={PERMISSIONS.SYSTEM.CONFIG_WRITE}>
+                    <Popconfirm
+                      title="删除微信小店配置？"
+                      description="删除后微信小店回调与订单同步将不可用，直到重新配置。"
+                      okText="删除"
+                      cancelText="取消"
+                      okButtonProps={{ danger: true, loading: deleting.wechatShop }}
+                      onConfirm={deleteWechatShopConfig}
+                    >
+                      <Button danger loading={deleting.wechatShop} style={{ marginLeft: 8 }}>
+                        删除配置
+                      </Button>
+                    </Popconfirm>
                   </Perm>
                 </Form>
               </Card>

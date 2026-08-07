@@ -9,7 +9,7 @@ export const systemConfigRoutes: RouteConfig[] = [
     element: <SystemConfigManagement />,
     title: '全局配置',
     menu: true,
-    permission: PERMISSIONS.SYSTEM.CONFIG,
+    permission: PERMISSIONS.SYSTEM.CONFIG_READ,
     icon: <ControlOutlined />,
   },
 ];
