@@ -410,7 +410,12 @@ export function ProfilePage() {
         </aside>
       </div>
 
-      <ResetPasswordModal open={resetPasswordOpen} onClose={() => setResetPasswordOpen(false)} />
+      <ResetPasswordModal
+        open={resetPasswordOpen}
+        onClose={() => setResetPasswordOpen(false)}
+        phone={profile?.phone}
+        countryCode={profile?.countryCode}
+      />
     </div>
   );
 }
