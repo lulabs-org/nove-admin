@@ -9,9 +9,9 @@ import Result from 'antd/es/result';
 import Typography from 'antd/es/typography';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useCountdown } from '../../../shared/hooks';
 import { useAuthStore } from '../../auth/model/authStore';
+import { authService } from '../../auth/api/service';
 import { resetPassword, sendEmailCode, sendPhoneCode } from '../api/passwordApi';
 
 const { Text } = Typography;
@@ -80,10 +80,8 @@ export function ResetPasswordModal({
   phone: phoneProp,
   countryCode: countryCodeProp,
 }: ResetPasswordModalProps) {
-  const navigate = useNavigate();
   const [form] = Form.useForm<FormValues>();
   const user = useAuthStore((state) => state.user);
-  const clearAuth = useAuthStore((state) => state.clearAuth);
   const { countdown, start: startCountdown, clear: clearCountdown } = useCountdown();
 
   const [current, setCurrent] = useState(0);
@@ -153,7 +151,9 @@ export function ResetPasswordModal({
       const values = await form.validateFields();
       setSubmitting(true);
       const target = channel === 'email' ? email : normalizePhone(phone);
-      await resetPassword(target, values.code, values.newPassword);
+      const result = await resetPassword(target, values.code, values.newPassword, 'web');
+      // 用新 token 续会话，无需强制登出
+      authService.setToken(result.accessToken);
       setCurrent(1);
     } catch (error) {
       if (axios.isAxiosError<{ message?: string | string[] }>(error)) {
@@ -181,13 +181,7 @@ export function ResetPasswordModal({
   };
 
   const handleClose = () => {
-    const isSuccess = current === 1;
     onClose();
-    if (isSuccess) {
-      // 清除本地凭证并跳转登录页，引导用户重新登录
-      clearAuth();
-      navigate('/login', { replace: true });
-    }
   };
 
   const footerButtons = () => {
@@ -346,7 +340,7 @@ export function ResetPasswordModal({
                   : '系统已向你的手机发送安全通知短信。'}
               </Text>
               <br />
-              <Text type="secondary">建议重新登录以刷新会话凭证。</Text>
+              <Text type="secondary">其他设备已自动退出，当前会话已续期。</Text>
             </div>
           }
         />
