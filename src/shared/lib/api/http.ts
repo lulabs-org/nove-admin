@@ -105,6 +105,10 @@ http.interceptors.response.use(
         return http(originalRequest);
       } catch (refreshError) {
         useAuthStore.getState().clearAuth();
+        // 刷新失败意味着会话已失效（如其他设备改了密码），强制跳登录页
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       }
     }
