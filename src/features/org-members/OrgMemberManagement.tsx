@@ -268,7 +268,7 @@ export function OrgMemberManagement() {
   const [memberModalOpen, setMemberModalOpen] = useState(false);
   const [departmentModalOpen, setDepartmentModalOpen] = useState(false);
   const [departmentModalMode, setDepartmentModalMode] = useState<DepartmentModalMode>('create');
-  const [editingDepartment, setEditingDepartment] = useState<DepartmentRow | null>(null);
+  const [editingDepartment, setEditingDepartment] = useState<DepartmentTreeDto | null>(null);
   const [batchDepartmentOpen, setBatchDepartmentOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailMember, setDetailMember] = useState<OrgMemberDetail | null>(null);
@@ -306,7 +306,6 @@ export function OrgMemberManagement() {
 
   const orgName = organization?.name || '当前组织';
   const allDepartments = useMemo(() => flattenDepartments(departmentTree), [departmentTree]);
-  const departmentRows = allDepartments;
   const departmentOptions = useMemo(
     () => flattenDepartmentOptions(departmentTree),
     [departmentTree]
@@ -700,7 +699,7 @@ export function OrgMemberManagement() {
     setDepartmentModalOpen(true);
   };
 
-  const openEditDepartmentModal = (department: DepartmentRow) => {
+  const openEditDepartmentModal = (department: DepartmentTreeDto) => {
     setDepartmentModalMode('edit');
     setEditingDepartment(department);
     departmentForm.setFieldsValue({
@@ -862,7 +861,7 @@ export function OrgMemberManagement() {
     },
   ];
 
-  const departmentColumns: TableProps<DepartmentRow>['columns'] = [
+  const departmentColumns: TableProps<DepartmentTreeDto>['columns'] = [
     {
       title: '部门名称',
       key: 'name',
@@ -1340,12 +1339,10 @@ export function OrgMemberManagement() {
           </div>
           <Table
             columns={departmentColumns}
-            dataSource={departmentRows}
+            dataSource={filteredDepartmentTree}
             rowKey="id"
             pagination={false}
-            rowClassName={(record) =>
-              !record.children || !record.children.length ? 'org-dept-row-no-children' : ''
-            }
+            rowClassName={(record) => (!record.children?.length ? 'org-dept-row-no-children' : '')}
             locale={{
               emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无部门" />,
             }}
