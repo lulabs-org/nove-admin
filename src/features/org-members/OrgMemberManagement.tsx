@@ -1478,16 +1478,18 @@ export function OrgMemberManagement() {
         )}
 
         <main className="org-structure-content">
-          <div className="org-scope-header">
-            <Space size="middle">
-              <Title level={4}>{selectedScopeName}</Title>
-              <Text type="secondary">
-                {activeTab === 'departments'
-                  ? `部门数 ${allDepartments.length}`
-                  : `总人数 ${memberList?.total || 0}`}
-              </Text>
-            </Space>
-          </div>
+          {activeTab === 'members' && (
+            <div className="org-scope-header">
+              <Space size="middle">
+                <Title level={4}>{selectedScopeName}</Title>
+                <Text type="secondary">
+                  {activeTab === 'departments'
+                    ? `部门数 ${allDepartments.length}`
+                    : `总人数 ${memberList?.total || 0}`}
+                </Text>
+              </Space>
+            </div>
+          )}
           {renderContent()}
         </main>
       </div>
