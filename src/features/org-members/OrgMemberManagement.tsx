@@ -1233,17 +1233,19 @@ export function OrgMemberManagement() {
   const renderMemberToolbar = () => (
     <div className="org-toolbar">
       <Space size="small" wrap>
-        <Select
-          value={filters.status as MemberStatus | undefined}
-          placeholder="账号状态"
-          allowClear
-          style={{ width: 140 }}
-          onChange={(value) => handleFilterChange('status', value)}
-          disabled={!currentOrgId || activeTab === 'left'}
-          options={Object.entries(MEMBER_STATUS_META)
-            .filter(([status]) => activeTab === 'left' || status !== 'LEFT')
-            .map(([value, meta]) => ({ value, label: meta.label }))}
-        />
+        {activeTab !== 'left' && (
+          <Select
+            value={filters.status as MemberStatus | undefined}
+            placeholder="账号状态"
+            allowClear
+            style={{ width: 140 }}
+            onChange={(value) => handleFilterChange('status', value)}
+            disabled={!currentOrgId}
+            options={Object.entries(MEMBER_STATUS_META)
+              .filter(([status]) => status !== 'LEFT')
+              .map(([value, meta]) => ({ value, label: meta.label }))}
+          />
+        )}
         <Select
           value={filters.type as MemberType | undefined}
           placeholder="成员类型"
@@ -1269,50 +1271,52 @@ export function OrgMemberManagement() {
           />
         </Tooltip>
       </Space>
-      <Space size="small" wrap>
-        <Popconfirm
-          title="确定将选中成员设为离职吗？"
-          okText="确定"
-          cancelText="取消"
-          disabled={!selectedRowKeys.length}
-          onConfirm={handleBulkLeave}
-        >
-          <Button danger disabled={!selectedRowKeys.length}>
-            批量操作离职
-          </Button>
-        </Popconfirm>
-        <Button
-          disabled={!selectedRowKeys.length}
-          onClick={() => {
-            batchDepartmentForm.setFieldsValue({
-              primaryDeptId: selectedDeptId,
-              departmentIds: selectedDeptId ? [selectedDeptId] : [],
-            });
-            setBatchDepartmentOpen(true);
-          }}
-        >
-          批量变更部门
-        </Button>
-        <Perm permission={PERMISSIONS.USER.CREATE}>
-          <Button
-            icon={<UserAddOutlined />}
-            onClick={openCreateMemberModal}
-            disabled={!currentOrgId}
+      {activeTab !== 'left' && (
+        <Space size="small" wrap>
+          <Popconfirm
+            title="确定将选中成员设为离职吗？"
+            okText="确定"
+            cancelText="取消"
+            disabled={!selectedRowKeys.length}
+            onConfirm={handleBulkLeave}
           >
-            邀请成员
-          </Button>
-        </Perm>
-        <Perm permission={PERMISSIONS.USER.CREATE}>
+            <Button danger disabled={!selectedRowKeys.length}>
+              批量操作离职
+            </Button>
+          </Popconfirm>
           <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={openCreateMemberModal}
-            disabled={!currentOrgId}
+            disabled={!selectedRowKeys.length}
+            onClick={() => {
+              batchDepartmentForm.setFieldsValue({
+                primaryDeptId: selectedDeptId,
+                departmentIds: selectedDeptId ? [selectedDeptId] : [],
+              });
+              setBatchDepartmentOpen(true);
+            }}
           >
-            添加成员
+            批量变更部门
           </Button>
-        </Perm>
-      </Space>
+          <Perm permission={PERMISSIONS.USER.CREATE}>
+            <Button
+              icon={<UserAddOutlined />}
+              onClick={openCreateMemberModal}
+              disabled={!currentOrgId}
+            >
+              邀请成员
+            </Button>
+          </Perm>
+          <Perm permission={PERMISSIONS.USER.CREATE}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={openCreateMemberModal}
+              disabled={!currentOrgId}
+            >
+              添加成员
+            </Button>
+          </Perm>
+        </Space>
+      )}
     </div>
   );
 
@@ -1478,16 +1482,18 @@ export function OrgMemberManagement() {
         )}
 
         <main className="org-structure-content">
-          <div className="org-scope-header">
-            <Space size="middle">
-              <Title level={4}>{selectedScopeName}</Title>
-              <Text type="secondary">
-                {activeTab === 'departments'
-                  ? `部门数 ${allDepartments.length}`
-                  : `总人数 ${memberList?.total || 0}`}
-              </Text>
-            </Space>
-          </div>
+          {activeTab === 'members' && (
+            <div className="org-scope-header">
+              <Space size="middle">
+                <Title level={4}>{selectedScopeName}</Title>
+                <Text type="secondary">
+                  {activeTab === 'departments'
+                    ? `部门数 ${allDepartments.length}`
+                    : `总人数 ${memberList?.total || 0}`}
+                </Text>
+              </Space>
+            </div>
+          )}
           {renderContent()}
         </main>
       </div>
