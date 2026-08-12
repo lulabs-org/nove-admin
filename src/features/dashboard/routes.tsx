@@ -2,7 +2,7 @@
  * @Author: 杨仕明 shiming.y@qq.com
  * @Date: 2026-01-07 07:04:11
  * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-11 11:42:40
+ * @LastEditTime: 2026-08-10
  * @FilePath: /nove-admin/src/features/dashboard/routes.tsx
  * @Description:
  *
@@ -10,11 +10,12 @@
  */
 import type { RouteConfig } from '../../shared/types/index';
 import { PieChartOutlined } from '@ant-design/icons';
+import { DashboardPage } from './DashboardPage';
 
 export const dashboardRoutes: RouteConfig[] = [
   {
     path: '/',
-    element: <div>Dashboard</div>,
+    element: <DashboardPage />,
     title: '首页',
     menu: true,
     icon: <PieChartOutlined />,
