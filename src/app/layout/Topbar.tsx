@@ -44,7 +44,7 @@ export function Topbar() {
         top: 0,
         right: 0,
         left: 0,
-        zIndex: 9,
+        zIndex: 100,
       }}
     >
       <Dropdown menu={{ items: menuItems }} placement="bottomRight">
