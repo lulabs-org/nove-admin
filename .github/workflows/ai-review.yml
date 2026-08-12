@@ -87,34 +87,47 @@ jobs:
 
             // ===== 3. 组装 prompt =====
             const systemPrompt = [
-              '你是一位资深 React / TypeScript 前端代码审查专家。请审查以下 PR 的 diff。',
+              '你是资深 React / TypeScript 代码审查专家。审查以下 PR 的 diff。',
               '',
-              '仓库技术栈：React 19、Ant Design 6、TanStack Query、Zustand、React Hook Form、Zod、Vite、Orval。',
-              '审查维度：',
-              '1. 状态管理正确性（Zustand store、React Query 缓存与失效）',
-              '2. 组件性能（不必要的 re-render、useMemo/useCallback 缺失）',
-              '3. 内存泄漏（useEffect 清理、事件监听/定时器）',
-              '4. 类型安全（any 滥用、类型断言）',
-              '5. 可访问性（a11y）',
-              '6. 与既有代码风格一致性（2 空格缩进、单引号、kebab-case 文件名、PascalCase 组件名）',
+              '技术栈：React 19、Ant Design 6、TanStack Query、Zustand、React Hook Form、Zod、Vite、Orval。',
+              '',
+              '审查原则（务必遵守，这是审查质量的评判标准）：',
+              '- 只报告有实际影响的问题：bug、安全风险、数据丢失、内存泄漏、性能反模式、类型安全漏洞。',
+              '- 不要报告纯风格/格式问题（缩进、引号、命名、注释缺失、import 顺序）——这些由 ESLint/Prettier 处理，不是你的职责。',
+              '- 只审查 diff 中变更的代码行，不要报告未修改行的问题。',
+              '- 不确定是否是问题时不要报告。宁缺毋滥，零问题好过凑数的十个 nit。',
+              '- 不要误报合理的工程决策：受控的 any（如第三方库边界）、有意的类型断言、必要的 escape hatch。',
+              '',
+              '重点检查：',
+              '1. React：hooks 依赖数组遗漏/多余、useEffect 未清理（定时器/监听/订阅）、setState 闭包陷阱、列表 key、不必要的 re-render',
+              '2. TanStack Query：queryKey 是否能正确缓存/失效、mutation 后 invalidate 是否覆盖、staleTime/gcTime 配置',
+              '3. Zustand：selector 粒度（避免全量订阅导致 re-render）、store 中混入派生数据',
+              '4. 类型安全：unsafe 类型断言（as unknown as）、隐式 any、Zod schema 与 TS 类型不一致、可选链缺失',
+              '5. 安全：硬编码密钥/token、XSS（dangerouslySetInnerHTML 未转义）、未校验的用户输入直接入库',
               '',
               '安全约束：',
-              '- 如果发现代码中疑似硬编码的密钥/token/凭证，作为 critical 问题报告，但对疑似密钥值做部分遮蔽展示（如 sk-***xxxx），不要原样复制完整值。',
+              '- 发现疑似硬编码密钥/token/凭证，作为 critical 报告，值做部分遮蔽展示（如 sk-***xxxx），不要原样复制完整值。',
               '- 不要输出任何密钥、token、凭证。',
               '',
-              '输出严格 JSON（仅输出 JSON，不要 markdown 代码块包裹）：',
+              'severity 定义（严格按影响判定）：',
+              '- critical：会导致 bug、安全问题、数据损失或崩溃',
+              '- major：很可能引发问题，或显著降低代码质量/可维护性',
+              '- minor：有实际意义的小改进（非风格类），如边界条件、错误处理遗漏',
+              '- 没有 nit 级别。不要为了凑数而报告 nit。',
+              '',
+              '输出严格 JSON（仅输出 JSON，不要 markdown 代码块包裹，不要前后解释文字）：',
               '{',
-              '  "summary": "整体结论（2-3 句）",',
+              '  "summary": "2-3 句整体结论，点出本次变更的主要风险点；无风险则说明已审查的范围与结论",',
               '  "issues": [',
-              '    { "severity": "critical|major|minor|nit",',
+              '    { "severity": "critical|major|minor",',
               '      "file": "src/features/auth/api/api.ts",',
               '      "line": 42,',
-              '      "title": "一句话问题",',
-              '      "description": "为什么是问题",',
-              '      "suggestion": "建议改法" }',
+              '      "title": "一句话问题（不要带 emoji/前缀）",',
+              '      "description": "为什么是问题 + 具体影响",',
+              '      "suggestion": "建议改法，必要时含简短代码示例" }',
               '  ]',
               '}',
-              '若没有发现问题，issues 返回空数组。',
+              '没有发现问题时 issues 必须返回空数组。不要编造问题。',
             ].join('\n');
 
             const fileBlocks = reviewable.map(f => `### ${f.filename}\n\`\`\`diff\n${f.patch}\n\`\`\``);
@@ -203,13 +216,25 @@ jobs:
                 core.warning(`块 ${i + 1} JSON 解析失败，跳过该块`);
                 continue;
               }
-              if (!merged.summary && parsed.summary) merged.summary = parsed.summary;
+              // 累积各块 summary（多块时分块拼接，比覆盖更全面）
+              if (parsed.summary) {
+                merged.summary = merged.summary
+                  ? `${merged.summary} / ${parsed.summary}`
+                  : parsed.summary;
+              }
               if (Array.isArray(parsed.issues)) {
-                // 最后一块的 summary 更全面时覆盖
-                if (i === chunks.length - 1 && parsed.summary) merged.summary = parsed.summary;
                 merged.issues.push(...parsed.issues);
               }
             }
+
+            // 按 file + title 去重（分块调用可能产生重复报告）
+            const seen = new Set();
+            const issues = merged.issues.filter(item => {
+              const key = `${(item?.file || '').toLowerCase()}|${(item?.title || '').toLowerCase()}`;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
 
             // ===== 5. 格式化 Markdown =====
             function runFooter() {
@@ -220,46 +245,55 @@ jobs:
               critical: '🔴 Critical',
               major:    '🟠 Major',
               minor:    '🟡 Minor',
-              nit:      '🔵 Nit',
             };
-            const SEVERITY_ORDER = ['critical', 'major', 'minor', 'nit'];
+            const SEVERITY_ORDER = ['critical', 'major', 'minor'];
+
+            function formatIssue(item, idx) {
+              const file  = item.file ? `\`${item.file}\`` : '_未知文件_';
+              const line  = item.line ? `:${item.line}` : '';
+              const title = item.title ? `**${item.title}**` : '';
+              const desc  = item.description ? `\n\n${item.description}` : '';
+              const sug   = item.suggestion  ? `\n\n💡 建议：${item.suggestion}` : '';
+              return `${idx + 1}. ${title} — ${file}${line}${desc}${sug}\n`;
+            }
 
             let body = '## 🤖 AI Code Review\n\n';
             body += merged.summary
               ? `**整体结论**：${merged.summary}\n\n`
               : '本次未取得整体结论摘要。\n\n';
 
-            const issues = Array.isArray(merged.issues) ? merged.issues : [];
-
             if (issues.length === 0) {
               body += '✅ 未发现明显问题。\n';
             } else {
-              body += `共发现 **${issues.length}** 个问题，按严重程度分组如下：\n`;
+              // 顶部统计行：一眼看到严重问题分布
+              const counts = {};
               for (const sev of SEVERITY_ORDER) {
+                counts[sev] = issues.filter(x => (x.severity || '').toLowerCase() === sev).length;
+              }
+              const otherGroup = issues.filter(x => !SEVERITY_ORDER.includes((x.severity || '').toLowerCase()));
+              const stats = SEVERITY_ORDER.filter(s => counts[s] > 0).map(s => `${SEVERITY_LABEL[s]} ×${counts[s]}`);
+              if (otherGroup.length > 0) stats.push(`⚪ 其他 ×${otherGroup.length}`);
+              body += `**问题统计**：${stats.join(' · ')}（共 ${issues.length} 个）\n`;
+
+              // critical / major 完整展示（reviewer 必看）
+              for (const sev of ['critical', 'major']) {
                 const group = issues.filter(x => (x.severity || '').toLowerCase() === sev);
                 if (group.length === 0) continue;
                 body += `\n### ${SEVERITY_LABEL[sev]}（${group.length}）\n\n`;
-                for (const [idx, item] of group.entries()) {
-                  const file   = item.file ? `\`${item.file}\`` : '_未知文件_';
-                  const line   = item.line ? `:${item.line}` : '';
-                  const title  = item.title  ? `**${item.title}**` : '';
-                  const desc   = item.description ? `\n\n${item.description}` : '';
-                  const sug    = item.suggestion  ? `\n\n💡 建议：${item.suggestion}` : '';
-                  body += `${idx + 1}. ${title} — ${file}${line}${desc}${sug}\n`;
-                }
+                for (const [idx, item] of group.entries()) body += formatIssue(item, idx);
               }
-              // 未知 severity 兜底
-              const others = issues.filter(x => !SEVERITY_ORDER.includes((x.severity || '').toLowerCase()));
-              if (others.length > 0) {
-                body += `\n### ⚪ 其他（${others.length}）\n\n`;
-                for (const [idx, item] of others.entries()) {
-                  const file  = item.file ? `\`${item.file}\`` : '_未知文件_';
-                  const line  = item.line ? `:${item.line}` : '';
-                  const title = item.title ? `**${item.title}**` : '';
-                  const desc  = item.description ? `\n\n${item.description}` : '';
-                  const sug   = item.suggestion  ? `\n\n💡 建议：${item.suggestion}` : '';
-                  body += `${idx + 1}. ${title} — ${file}${line}${desc}${sug}\n`;
-                }
+
+              // minor 及其他默认折叠（信噪比优化：次要问题不抢注意力）
+              const minorGroup = counts.minor > 0
+                ? issues.filter(x => (x.severity || '').toLowerCase() === 'minor')
+                : [];
+              if (minorGroup.length > 0 || otherGroup.length > 0) {
+                const total = minorGroup.length + otherGroup.length;
+                body += `\n<details><summary>🟡 Minor 及其他（${total}，点击展开）</summary>\n\n`;
+                for (const [idx, item] of minorGroup.entries()) body += formatIssue(item, idx);
+                if (minorGroup.length > 0 && otherGroup.length > 0) body += '\n';
+                for (const [idx, item] of otherGroup.entries()) body += formatIssue(item, idx);
+                body += `\n</details>\n`;
               }
             }
 
