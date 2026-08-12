@@ -159,21 +159,28 @@ jobs:
             }
 
             async function callModel(userContent) {
+              const body = {
+                model,
+                temperature: 0.2,
+                max_tokens: 4000,
+                messages: [
+                  { role: 'system', content: systemPrompt },
+                  { role: 'user',   content: userContent },
+                ],
+              };
+              // DeepSeek V4 默认开启 thinking 模式（产生额外 reasoning token，按输出计费、增加延迟）
+              // 代码审查场景关闭 thinking 以对等旧 deepseek-chat 行为，保持低成本快速响应
+              // 仅对 deepseek 系列模型注入该参数，换用其他 OpenAI 兼容 API 时不受影响
+              if (/deepseek/i.test(model)) {
+                body.thinking = { type: 'disabled' };
+              }
               const resp = await fetch(`${process.env.OPENAI_BASE_URL}/chat/completions`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
                   Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
                 },
-                body: JSON.stringify({
-                  model,
-                  temperature: 0.2,
-                  max_tokens: 4000,
-                  messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user',   content: userContent },
-                  ],
-                }),
+                body: JSON.stringify(body),
               });
               if (!resp.ok) {
                 const statusText = await resp.text().catch(() => '');
