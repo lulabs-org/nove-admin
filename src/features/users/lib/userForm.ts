@@ -1,4 +1,26 @@
-import type { UserWritePayload } from '../types';
+import type { AdminUser, UserWritePayload } from '../types';
+
+export function userToFormValues(user: AdminUser): UserWritePayload {
+  return {
+    username: user.username ?? undefined,
+    email: user.email ?? undefined,
+    countryCode: user.countryCode ?? '+86',
+    phone: user.phone ?? undefined,
+    displayName: user.profile?.displayName ?? undefined,
+    avatar: user.profile?.avatar ?? undefined,
+    bio: user.profile?.bio ?? undefined,
+    firstName: user.profile?.firstName ?? undefined,
+    lastName: user.profile?.lastName ?? undefined,
+    dateOfBirth: user.profile?.dateOfBirth?.slice(0, 10) ?? undefined,
+    gender: user.profile?.gender ?? undefined,
+    address: user.profile?.address ?? undefined,
+    city: user.profile?.city ?? undefined,
+    country: user.profile?.country ?? undefined,
+    zipCode: user.profile?.zipCode ?? undefined,
+    website: user.profile?.website ?? undefined,
+    active: user.active,
+  };
+}
 
 export function normalizeUserPayload(values: UserWritePayload): UserWritePayload {
   const text = (value?: string | null) => value?.trim() || null;

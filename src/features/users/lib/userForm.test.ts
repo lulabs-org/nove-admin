@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeUserPayload, validateImportFile, validateUserPayload } from './userForm';
+import {
+  normalizeUserPayload,
+  userToFormValues,
+  validateImportFile,
+  validateUserPayload,
+} from './userForm';
+import type { AdminUser } from '../types';
 
 describe('user form helpers', () => {
   it('normalizes contact information', () => {
@@ -36,5 +42,44 @@ describe('user form helpers', () => {
   it('accepts CSV and XLSX files only', () => {
     expect(validateImportFile(new File(['email\na@example.com'], 'users.csv'))).toBeNull();
     expect(validateImportFile(new File(['x'], 'users.xls'))).toBe('仅支持 CSV 或 XLSX 文件');
+  });
+
+  it('maps account and profile detail into edit form values', () => {
+    const user: AdminUser = {
+      id: 'user-1',
+      username: 'zhangsan',
+      email: 'zhangsan@example.com',
+      countryCode: '+86',
+      phone: '13800138000',
+      active: true,
+      emailVerified: true,
+      phoneVerified: false,
+      lastLoginAt: null,
+      createdAt: '2026-08-12T00:00:00.000Z',
+      updatedAt: '2026-08-12T00:00:00.000Z',
+      profile: {
+        displayName: '张三',
+        avatar: 'https://example.com/avatar.png',
+        bio: '个人简介',
+        firstName: '三',
+        lastName: '张',
+        dateOfBirth: '2000-01-02T00:00:00.000Z',
+        gender: 'MALE',
+        address: '示例路 1 号',
+        city: '上海',
+        country: '中国',
+        zipCode: '200000',
+        website: 'https://example.com',
+      },
+    };
+
+    expect(userToFormValues(user)).toMatchObject({
+      username: 'zhangsan',
+      email: 'zhangsan@example.com',
+      displayName: '张三',
+      dateOfBirth: '2000-01-02',
+      gender: 'MALE',
+      active: true,
+    });
   });
 });

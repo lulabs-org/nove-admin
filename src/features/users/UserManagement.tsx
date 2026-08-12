@@ -11,7 +11,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Avatar from 'antd/es/avatar';
 import Button from 'antd/es/button';
 import Divider from 'antd/es/divider';
@@ -22,6 +22,7 @@ import Modal from 'antd/es/modal';
 import Popconfirm from 'antd/es/popconfirm';
 import Select from 'antd/es/select';
 import Space from 'antd/es/space';
+import Spin from 'antd/es/spin';
 import Switch from 'antd/es/switch';
 import Table from 'antd/es/table';
 import Tag from 'antd/es/tag';
@@ -32,7 +33,13 @@ import type { UploadFile } from 'antd/es/upload/interface';
 import { Perm } from '../../app/guards/Perm';
 import { PERMISSIONS } from '../../shared/utils/permissions';
 import { userApi } from './api/userApi';
-import { normalizeUserPayload, validateImportFile, validateUserPayload } from './lib/userForm';
+import {
+  normalizeUserPayload,
+  userToFormValues,
+  validateImportFile,
+  validateUserPayload,
+} from './lib/userForm';
+import { COUNTRY_OPTIONS } from './lib/countryOptions';
 import type { AdminUser, UserImportResponse, UserListParams, UserWritePayload } from './types';
 import './UserManagement.css';
 
@@ -62,6 +69,33 @@ export function UserManagement() {
     queryFn: () => userApi.list(filters),
     placeholderData: (previous) => previous,
   });
+
+  const editDetailQuery = useQuery({
+    queryKey: ['admin-user-detail', editing?.id],
+    queryFn: () => userApi.getById(editing!.id),
+    enabled: formOpen && Boolean(editing),
+    staleTime: 0,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!formOpen) return;
+    if (!editing) {
+      form.resetFields();
+      form.setFieldsValue({ countryCode: '+86', active: true });
+      return;
+    }
+    if (editDetailQuery.data) {
+      form.resetFields();
+      form.setFieldsValue(userToFormValues(editDetailQuery.data));
+    }
+  }, [editDetailQuery.data, editing, form, formOpen]);
+
+  useEffect(() => {
+    if (editDetailQuery.error) {
+      void message.error(errorMessage(editDetailQuery.error, '获取用户详情失败'));
+    }
+  }, [editDetailQuery.error]);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: [LIST_KEY] });
 
@@ -99,32 +133,12 @@ export function UserManagement() {
 
   const openCreate = () => {
     setEditing(null);
-    form.resetFields();
-    form.setFieldsValue({ countryCode: '+86', active: true });
     setFormOpen(true);
   };
 
   const openEdit = (user: AdminUser) => {
     setEditing(user);
-    form.setFieldsValue({
-      username: user.username ?? undefined,
-      email: user.email ?? undefined,
-      countryCode: user.countryCode ?? '+86',
-      phone: user.phone ?? undefined,
-      displayName: user.profile?.displayName ?? undefined,
-      avatar: user.profile?.avatar ?? undefined,
-      bio: user.profile?.bio ?? undefined,
-      firstName: user.profile?.firstName ?? undefined,
-      lastName: user.profile?.lastName ?? undefined,
-      dateOfBirth: user.profile?.dateOfBirth?.slice(0, 10) ?? undefined,
-      gender: user.profile?.gender ?? undefined,
-      address: user.profile?.address ?? undefined,
-      city: user.profile?.city ?? undefined,
-      country: user.profile?.country ?? undefined,
-      zipCode: user.profile?.zipCode ?? undefined,
-      website: user.profile?.website ?? undefined,
-      active: user.active,
-    });
+    form.resetFields();
     setFormOpen(true);
   };
 
@@ -300,102 +314,117 @@ export function UserManagement() {
       <Modal
         title={editing ? '编辑用户' : '新建用户'}
         open={formOpen}
-        onCancel={() => setFormOpen(false)}
+        onCancel={() => {
+          setFormOpen(false);
+          setEditing(null);
+          form.resetFields();
+        }}
         onOk={() => void submitForm()}
-        confirmLoading={saveMutation.isPending}
+        confirmLoading={saveMutation.isPending || editDetailQuery.isFetching}
+        okButtonProps={{
+          disabled: Boolean(editing) && (!editDetailQuery.data || editDetailQuery.isFetching),
+        }}
         destroyOnHidden
         width={760}
       >
-        <Form form={form} layout="vertical" preserve={false}>
-          <Divider titlePlacement="start">账号信息</Divider>
-          <Form.Item label="显示名称" name="displayName">
-            <Input maxLength={100} placeholder="用于后台展示" />
-          </Form.Item>
-          <Form.Item
-            label="用户名"
-            name="username"
-            rules={[{ pattern: /^[a-zA-Z0-9_]+$/, message: '只能包含字母、数字和下划线' }]}
-          >
-            <Input maxLength={50} placeholder="用户名、邮箱、手机号至少填写一个" />
-          </Form.Item>
-          <Form.Item
-            label="邮箱"
-            name="email"
-            rules={[{ type: 'email', message: '邮箱格式不正确' }]}
-          >
-            <Input maxLength={255} placeholder="user@example.com" />
-          </Form.Item>
-          <Space align="start" className="user-phone-fields">
-            <Form.Item label="国家代码" name="countryCode">
-              <Input placeholder="+86" maxLength={5} />
+        <Spin spinning={Boolean(editing) && editDetailQuery.isFetching}>
+          <Form form={form} layout="vertical" preserve={false}>
+            <Divider titlePlacement="start">账号信息</Divider>
+            <Form.Item label="显示名称" name="displayName">
+              <Input maxLength={100} placeholder="用于后台展示" />
             </Form.Item>
             <Form.Item
-              label="手机号"
-              name="phone"
-              rules={[{ pattern: /^[\d\s()-]+$/, message: '手机号格式不正确' }]}
+              label="用户名"
+              name="username"
+              rules={[{ pattern: /^[a-zA-Z0-9_]+$/, message: '只能包含字母、数字和下划线' }]}
             >
-              <Input maxLength={30} placeholder="13800138000" />
+              <Input maxLength={50} placeholder="用户名、邮箱、手机号至少填写一个" />
             </Form.Item>
-          </Space>
-          <Form.Item label="启用" name="active" valuePropName="checked">
-            <Switch />
-          </Form.Item>
+            <Form.Item
+              label="邮箱"
+              name="email"
+              rules={[{ type: 'email', message: '邮箱格式不正确' }]}
+            >
+              <Input maxLength={255} placeholder="user@example.com" />
+            </Form.Item>
+            <Space align="start" className="user-phone-fields">
+              <Form.Item label="国家代码" name="countryCode">
+                <Input placeholder="+86" maxLength={5} />
+              </Form.Item>
+              <Form.Item
+                label="手机号"
+                name="phone"
+                rules={[{ pattern: /^[\d\s()-]+$/, message: '手机号格式不正确' }]}
+              >
+                <Input maxLength={30} placeholder="13800138000" />
+              </Form.Item>
+            </Space>
+            <Form.Item label="启用" name="active" valuePropName="checked">
+              <Switch />
+            </Form.Item>
 
-          <Divider titlePlacement="start">个人资料</Divider>
-          <div className="user-profile-grid">
-            <Form.Item label="姓" name="lastName">
-              <Input maxLength={100} />
-            </Form.Item>
-            <Form.Item label="名" name="firstName">
-              <Input maxLength={100} />
-            </Form.Item>
-            <Form.Item label="出生日期" name="dateOfBirth">
-              <Input type="date" />
-            </Form.Item>
-            <Form.Item label="性别" name="gender">
-              <Select
-                allowClear
-                options={[
-                  { label: '男', value: 'MALE' },
-                  { label: '女', value: 'FEMALE' },
-                  { label: '其他', value: 'OTHER' },
-                  { label: '不愿透露', value: 'PREFER_NOT_TO_SAY' },
-                ]}
-              />
-            </Form.Item>
-            <Form.Item
-              label="头像 URL"
-              name="avatar"
-              rules={[{ type: 'url', message: '头像 URL 格式不正确' }]}
-              className="user-profile-wide"
-            >
-              <Input maxLength={500} placeholder="https://example.com/avatar.png" />
-            </Form.Item>
-            <Form.Item
-              label="个人网站"
-              name="website"
-              rules={[{ type: 'url', message: '个人网站 URL 格式不正确' }]}
-              className="user-profile-wide"
-            >
-              <Input maxLength={255} placeholder="https://example.com" />
-            </Form.Item>
-            <Form.Item label="国家" name="country">
-              <Input maxLength={100} />
-            </Form.Item>
-            <Form.Item label="城市" name="city">
-              <Input maxLength={100} />
-            </Form.Item>
-            <Form.Item label="邮政编码" name="zipCode">
-              <Input maxLength={20} />
-            </Form.Item>
-            <Form.Item label="详细地址" name="address" className="user-profile-wide">
-              <Input maxLength={500} />
-            </Form.Item>
-            <Form.Item label="个人简介" name="bio" className="user-profile-full">
-              <Input.TextArea maxLength={500} rows={3} showCount />
-            </Form.Item>
-          </div>
-        </Form>
+            <Divider titlePlacement="start">个人资料</Divider>
+            <div className="user-profile-grid">
+              <Form.Item label="姓" name="lastName">
+                <Input maxLength={100} />
+              </Form.Item>
+              <Form.Item label="名" name="firstName">
+                <Input maxLength={100} />
+              </Form.Item>
+              <Form.Item label="出生日期" name="dateOfBirth">
+                <Input type="date" />
+              </Form.Item>
+              <Form.Item label="性别" name="gender">
+                <Select
+                  allowClear
+                  options={[
+                    { label: '男', value: 'MALE' },
+                    { label: '女', value: 'FEMALE' },
+                    { label: '其他', value: 'OTHER' },
+                    { label: '不愿透露', value: 'PREFER_NOT_TO_SAY' },
+                  ]}
+                />
+              </Form.Item>
+              <Form.Item
+                label="头像 URL"
+                name="avatar"
+                rules={[{ type: 'url', message: '头像 URL 格式不正确' }]}
+                className="user-profile-wide"
+              >
+                <Input maxLength={500} placeholder="https://example.com/avatar.png" />
+              </Form.Item>
+              <Form.Item
+                label="个人网站"
+                name="website"
+                rules={[{ type: 'url', message: '个人网站 URL 格式不正确' }]}
+                className="user-profile-wide"
+              >
+                <Input maxLength={255} placeholder="https://example.com" />
+              </Form.Item>
+              <Form.Item label="国家" name="country">
+                <Select
+                  allowClear
+                  showSearch
+                  optionFilterProp="label"
+                  placeholder="请选择国家或地区"
+                  options={COUNTRY_OPTIONS}
+                />
+              </Form.Item>
+              <Form.Item label="城市" name="city">
+                <Input maxLength={100} />
+              </Form.Item>
+              <Form.Item label="邮政编码" name="zipCode">
+                <Input maxLength={20} />
+              </Form.Item>
+              <Form.Item label="详细地址" name="address" className="user-profile-wide">
+                <Input maxLength={500} />
+              </Form.Item>
+              <Form.Item label="个人简介" name="bio" className="user-profile-full">
+                <Input.TextArea maxLength={500} rows={3} showCount />
+              </Form.Item>
+            </div>
+          </Form>
+        </Spin>
       </Modal>
 
       <Modal
