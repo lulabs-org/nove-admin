@@ -1,0 +1,267 @@
+name: AI Code Review
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ai-review-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  ai-review:
+    if: github.event.issue.pull_request != '' && contains(github.event.comment.body, '@review')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: AI Review
+        uses: actions/github-script@v7
+        env:
+          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+        with:
+          script: |
+            // ===== 0. fork PR / 未配置 secret 兜底 =====
+            if (!process.env.OPENAI_API_KEY || !process.env.OPENAI_BASE_URL || !process.env.OPENAI_MODEL) {
+              core.info('未配置 OPENAI_* secrets（可能为 fork PR），跳过 AI Review');
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+            const prNumber = context.issue.number;
+            const comment  = context.payload.comment;
+            const model    = process.env.OPENAI_MODEL;
+
+            core.info(`AI Review 开始 · PR #${prNumber} · 模型 ${model}`);
+
+            // ===== 1. 权限校验 =====
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: prNumber });
+            const allowed = ['OWNER', 'MEMBER', 'COLLABORATOR'];
+            if (comment.user.login !== pr.user.login && !allowed.includes(comment.author_association)) {
+              core.info(`无权限触发 AI Review（@${comment.user.login}, ${comment.author_association}），跳过`);
+              return;
+            }
+
+            // ===== 2. 拉取变更文件并过滤 =====
+            const files = [];
+            for (let page = 1; ; page++) {
+              const { data } = await github.rest.pulls.listFiles({
+                owner, repo, pull_number: prNumber, per_page: 100, page,
+              });
+              files.push(...data);
+              if (data.length < 100) break;
+            }
+
+            const ignorePatterns = [
+              /pnpm-lock\.yaml$/, /package-lock\.json$/, /yarn\.lock$/,
+              /\.map$/, /dist\//, /build\//,
+              /docs\//, /\.md$/, /CHANGELOG/, /LICENSE/,
+            ];
+            const reviewable = files.filter(f =>
+              f.status !== 'removed' &&
+              !ignorePatterns.some(p => p.test(f.filename)) &&
+              (f.patch?.length ?? 0) > 0 &&
+              (f.patch?.length ?? 0) < 50000
+            );
+
+            if (reviewable.length === 0) {
+              core.info('没有可审查的文件（全部被过滤或为删除项），跳过');
+              await github.rest.pulls.createReview({
+                owner, repo, pull_number: prNumber, event: 'COMMENT',
+                body: [
+                  '## 🤖 AI Code Review',
+                  '',
+                  '本次变更无可审查的代码文件（lock / 生成产物 / 文档 / 删除项 已自动跳过）。',
+                  '',
+                  runFooter(),
+                ].join('\n'),
+              });
+              return;
+            }
+
+            // ===== 3. 组装 prompt =====
+            const systemPrompt = [
+              '你是一位资深 React / TypeScript 前端代码审查专家。请审查以下 PR 的 diff。',
+              '',
+              '仓库技术栈：React 19、Ant Design 6、TanStack Query、Zustand、React Hook Form、Zod、Vite、Orval。',
+              '审查维度：',
+              '1. 状态管理正确性（Zustand store、React Query 缓存与失效）',
+              '2. 组件性能（不必要的 re-render、useMemo/useCallback 缺失）',
+              '3. 内存泄漏（useEffect 清理、事件监听/定时器）',
+              '4. 类型安全（any 滥用、类型断言）',
+              '5. 可访问性（a11y）',
+              '6. 与既有代码风格一致性（2 空格缩进、单引号、kebab-case 文件名、PascalCase 组件名）',
+              '',
+              '安全约束：',
+              '- 如果发现代码中疑似硬编码的密钥/token/凭证，作为 critical 问题报告，但对疑似密钥值做部分遮蔽展示（如 sk-***xxxx），不要原样复制完整值。',
+              '- 不要输出任何密钥、token、凭证。',
+              '',
+              '输出严格 JSON（仅输出 JSON，不要 markdown 代码块包裹）：',
+              '{',
+              '  "summary": "整体结论（2-3 句）",',
+              '  "issues": [',
+              '    { "severity": "critical|major|minor|nit",',
+              '      "file": "src/features/auth/api/api.ts",',
+              '      "line": 42,',
+              '      "title": "一句话问题",',
+              '      "description": "为什么是问题",',
+              '      "suggestion": "建议改法" }',
+              '  ]',
+              '}',
+              '若没有发现问题，issues 返回空数组。',
+            ].join('\n');
+
+            const fileBlocks = reviewable.map(f => `### ${f.filename}\n\`\`\`diff\n${f.patch}\n\`\`\``);
+
+            // 分块：单块 user content 上限 ~80KB，避免超出模型上下文
+            const MAX_CHUNK_BYTES = 80000;
+            function chunkBlocks(blocks) {
+              const chunks = [];
+              let cur = [];
+              let curLen = 0;
+              for (const b of blocks) {
+                const len = Buffer.byteLength(b, 'utf8');
+                if (curLen + len > MAX_CHUNK_BYTES && cur.length > 0) {
+                  chunks.push(cur);
+                  cur = [];
+                  curLen = 0;
+                }
+                cur.push(b);
+                curLen += len;
+              }
+              if (cur.length > 0) chunks.push(cur);
+              return chunks;
+            }
+            const chunks = chunkBlocks(fileBlocks);
+            core.info(`审查文件 ${reviewable.length} 个，分 ${chunks.length} 块调用模型`);
+
+            // ===== 4. 调用 DeepSeek（每块一次，结果合并） =====
+            function parseJsonContent(text) {
+              if (!text) return null;
+              let t = text.trim();
+              // 去除可能的 ```json ... ``` 包裹
+              const fence = t.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+              if (fence) t = fence[1].trim();
+              try { return JSON.parse(t); } catch (_) { /* fallthrough */ }
+              // 尝试截取第一个 { 到最后一个 }
+              const first = t.indexOf('{');
+              const last  = t.lastIndexOf('}');
+              if (first !== -1 && last !== -1 && last > first) {
+                try { return JSON.parse(t.slice(first, last + 1)); } catch (_) { /* ignore */ }
+              }
+              return null;
+            }
+
+            async function callModel(userContent) {
+              const resp = await fetch(`${process.env.OPENAI_BASE_URL}/chat/completions`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                },
+                body: JSON.stringify({
+                  model,
+                  temperature: 0.2,
+                  max_tokens: 4000,
+                  messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user',   content: userContent },
+                  ],
+                }),
+              });
+              if (!resp.ok) {
+                const statusText = await resp.text().catch(() => '');
+                // 仅打印 status 与截断后的安全片段，绝不打印请求头
+                core.warning(`模型返回非 2xx: ${resp.status} ${resp.statusText}`);
+                if (statusText) core.warning(`响应片段: ${statusText.slice(0, 200)}`);
+                throw new Error(`API 调用失败: ${resp.status} ${resp.statusText}`);
+              }
+              const data = await resp.json();
+              return data.choices?.[0]?.message?.content ?? '';
+            }
+
+            const merged = { summary: '', issues: [] };
+            for (let i = 0; i < chunks.length; i++) {
+              const userContent = `以下是本次 PR 的 diff（第 ${i + 1}/${chunks.length} 块）：\n\n` + chunks[i].join('\n\n');
+              core.info(`调用模型 · 块 ${i + 1}/${chunks.length}`);
+              const content = await callModel(userContent);
+              const parsed  = parseJsonContent(content);
+              if (!parsed) {
+                core.warning(`块 ${i + 1} JSON 解析失败，跳过该块`);
+                continue;
+              }
+              if (!merged.summary && parsed.summary) merged.summary = parsed.summary;
+              if (Array.isArray(parsed.issues)) {
+                // 最后一块的 summary 更全面时覆盖
+                if (i === chunks.length - 1 && parsed.summary) merged.summary = parsed.summary;
+                merged.issues.push(...parsed.issues);
+              }
+            }
+
+            // ===== 5. 格式化 Markdown =====
+            function runFooter() {
+              return `\n---\n> 由 GitHub Actions run [#${context.runId}](${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}) 生成 · 模型: ${model}`;
+            }
+
+            const SEVERITY_LABEL = {
+              critical: '🔴 Critical',
+              major:    '🟠 Major',
+              minor:    '🟡 Minor',
+              nit:      '🔵 Nit',
+            };
+            const SEVERITY_ORDER = ['critical', 'major', 'minor', 'nit'];
+
+            let body = '## 🤖 AI Code Review\n\n';
+            body += merged.summary
+              ? `**整体结论**：${merged.summary}\n\n`
+              : '本次未取得整体结论摘要。\n\n';
+
+            const issues = Array.isArray(merged.issues) ? merged.issues : [];
+
+            if (issues.length === 0) {
+              body += '✅ 未发现明显问题。\n';
+            } else {
+              body += `共发现 **${issues.length}** 个问题，按严重程度分组如下：\n`;
+              for (const sev of SEVERITY_ORDER) {
+                const group = issues.filter(x => (x.severity || '').toLowerCase() === sev);
+                if (group.length === 0) continue;
+                body += `\n### ${SEVERITY_LABEL[sev]}（${group.length}）\n\n`;
+                for (const [idx, item] of group.entries()) {
+                  const file   = item.file ? `\`${item.file}\`` : '_未知文件_';
+                  const line   = item.line ? `:${item.line}` : '';
+                  const title  = item.title  ? `**${item.title}**` : '';
+                  const desc   = item.description ? `\n\n${item.description}` : '';
+                  const sug    = item.suggestion  ? `\n\n💡 建议：${item.suggestion}` : '';
+                  body += `${idx + 1}. ${title} — ${file}${line}${desc}${sug}\n`;
+                }
+              }
+              // 未知 severity 兜底
+              const others = issues.filter(x => !SEVERITY_ORDER.includes((x.severity || '').toLowerCase()));
+              if (others.length > 0) {
+                body += `\n### ⚪ 其他（${others.length}）\n\n`;
+                for (const [idx, item] of others.entries()) {
+                  const file  = item.file ? `\`${item.file}\`` : '_未知文件_';
+                  const line  = item.line ? `:${item.line}` : '';
+                  const title = item.title ? `**${item.title}**` : '';
+                  const desc  = item.description ? `\n\n${item.description}` : '';
+                  const sug   = item.suggestion  ? `\n\n💡 建议：${item.suggestion}` : '';
+                  body += `${idx + 1}. ${title} — ${file}${line}${desc}${sug}\n`;
+                }
+              }
+            }
+
+            body += runFooter();
+
+            // ===== 6. 发布 Review 评论 =====
+            await github.rest.pulls.createReview({
+              owner, repo, pull_number: prNumber,
+              event: 'COMMENT',
+              body,
+            });
+            core.info(`AI Review 完成 · 共 ${issues.length} 个问题`);
