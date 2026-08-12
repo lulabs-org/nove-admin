@@ -85,17 +85,17 @@ jobs:
               return;
             }
 
-            // ===== 3. 组装 prompt =====
-            const systemPrompt = [
-              '你是资深 React / TypeScript 代码审查专家。审查以下 PR 的 diff。',
+            // ===== 3. 第一步：探索 prompt（找出疑似问题 + 需要的上下文文件）=====
+            const explorePrompt = [
+              '你是资深 React / TypeScript 代码审查专家。审查以下 PR 的 diff，找出疑似问题。',
               '',
               '技术栈：React 19、Ant Design 6、TanStack Query、Zustand、React Hook Form、Zod、Vite、Orval。',
               '',
-              '审查原则（务必遵守，这是审查质量的评判标准）：',
-              '- 只报告有实际影响的问题：bug、安全风险、数据丢失、内存泄漏、性能反模式、类型安全漏洞。',
-              '- 不要报告纯风格/格式问题（缩进、引号、命名、注释缺失、import 顺序）——这些由 ESLint/Prettier 处理，不是你的职责。',
+              '审查原则：',
+              '- 只关注有实际影响的问题：bug、安全风险、数据丢失、内存泄漏、性能反模式、类型安全漏洞。',
+              '- 不要报告纯风格/格式问题（缩进、引号、命名、注释缺失、import 顺序）——这些由 ESLint/Prettier 处理。',
               '- 只审查 diff 中变更的代码行，不要报告未修改行的问题。',
-              '- 不确定是否是问题时不要报告。宁缺毋滥，零问题好过凑数的十个 nit。',
+              '- 不确定是否是问题时，标记为疑似并通过 context_files 指出需要查看哪些文件来确认。',
               '- 不要误报合理的工程决策：受控的 any（如第三方库边界）、有意的类型断言、必要的 escape hatch。',
               '',
               '重点检查：',
@@ -103,31 +103,28 @@ jobs:
               '2. TanStack Query：queryKey 是否能正确缓存/失效、mutation 后 invalidate 是否覆盖、staleTime/gcTime 配置',
               '3. Zustand：selector 粒度（避免全量订阅导致 re-render）、store 中混入派生数据',
               '4. 类型安全：unsafe 类型断言（as unknown as）、隐式 any、Zod schema 与 TS 类型不一致、可选链缺失',
-              '5. 安全：硬编码密钥/token、XSS（dangerouslySetInnerHTML 未转义）、未校验的用户输入直接入库',
+              '5. 安全：硬编码密钥/token、XSS（dangerouslySetInnerHTML 未转义）、未校验的用户输入',
               '',
               '安全约束：',
-              '- 发现疑似硬编码密钥/token/凭证，作为 critical 报告，值做部分遮蔽展示（如 sk-***xxxx），不要原样复制完整值。',
+              '- 发现疑似硬编码密钥/token/凭证，直接报告（context_files 可为空数组），值做部分遮蔽展示（如 sk-***xxxx）。',
               '- 不要输出任何密钥、token、凭证。',
               '',
-              'severity 定义（严格按影响判定）：',
-              '- critical：会导致 bug、安全问题、数据损失或崩溃',
-              '- major：很可能引发问题，或显著降低代码质量/可维护性',
-              '- minor：有实际意义的小改进（非风格类），如边界条件、错误处理遗漏',
-              '- 没有 nit 级别。不要为了凑数而报告 nit。',
+              '本次任务（探索阶段）：找出疑似问题，并指出需要查看哪些上下文文件才能确认。',
+              '对于每个疑似问题，列出需要查看的文件路径（仓库相对路径，如 src/hooks/useXxx.ts、src/types/xxx.ts）。',
+              '优先列出：被调用函数/hook 的定义文件、类型定义文件、相关接口/schema 文件、调用方文件。',
+              '确信无疑的问题（如硬编码密钥）context_files 可为空数组。',
               '',
-              '输出严格 JSON（仅输出 JSON，不要 markdown 代码块包裹，不要前后解释文字）：',
+              '输出严格 JSON（仅 JSON，不要 markdown 代码块包裹，不要前后解释文字）：',
               '{',
-              '  "summary": "2-3 句整体结论，点出本次变更的主要风险点；无风险则说明已审查的范围与结论",',
-              '  "issues": [',
-              '    { "severity": "critical|major|minor",',
-              '      "file": "src/features/auth/api/api.ts",',
+              '  "suspects": [',
+              '    { "file": "src/features/auth/api/api.ts",',
               '      "line": 42,',
-              '      "title": "一句话问题（不要带 emoji/前缀）",',
-              '      "description": "为什么是问题 + 具体影响",',
-              '      "suggestion": "建议改法，必要时含简短代码示例" }',
+              '      "title": "一句话疑似问题（不要带 emoji）",',
+              '      "why_suspect": "基于 diff 看到什么而怀疑",',
+              '      "context_files": ["src/hooks/useAuth.ts", "src/features/auth/model/types.ts"] }',
               '  ]',
               '}',
-              '没有发现问题时 issues 必须返回空数组。不要编造问题。',
+              '没有疑似问题时 suspects 返回空数组。不要编造问题。',
             ].join('\n');
 
             const fileBlocks = reviewable.map(f => `### ${f.filename}\n\`\`\`diff\n${f.patch}\n\`\`\``);
@@ -171,13 +168,13 @@ jobs:
               return null;
             }
 
-            async function callModel(userContent) {
+            async function callModel(sysPrompt, userContent, maxTokens) {
               const body = {
                 model,
                 temperature: 0.2,
-                max_tokens: 4000,
+                max_tokens: maxTokens,
                 messages: [
-                  { role: 'system', content: systemPrompt },
+                  { role: 'system', content: sysPrompt },
                   { role: 'user',   content: userContent },
                 ],
               };
@@ -206,35 +203,156 @@ jobs:
               return data.choices?.[0]?.message?.content ?? '';
             }
 
-            const merged = { summary: '', issues: [] };
+            // PR 描述（方案 2：让模型理解变更意图，避免误报合理决策）
+            const prDescription = (pr.body && pr.body.trim()) ? pr.body.trim() : '（无 PR 描述）';
+
+            // ===== 4a. 第一步：探索（分块调用，找出疑似问题 + 需要的上下文文件）=====
+            const allSuspects = [];
             for (let i = 0; i < chunks.length; i++) {
-              const userContent = `以下是本次 PR 的 diff（第 ${i + 1}/${chunks.length} 块）：\n\n` + chunks[i].join('\n\n');
-              core.info(`调用模型 · 块 ${i + 1}/${chunks.length}`);
-              const content = await callModel(userContent);
-              const parsed  = parseJsonContent(content);
-              if (!parsed) {
-                core.warning(`块 ${i + 1} JSON 解析失败，跳过该块`);
-                continue;
-              }
-              // 累积各块 summary（多块时分块拼接，比覆盖更全面）
-              if (parsed.summary) {
-                merged.summary = merged.summary
-                  ? `${merged.summary} / ${parsed.summary}`
-                  : parsed.summary;
-              }
-              if (Array.isArray(parsed.issues)) {
-                merged.issues.push(...parsed.issues);
+              const userContent = [
+                `## PR 描述\n${prDescription}`,
+                '',
+                `## 变更 diff（第 ${i + 1}/${chunks.length} 块）`,
+                '',
+                chunks[i].join('\n\n'),
+              ].join('\n');
+              core.info(`探索 · 块 ${i + 1}/${chunks.length}`);
+              const content = await callModel(explorePrompt, userContent, 3000);
+              const parsed = parseJsonContent(content);
+              if (parsed && Array.isArray(parsed.suspects)) {
+                allSuspects.push(...parsed.suspects);
+              } else {
+                core.warning(`块 ${i + 1} 探索结果解析失败，跳过`);
               }
             }
 
-            // 按 file + title 去重（分块调用可能产生重复报告）
+            // suspects 去重（按 file + title）
+            const seenSuspect = new Set();
+            const suspects = allSuspects.filter(s => {
+              const key = `${(s?.file || '').toLowerCase()}|${(s?.title || '').toLowerCase()}`;
+              if (seenSuspect.has(key)) return false;
+              seenSuspect.add(key);
+              return true;
+            });
+            core.info(`探索完成 · ${suspects.length} 个疑似问题`);
+
+            // ===== 4b. 拉取上下文文件（方案 4：模拟 IDE 探索-验证回路）=====
+            const requestedFiles = new Set();
+            for (const s of suspects) {
+              for (const f of (s.context_files || [])) {
+                if (typeof f === 'string' && f.trim()) requestedFiles.add(f.trim());
+              }
+            }
+            const MAX_CONTEXT_FILES = 10;
+            const MAX_FILE_BYTES = 20000;
+            const filesToFetch = [...requestedFiles].slice(0, MAX_CONTEXT_FILES);
+            if (requestedFiles.size > MAX_CONTEXT_FILES) {
+              core.info(`上下文文件请求 ${requestedFiles.size} 个，截断为前 ${MAX_CONTEXT_FILES} 个`);
+            }
+            const contextContents = {};
+            for (const filePath of filesToFetch) {
+              try {
+                const { data } = await github.rest.repos.getContent({
+                  owner, repo, path: filePath, ref: pr.head.sha,
+                });
+                if (data.type === 'file' && data.content && data.encoding === 'base64') {
+                  const text = Buffer.from(data.content, 'base64').toString('utf8');
+                  contextContents[filePath] = text.length > MAX_FILE_BYTES
+                    ? text.slice(0, MAX_FILE_BYTES) + '\n... (截断，文件过大)'
+                    : text;
+                  core.info(`拉取上下文 ${filePath} · ${text.length} 字符`);
+                }
+              } catch (e) {
+                core.warning(`拉取 ${filePath} 失败: ${e.status || e.message}`);
+              }
+            }
+
+            // ===== 4c. 第二步：验证（基于完整上下文确认/驳回每个疑似问题）=====
+            let summary = '';
+            let rawIssues = [];
+
+            if (suspects.length === 0) {
+              summary = '探索阶段未发现疑似问题。';
+            } else {
+              const verifyPrompt = [
+                '你是资深 React / TypeScript 代码审查专家。基于完整上下文，确认或驳回以下疑似问题。',
+                '',
+                '技术栈：React 19、Ant Design 6、TanStack Query、Zustand、React Hook Form、Zod、Vite、Orval。',
+                '',
+                '验证原则：',
+                '- 基于提供的上下文文件内容，判断每个疑似问题是否成立。',
+                '- 驳回：上下文已处理的、误判的、合理的工程决策、基于 diff 外代码的误报。',
+                '- 确认：上下文证实确实存在问题，或无法排除且风险足够大。',
+                '- 只保留确认的问题。宁缺毋滥，没有确认的问题就返回空数组。',
+                '- 不要报告纯风格/格式问题。',
+                '',
+                '安全约束：',
+                '- 确认的硬编码密钥作为 critical，值做部分遮蔽展示（如 sk-***xxxx）。',
+                '- 不要输出任何密钥、token、凭证。',
+                '',
+                'severity 定义：',
+                '- critical：会导致 bug、安全问题、数据损失或崩溃',
+                '- major：很可能引发问题，或显著降低代码质量/可维护性',
+                '- minor：有实际意义的小改进（非风格类）',
+                '- 没有 nit 级别。',
+                '',
+                '输出严格 JSON（仅 JSON，不要 markdown 代码块包裹，不要前后解释文字）：',
+                '{',
+                '  "summary": "2-3 句整体结论，点出主要风险点；无风险则说明结论",',
+                '  "issues": [',
+                '    { "severity": "critical|major|minor",',
+                '      "file": "src/...",',
+                '      "line": 42,',
+                '      "title": "一句话问题（不要带 emoji）",',
+                '      "description": "为什么是问题 + 具体影响（引用上下文证据）",',
+                '      "suggestion": "建议改法" }',
+                '  ]',
+                '}',
+                '没有确认的问题时 issues 返回空数组。',
+              ].join('\n');
+
+              const suspectsBlock = suspects.map((s, i) =>
+                `### 疑似 ${i + 1}: ${s.title || ''}\n- 文件: ${s.file || '?'}${s.line ? ':' + s.line : ''}\n- 怀疑原因: ${s.why_suspect || ''}`
+              ).join('\n\n');
+
+              const contextBlock = Object.keys(contextContents).length > 0
+                ? Object.entries(contextContents).map(([path, content]) =>
+                    `### ${path}\n\`\`\`\n${content}\n\`\`\``
+                  ).join('\n\n')
+                : '（探索阶段未请求额外上下文文件，或拉取失败）';
+
+              const verifyUserContent = [
+                `## PR 描述\n${prDescription}`,
+                '',
+                `## 疑似问题清单（共 ${suspects.length} 个）`,
+                suspectsBlock,
+                '',
+                '## 上下文文件',
+                contextBlock,
+              ].join('\n');
+
+              core.info(`验证 · 调用模型确认 ${suspects.length} 个疑似问题`);
+              const verifyContent = await callModel(verifyPrompt, verifyUserContent, 4000);
+              const verified = parseJsonContent(verifyContent);
+              if (verified) {
+                summary = verified.summary || '';
+                if (Array.isArray(verified.issues)) rawIssues = verified.issues;
+              } else {
+                core.warning('验证结果 JSON 解析失败');
+                summary = '验证阶段结果解析失败，未输出问题。';
+              }
+            }
+
+            // 按 file + title 去重（验证步可能对分批 suspects 产生重复）
             const seen = new Set();
-            const issues = merged.issues.filter(item => {
+            const issues = rawIssues.filter(item => {
               const key = `${(item?.file || '').toLowerCase()}|${(item?.title || '').toLowerCase()}`;
               if (seen.has(key)) return false;
               seen.add(key);
               return true;
             });
+
+            const merged = { summary };
 
             // ===== 5. 格式化 Markdown =====
             function runFooter() {
