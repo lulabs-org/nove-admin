@@ -33,6 +33,7 @@ import {
 import { taskApi } from '../api/taskApi';
 import { CronScheduleEditor } from '../components/CronScheduleEditor';
 import { describeCronExpression, getCronError } from '../lib/taskScheduling';
+import { buildHandlerPayload, type TaskHandlerPayloadValues } from '../lib/taskPayload';
 import type { CreateCronTask, CreateOnceTask, ScheduledTask, TaskStatus, TaskType } from '../types';
 
 const { Search, TextArea } = Input;
@@ -40,23 +41,14 @@ const { Option } = Select;
 
 type TaskFormMode = 'create' | 'edit';
 
-interface TaskFormValues {
+interface TaskFormValues extends TaskHandlerPayloadValues {
   type: TaskType;
   name: string;
-  handler: string;
   runAt?: dayjs.Dayjs;
   cron?: string;
   timezone?: string;
   status?: TaskStatus;
   jobIdHint?: string;
-  httpUrl?: string;
-  httpMethod?: string;
-  httpTimeout?: number;
-  httpHeadersText?: string;
-  httpDataText?: string;
-  customPayloadText?: string;
-  linkPlatform?: string;
-  linkBatchSize?: number;
 }
 
 const TASK_TYPE_OPTIONS: Array<{ label: string; value: TaskType }> = [
@@ -74,6 +66,11 @@ const TASK_HANDLER_OPTIONS = [
     label: '关联平台用户',
     value: 'link_platform_users_by_phone_hash',
     description: '根据同一平台的手机号哈希，将未关联的平台用户关联到本地用户',
+  },
+  {
+    label: '关联订单购买者',
+    value: 'link_orders_to_users_by_phone',
+    description: '按国家代码和手机号关联未关联的订单，找不到用户时自动创建',
   },
   {
     label: '调用 HTTP 接口',
@@ -139,41 +136,6 @@ function formatDateTime(value?: string | null) {
 
 function formatPayload(payload: Record<string, unknown>) {
   return JSON.stringify(payload ?? {}, null, 2);
-}
-
-function parsePayload(text: string, label = 'Payload'): Record<string, unknown> {
-  const parsed: unknown = JSON.parse(text || '{}');
-
-  if (parsed === null || Array.isArray(parsed) || typeof parsed !== 'object') {
-    throw new Error(`${label} 必须是 JSON 对象`);
-  }
-
-  return parsed as Record<string, unknown>;
-}
-
-function buildHandlerPayload(values: TaskFormValues): Record<string, unknown> {
-  if (values.handler === 'migrate_phone_hashes') return {};
-
-  if (values.handler === 'link_platform_users_by_phone_hash') {
-    return {
-      ...(values.linkPlatform && values.linkPlatform !== 'ALL'
-        ? { platform: values.linkPlatform }
-        : {}),
-      batchSize: values.linkBatchSize ?? 500,
-    };
-  }
-
-  if (values.handler === 'invoke_http') {
-    return {
-      url: values.httpUrl,
-      method: values.httpMethod || 'POST',
-      timeout: values.httpTimeout || 10000,
-      headers: parsePayload(values.httpHeadersText || '{}', '请求头'),
-      data: parsePayload(values.httpDataText || '{}', '请求体'),
-    };
-  }
-
-  return parsePayload(values.customPayloadText || '{}');
 }
 
 function getApiErrorMessage(error: unknown, fallback: string): string {
@@ -328,6 +290,7 @@ export function TaskManagement() {
         customPayloadText: '{}',
         linkPlatform: 'ALL',
         linkBatchSize: 500,
+        orderLinkBatchSize: 500,
       });
       return;
     }
@@ -362,6 +325,8 @@ export function TaskManagement() {
       linkPlatform:
         typeof editingTask.payload.platform === 'string' ? editingTask.payload.platform : 'ALL',
       linkBatchSize:
+        typeof editingTask.payload.batchSize === 'number' ? editingTask.payload.batchSize : 500,
+      orderLinkBatchSize:
         typeof editingTask.payload.batchSize === 'number' ? editingTask.payload.batchSize : 500,
     });
   }, [editingTask, form, formMode, modalOpen]);
@@ -806,6 +771,26 @@ export function TaskManagement() {
                   <InputNumber min={1} max={2000} step={100} style={{ width: '100%' }} />
                 </Form.Item>
               </Space>
+            </>
+          ) : null}
+
+          {watchedHandler === 'link_orders_to_users_by_phone' ? (
+            <>
+              <Alert
+                type="info"
+                showIcon
+                title="关联订单购买者"
+                description="仅处理尚未关联购买者且未删除的订单。国家代码和手机号会先标准化；匹配不到用户时自动创建，已软删除用户的联系方式会作为冲突跳过。"
+                style={{ marginBottom: 24 }}
+              />
+
+              <Form.Item
+                name="orderLinkBatchSize"
+                label="每批处理数量"
+                rules={[{ required: true, message: '请输入每批处理数量' }]}
+              >
+                <InputNumber min={1} max={2000} step={100} style={{ width: '100%' }} />
+              </Form.Item>
             </>
           ) : null}
 
