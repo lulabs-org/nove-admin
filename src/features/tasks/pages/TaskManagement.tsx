@@ -55,6 +55,8 @@ interface TaskFormValues {
   httpHeadersText?: string;
   httpDataText?: string;
   customPayloadText?: string;
+  linkPlatform?: string;
+  linkBatchSize?: number;
 }
 
 const TASK_TYPE_OPTIONS: Array<{ label: string; value: TaskType }> = [
@@ -69,10 +71,27 @@ const TASK_HANDLER_OPTIONS = [
     description: '重新计算用户手机号哈希，无需额外参数',
   },
   {
+    label: '关联平台用户',
+    value: 'link_platform_users_by_phone_hash',
+    description: '根据同一平台的手机号哈希，将未关联的平台用户关联到本地用户',
+  },
+  {
     label: '调用 HTTP 接口',
     value: 'invoke_http',
     description: '按计划向指定地址发起 HTTP 请求',
   },
+];
+
+const PLATFORM_OPTIONS = [
+  { label: '全部平台', value: 'ALL' },
+  { label: '腾讯会议', value: 'TENCENT_MEETING' },
+  { label: 'Zoom', value: 'ZOOM' },
+  { label: 'Microsoft Teams', value: 'TEAMS' },
+  { label: '钉钉', value: 'DINGTALK' },
+  { label: '飞书', value: 'FEISHU' },
+  { label: 'Cisco Webex', value: 'WEBEX' },
+  { label: 'VooV Meeting', value: 'VOOV' },
+  { label: '其他', value: 'OTHER' },
 ];
 
 const COMMON_TIMEZONE_OPTIONS = [
@@ -134,6 +153,15 @@ function parsePayload(text: string, label = 'Payload'): Record<string, unknown> 
 
 function buildHandlerPayload(values: TaskFormValues): Record<string, unknown> {
   if (values.handler === 'migrate_phone_hashes') return {};
+
+  if (values.handler === 'link_platform_users_by_phone_hash') {
+    return {
+      ...(values.linkPlatform && values.linkPlatform !== 'ALL'
+        ? { platform: values.linkPlatform }
+        : {}),
+      batchSize: values.linkBatchSize ?? 500,
+    };
+  }
 
   if (values.handler === 'invoke_http') {
     return {
@@ -258,10 +286,10 @@ export function TaskManagement() {
     queryKey: 'tasks',
     mutationFn: taskApi.pauseQueue,
     onSuccess: () => {
-      message.success('任务队列已暂停');
+      message.success('任务调度已暂停');
     },
     onError: () => {
-      message.error('暂停任务队列失败');
+      message.error('暂停任务调度失败');
     },
   });
 
@@ -269,10 +297,10 @@ export function TaskManagement() {
     queryKey: 'tasks',
     mutationFn: taskApi.resumeQueue,
     onSuccess: () => {
-      message.success('任务队列已恢复');
+      message.success('任务调度已恢复');
     },
     onError: () => {
-      message.error('恢复任务队列失败');
+      message.error('恢复任务调度失败');
     },
   });
 
@@ -298,6 +326,8 @@ export function TaskManagement() {
         httpHeadersText: '{}',
         httpDataText: '{}',
         customPayloadText: '{}',
+        linkPlatform: 'ALL',
+        linkBatchSize: 500,
       });
       return;
     }
@@ -329,6 +359,10 @@ export function TaskManagement() {
           : {}
       ),
       customPayloadText: formatPayload(editingTask.payload),
+      linkPlatform:
+        typeof editingTask.payload.platform === 'string' ? editingTask.payload.platform : 'ALL',
+      linkBatchSize:
+        typeof editingTask.payload.batchSize === 'number' ? editingTask.payload.batchSize : 500,
     });
   }, [editingTask, form, formMode, modalOpen]);
 
@@ -529,7 +563,7 @@ export function TaskManagement() {
               size="small"
               icon={<ThunderboltOutlined />}
               onClick={() => handleRunNow(record)}
-              loading={runNowMutation.isPending}
+              loading={runNowMutation.isPending && runNowMutation.variables === record.id}
             />
           </Tooltip>
           <Tooltip title="编辑">
@@ -598,13 +632,14 @@ export function TaskManagement() {
         </Button>
 
         <Popconfirm
-          title="确定要暂停整个任务队列吗？"
+          title="确定要暂停任务调度吗？"
+          description="不会中断正在运行的任务，待执行任务将在恢复调度后继续执行"
           onConfirm={() => pauseMutation.mutate(undefined)}
           okText="确定"
           cancelText="取消"
         >
           <Button icon={<PauseCircleOutlined />} loading={pauseMutation.isPending}>
-            暂停队列
+            暂停调度
           </Button>
         </Popconfirm>
 
@@ -613,7 +648,7 @@ export function TaskManagement() {
           onClick={() => resumeMutation.mutate(undefined)}
           loading={resumeMutation.isPending}
         >
-          恢复队列
+          恢复调度
         </Button>
       </div>
 
@@ -740,6 +775,38 @@ export function TaskManagement() {
               description="该处理器无需额外参数，将为所有存在手机号的用户重新计算并写入哈希。"
               style={{ marginBottom: 24 }}
             />
+          ) : null}
+
+          {watchedHandler === 'link_platform_users_by_phone_hash' ? (
+            <>
+              <Alert
+                type="info"
+                showIcon
+                title="关联平台用户"
+                description="仅处理尚未关联且未删除的平台用户，按相同平台和手机号 Hash 匹配，不会覆盖已有的本地用户关联。"
+                style={{ marginBottom: 24 }}
+              />
+
+              <Space size="middle" style={{ width: '100%' }} align="start">
+                <Form.Item
+                  name="linkPlatform"
+                  label="处理平台"
+                  rules={[{ required: true, message: '请选择处理平台' }]}
+                  style={{ flex: 1 }}
+                >
+                  <Select options={PLATFORM_OPTIONS} />
+                </Form.Item>
+
+                <Form.Item
+                  name="linkBatchSize"
+                  label="每批处理数量"
+                  rules={[{ required: true, message: '请输入每批处理数量' }]}
+                  style={{ flex: 1 }}
+                >
+                  <InputNumber min={1} max={2000} step={100} style={{ width: '100%' }} />
+                </Form.Item>
+              </Space>
+            </>
           ) : null}
 
           {watchedHandler === 'invoke_http' ? (
