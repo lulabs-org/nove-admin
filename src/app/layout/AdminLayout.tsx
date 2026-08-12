@@ -45,7 +45,7 @@ export function AdminLayout({ routes, children }: AdminLayoutProps) {
           position: 'fixed',
           left: 0,
           top: 0,
-          zIndex: 10,
+          zIndex: 101,
         }}
       >
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
