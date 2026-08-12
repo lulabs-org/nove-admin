@@ -1483,11 +1483,7 @@ export function OrgMemberManagement() {
             <div className="org-scope-header">
               <Space size="middle">
                 <Title level={4}>{selectedScopeName}</Title>
-                <Text type="secondary">
-                  {activeTab === 'departments'
-                    ? `部门数 ${allDepartments.length}`
-                    : `总人数 ${memberList?.total || 0}`}
-                </Text>
+                <Text type="secondary">总人数 {memberList?.total || 0}</Text>
               </Space>
             </div>
           )}

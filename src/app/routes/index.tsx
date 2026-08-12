@@ -20,10 +20,12 @@ import { authRoutes } from '../../features/auth/routes';
 import { meetingRoutes } from '../../features/meetings/routes';
 import { taskRoutes } from '../../features/tasks/routes';
 import { orderRoutes } from '../../features/orders/routes';
+import { userRoutes } from '../../features/users/routes';
 
 export const routes: RouteConfig[] = [
   ...authRoutes,
   ...dashboardRoutes,
+  ...userRoutes,
   ...orgMemberRoutes,
   ...platformUserRoutes,
   ...permissionRoutes,

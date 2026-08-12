@@ -1,0 +1,96 @@
+.user-management {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.user-management-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.user-management-header h2 {
+  margin: 0 0 4px;
+}
+
+.user-management-filters {
+  display: grid;
+  grid-template-columns: minmax(280px, 480px) 140px;
+  gap: 12px;
+}
+
+.user-primary-cell {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.user-primary-cell .ant-typography-secondary {
+  max-width: 135px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.user-phone-fields {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+}
+
+.user-phone-fields > .ant-space-item:last-child {
+  min-width: 260px;
+}
+
+.user-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+
+.user-profile-wide,
+.user-profile-full {
+  grid-column: 1 / -1;
+}
+
+.user-import-help {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.user-import-help-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.user-import-help-header .ant-btn {
+  flex: none;
+  padding-inline: 0;
+}
+
+.user-import-result {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+@media (max-width: 760px) {
+  .user-management-header {
+    flex-direction: column;
+  }
+
+  .user-management-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .user-profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
