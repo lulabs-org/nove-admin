@@ -1,38 +1,40 @@
-/*
- * @Author: 杨仕明 shiming.y@qq.com
- * @Date: 2026-01-07 10:29:11
- * @LastEditors: 杨仕明 shiming.y@qq.com
- * @LastEditTime: 2026-01-24 09:58:23
- * @FilePath: /nove-admin/src/features/auth/pages/LoginPage.tsx
- * @Description:
- *
- * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
- */
+import {
+  ArrowRightOutlined,
+  LockOutlined,
+  MailOutlined,
+  SafetyCertificateOutlined,
+} from '@ant-design/icons';
+import Button from 'antd/es/button';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
-import Button from 'antd/es/button';
-import Card from 'antd/es/card';
-import Typography from 'antd/es/typography';
 import message from 'antd/es/message';
 import Tabs from 'antd/es/tabs';
-import { LockOutlined, MailOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { verificationControllerSend } from '../../../shared/lib/api/orval/business/auth';
+import './LoginPage.css';
 
-const { Title, Text } = Typography;
+type LoginType = 'password' | 'code';
+
+interface LoginValues {
+  email: string;
+  password?: string;
+  code?: string;
+}
+
+const CAPABILITIES = ['身份与权限', '组织数据', '会议智能', '订单数据', 'Agent 接入'];
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const [form] = Form.useForm();
+  const [form] = Form.useForm<LoginValues>();
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [loginType, setLoginType] = useState<'password' | 'code'>('password');
+  const [loginType, setLoginType] = useState<LoginType>('password');
   const [sendingCode, setSendingCode] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
-  const onFinish = async (values: { email: string; password?: string; code?: string }) => {
+  const onFinish = async (values: LoginValues) => {
     setLoading(true);
     try {
       if (loginType === 'password') {
@@ -67,19 +69,16 @@ export function LoginPage() {
     }
     setSendingCode(true);
     try {
-      await verificationControllerSend({
-        target: email,
-        type: 'login',
-      });
+      await verificationControllerSend({ target: email, type: 'login' });
       message.success('验证码已发送');
       setCountdown(60);
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
+      const timer = window.setInterval(() => {
+        setCountdown((previous) => {
+          if (previous <= 1) {
+            window.clearInterval(timer);
             return 0;
           }
-          return prev - 1;
+          return previous - 1;
         });
       }, 1000);
     } catch {
@@ -90,188 +89,185 @@ export function LoginPage() {
   };
 
   return (
-    <div
-      style={{
-        width: '100vw',
-        height: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          width: '500px',
-          height: '500px',
-          borderRadius: '50%',
-          background: 'rgba(255, 255, 255, 0.1)',
-          top: '-250px',
-          right: '-100px',
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          width: '400px',
-          height: '400px',
-          borderRadius: '50%',
-          background: 'rgba(255, 255, 255, 0.08)',
-          bottom: '-200px',
-          left: '-100px',
-        }}
-      />
-      <Card
-        style={{
-          width: '100%',
-          maxWidth: 420,
-          borderRadius: '16px',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-          border: 'none',
-          backdropFilter: 'blur(10px)',
-          background: 'rgba(255, 255, 255, 0.95)',
-          zIndex: 1,
-        }}
-      >
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div
-            style={{
-              width: 64,
-              height: 64,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              margin: '0 auto 16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '28px',
-              color: '#fff',
-              fontWeight: 'bold',
-            }}
-          >
-            A
-          </div>
-          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
-            欢迎回来
-          </Title>
-          <Text style={{ color: '#8c8c8c', fontSize: '14px', marginTop: '8px', display: 'block' }}>
-            登录到管理后台
-          </Text>
-        </div>
-        <Form form={form} name="login" onFinish={onFinish} autoComplete="off" layout="vertical">
-          <Tabs
-            activeKey={loginType}
-            onChange={(key) => setLoginType(key as 'password' | 'code')}
-            centered
-            style={{ marginBottom: '24px' }}
-            items={[
-              {
-                key: 'password',
-                label: '密码登录',
-              },
-              {
-                key: 'code',
-                label: '验证码登录',
-              },
-            ]}
-          />
-          <Form.Item
-            name="email"
-            rules={[{ required: true, message: '请输入邮箱' }]}
-            style={{ marginBottom: '20px' }}
-          >
-            <Input
-              prefix={<MailOutlined style={{ color: '#8c8c8c' }} />}
-              placeholder="邮箱"
-              size="large"
-              style={{
-                borderRadius: '8px',
-                padding: '12px 16px',
-                border: '1px solid #d9d9d9',
-                transition: 'all 0.3s',
-              }}
-            />
-          </Form.Item>
+    <main className="nove-login">
+      <section className="nove-login__brand" aria-label="Nove System 产品介绍">
+        <div className="nove-login__ambient nove-login__ambient--one" />
+        <div className="nove-login__ambient nove-login__ambient--two" />
 
-          {loginType === 'password' ? (
+        <header className="nove-brand-header">
+          <div className="nove-mark" aria-hidden="true">
+            <span>N</span>
+            <i className="nove-mark__dot nove-mark__dot--one" />
+            <i className="nove-mark__dot nove-mark__dot--two" />
+          </div>
+          <div>
+            <strong>Nove System</strong>
+            <span>Data & Agent Infrastructure</span>
+          </div>
+        </header>
+
+        <div className="nove-brand-copy">
+          <div className="nove-brand-copy__eyebrow">
+            <span />
+            ENTERPRISE INTELLIGENCE FOUNDATION
+          </div>
+          <h1>让数据持续产生价值</h1>
+          <p>统一承载组织数据，为人与 AI Agent 提供安全、可授权的数据访问与协作基础。</p>
+          <div className="nove-capabilities" aria-label="系统能力">
+            {CAPABILITIES.map((capability) => (
+              <span key={capability}>{capability}</span>
+            ))}
+          </div>
+        </div>
+
+        <div className="nove-system-map" aria-hidden="true">
+          <svg viewBox="0 0 680 250" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="connection-line" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stopColor="#38bdf8" stopOpacity="0.08" />
+                <stop offset="0.55" stopColor="#60a5fa" stopOpacity="0.65" />
+                <stop offset="1" stopColor="#2dd4bf" stopOpacity="0.12" />
+              </linearGradient>
+            </defs>
+            <path d="M72 162 C165 154, 178 65, 284 82 S430 190, 612 118" />
+            <path d="M72 162 C190 210, 302 194, 390 140 S512 42, 612 118" />
+            <path d="M284 82 C330 116, 348 112, 390 140" />
+          </svg>
+          <span className="system-node system-node--users">身份</span>
+          <span className="system-node system-node--products">组织</span>
+          <span className="system-node system-node--orders">订单</span>
+          <span className="system-node system-node--meetings">会议</span>
+          <span className="system-node system-node--tasks">Agent</span>
+          <div className="system-core">
+            <span>N</span>
+            <small>DATA CORE</small>
+          </div>
+        </div>
+
+        <footer className="nove-brand-footer">
+          <span className="nove-status-dot" />
+          REST · GraphQL · MCP
+          <span className="nove-brand-footer__divider" />
+          Human · Agent Access
+        </footer>
+      </section>
+
+      <section className="nove-login__access">
+        <div className="nove-access-status">
+          <SafetyCertificateOutlined />
+          企业安全访问
+        </div>
+
+        <div className="nove-login-panel">
+          <div className="nove-mobile-brand">
+            <div className="nove-mark" aria-hidden="true">
+              <span>N</span>
+            </div>
+            <strong>Nove System</strong>
+          </div>
+
+          <div className="nove-login-heading">
+            <span>NOVE DATA CONSOLE</span>
+            <h2>进入 Nove</h2>
+            <p>登录企业数据与 Agent 管理控制台</p>
+          </div>
+
+          <Form
+            form={form}
+            name="login"
+            onFinish={onFinish}
+            autoComplete="on"
+            layout="vertical"
+            className="nove-login-form"
+          >
+            <Tabs
+              activeKey={loginType}
+              onChange={(key) => setLoginType(key as LoginType)}
+              className="nove-login-tabs"
+              items={[
+                { key: 'password', label: '密码登录' },
+                { key: 'code', label: '验证码登录' },
+              ]}
+            />
+
             <Form.Item
-              name="password"
-              rules={[{ required: true, message: '请输入密码' }]}
-              style={{ marginBottom: '24px' }}
-            >
-              <Input.Password
-                prefix={<LockOutlined style={{ color: '#8c8c8c' }} />}
-                placeholder="密码"
-                size="large"
-                style={{
-                  borderRadius: '8px',
-                  padding: '12px 16px',
-                  border: '1px solid #d9d9d9',
-                  transition: 'all 0.3s',
-                }}
-              />
-            </Form.Item>
-          ) : (
-            <Form.Item
-              name="code"
-              rules={[{ required: true, message: '请输入验证码' }]}
-              style={{ marginBottom: '24px' }}
+              name="email"
+              label="工作邮箱"
+              rules={[
+                { required: true, message: '请输入邮箱' },
+                { type: 'email', message: '请输入有效的邮箱地址' },
+              ]}
             >
               <Input
-                prefix={<LockOutlined style={{ color: '#8c8c8c' }} />}
-                placeholder="验证码"
+                prefix={<MailOutlined />}
+                placeholder="name@company.com"
                 size="large"
-                suffix={
-                  <Button
-                    type="link"
-                    onClick={handleSendCode}
-                    loading={sendingCode}
-                    disabled={countdown > 0}
-                    style={{ padding: 0, height: 'auto' }}
-                  >
-                    {countdown > 0 ? `${countdown}秒后重发` : '发送验证码'}
-                  </Button>
-                }
-                style={{
-                  borderRadius: '8px',
-                  padding: '12px 16px',
-                  border: '1px solid #d9d9d9',
-                  transition: 'all 0.3s',
-                }}
+                autoComplete="email"
               />
             </Form.Item>
-          )}
 
-          <Form.Item style={{ marginBottom: '24px' }}>
-            <Button
-              type="primary"
-              htmlType="submit"
-              block
-              size="large"
-              loading={loading}
-              style={{
-                height: '48px',
-                borderRadius: '8px',
-                fontSize: '16px',
-                fontWeight: 500,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                border: 'none',
-                boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-              }}
-            >
-              登录
-            </Button>
-          </Form.Item>
-        </Form>
-        <div style={{ textAlign: 'center', marginTop: '16px' }}>
-          <Text style={{ color: '#8c8c8c', fontSize: '13px' }}>
-            © 2026 Admin Dashboard. All rights reserved.
-          </Text>
+            {loginType === 'password' ? (
+              <Form.Item
+                name="password"
+                label="密码"
+                rules={[{ required: true, message: '请输入密码' }]}
+              >
+                <Input.Password
+                  prefix={<LockOutlined />}
+                  placeholder="请输入密码"
+                  size="large"
+                  autoComplete="current-password"
+                />
+              </Form.Item>
+            ) : (
+              <Form.Item
+                name="code"
+                label="邮箱验证码"
+                rules={[{ required: true, message: '请输入验证码' }]}
+              >
+                <Input
+                  prefix={<LockOutlined />}
+                  placeholder="请输入 6 位验证码"
+                  size="large"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  suffix={
+                    <Button
+                      type="link"
+                      onClick={handleSendCode}
+                      loading={sendingCode}
+                      disabled={countdown > 0}
+                      className="nove-code-button"
+                    >
+                      {countdown > 0 ? `${countdown} 秒` : '发送验证码'}
+                    </Button>
+                  }
+                />
+              </Form.Item>
+            )}
+
+            <Form.Item className="nove-login-submit">
+              <Button type="primary" htmlType="submit" block size="large" loading={loading}>
+                <span>安全登录</span>
+                <ArrowRightOutlined />
+              </Button>
+            </Form.Item>
+          </Form>
+
+          <div className="nove-security-note">
+            <SafetyCertificateOutlined />
+            <span>
+              <strong>数据访问遵循最小权限原则</strong>
+              登录后将按组织上下文与 RBAC 权限开放数据和操作
+            </span>
+          </div>
         </div>
-      </Card>
-    </div>
+
+        <footer className="nove-access-footer">
+          <span>© 2026 Nove System</span>
+          <span>企业级智能数据仓库与 AI Agent 基础设施</span>
+        </footer>
+      </section>
+    </main>
   );
 }
