@@ -33,7 +33,6 @@ const { Search, TextArea } = Input;
 
 interface ChannelFormValues {
   name: string;
-  code: string;
   description?: string;
   isActive: boolean;
 }
@@ -47,7 +46,6 @@ function getErrorMessage(error: unknown, fallback: string): string {
 function buildPayload(values: ChannelFormValues): CreateChannel {
   return {
     name: values.name.trim(),
-    code: values.code.trim().toUpperCase(),
     description: values.description?.trim() || null,
     isActive: values.isActive,
   };
@@ -127,7 +125,7 @@ export function ChannelManagement() {
 
   const openCreate = () => {
     setEditingChannel(null);
-    form.setFieldsValue({ name: '', code: '', description: '', isActive: true });
+    form.setFieldsValue({ name: '', description: '', isActive: true });
     setModalOpen(true);
   };
 
@@ -135,7 +133,6 @@ export function ChannelManagement() {
     setEditingChannel(channel);
     form.setFieldsValue({
       name: channel.name,
-      code: channel.code,
       description: channel.description ?? '',
       isActive: channel.isActive,
     });
@@ -337,16 +334,6 @@ export function ChannelManagement() {
             rules={[{ required: true, message: '请输入渠道名称' }]}
           >
             <Input placeholder="例如：微信小程序" />
-          </Form.Item>
-          <Form.Item
-            name="code"
-            label="渠道编码"
-            rules={[
-              { required: true, message: '请输入渠道编码' },
-              { pattern: /^[A-Za-z0-9_-]+$/, message: '只能包含字母、数字、下划线和连字符' },
-            ]}
-          >
-            <Input placeholder="例如：WECHAT_MINIPROGRAM" />
           </Form.Item>
           <Form.Item name="description" label="渠道描述">
             <TextArea rows={4} maxLength={1000} showCount />
