@@ -67,7 +67,17 @@ export function createAppRouter(routeConfigs: RouteConfig[]) {
 }
 
 export function generateProtectedRoutes(routeConfigs: RouteConfig[]): RouteObject[] {
-  return routeConfigs.map((config) => {
+  const result: RouteObject[] = [];
+
+  for (const config of routeConfigs) {
+    // menuOnly 节点不创建真实路由，子路由展平到同级注册
+    if (config.menuOnly) {
+      if (config.children) {
+        result.push(...generateProtectedRoutes(config.children));
+      }
+      continue;
+    }
+
     const route: RouteObject = {
       path: config.path,
       element: <ProtectedRoute permission={config.permission}>{config.element}</ProtectedRoute>,
@@ -81,6 +91,8 @@ export function generateProtectedRoutes(routeConfigs: RouteConfig[]): RouteObjec
       route.element = <Navigate to={config.redirect} replace />;
     }
 
-    return route;
-  });
+    result.push(route);
+  }
+
+  return result;
 }
