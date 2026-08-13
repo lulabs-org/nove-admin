@@ -201,7 +201,7 @@ export function MeetingDetail() {
     try {
       await meetingApi.delete(id);
       message.success('删除会议成功');
-      navigate('/meetings/list');
+      navigate('/meetings');
     } catch {
       message.error('删除会议失败');
     }
@@ -485,11 +485,7 @@ export function MeetingDetail() {
     <div className="meeting-detail-page">
       <header className="meeting-detail-header">
         <div className="meeting-detail-title-group">
-          <Button
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate('/meetings/list')}
-          >
+          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate('/meetings')}>
             返回
           </Button>
           <div>

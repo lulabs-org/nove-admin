@@ -9,36 +9,30 @@
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
 import type { RouteConfig } from '../../shared/types/index';
-import { Outlet } from 'react-router-dom';
 import { MeetingList } from './pages/MeetingList';
 import { MeetingDetail } from './pages/MeetingDetail';
 import { PERMISSIONS } from '../../shared/utils/permissions';
-import { CalendarOutlined, UnorderedListOutlined } from '@ant-design/icons';
+import { CalendarOutlined } from '@ant-design/icons';
 
 export const meetingRoutes: RouteConfig[] = [
   {
     path: '/meetings',
-    element: <Outlet />,
+    element: <MeetingList />,
     title: '会议管理',
     menu: true,
     permission: PERMISSIONS.MEETING.READ,
     icon: <CalendarOutlined />,
-    children: [
-      {
-        path: '/meetings/list',
-        element: <MeetingList />,
-        title: '会议列表',
-        menu: true,
-        permission: PERMISSIONS.MEETING.READ,
-        icon: <UnorderedListOutlined />,
-      },
-      {
-        path: '/meetings/:id',
-        element: <MeetingDetail />,
-        title: '会议详情',
-        menu: false,
-        permission: PERMISSIONS.MEETING.READ,
-      },
-    ],
+  },
+  {
+    path: '/meetings/list',
+    redirect: '/meetings',
+    menu: false,
+  },
+  {
+    path: '/meetings/:id',
+    element: <MeetingDetail />,
+    title: '会议详情',
+    menu: false,
+    permission: PERMISSIONS.MEETING.READ,
   },
 ];
