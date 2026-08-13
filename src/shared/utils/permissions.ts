@@ -59,6 +59,13 @@ export const PERMISSIONS = {
     DELETE: 'order:delete',
     STATUS: 'order:status',
   },
+  ORDER_REFUND: {
+    READ: 'order-refund:read',
+    CREATE: 'order-refund:create',
+    UPDATE: 'order-refund:update',
+    DELETE: 'order-refund:delete',
+    SETTLE: 'order-refund:settle',
+  },
   FINANCE: {
     READ: 'finance:read',
     EXPORT: 'finance:export',
