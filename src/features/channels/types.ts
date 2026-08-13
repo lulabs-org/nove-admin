@@ -24,7 +24,6 @@ export type ChannelListData = TableQueryResult<Channel> & { totalPages?: number 
 
 export interface CreateChannel {
   name: string;
-  code: string;
   description?: string | null;
   isActive?: boolean;
 }
