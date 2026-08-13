@@ -117,7 +117,7 @@ export function DashboardPage() {
       icon: <CalendarOutlined />,
       title: '会议管理',
       desc: '查看会议记录',
-      onClick: () => navigate('/meetings/list'),
+      onClick: () => navigate('/meetings'),
     });
   }
   quickLinks.push({
