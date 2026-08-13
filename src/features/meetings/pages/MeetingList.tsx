@@ -90,18 +90,6 @@ export function MeetingList() {
     onError: () => message.error('编辑会议失败'),
   });
 
-  // 后端 reprocess 接口暂时禁用，见 PR #321
-  // const reprocessMutation = useTableMutation({
-  //   queryKey: 'meetings',
-  //   mutationFn: (id: string) => meetingApi.reprocess(id),
-  //   onSuccess: () => {
-  //     message.success('重新处理会议成功');
-  //   },
-  //   onError: () => {
-  //     message.error('重新处理会议失败');
-  //   },
-  // });
-
   const handleCreate = () => {
     setEditingMeeting(null);
     setFormOpen(true);
@@ -119,11 +107,6 @@ export function MeetingList() {
   const handleDelete = (record: MeetingListItem) => {
     deleteMutation.mutate(record.id);
   };
-
-  // 后端 reprocess 接口暂时禁用，见 PR #321
-  // const handleReprocess = (record: MeetingListItem) => {
-  //   reprocessMutation.mutate(record.id);
-  // };
 
   const handleSearch = (field: string, value: string) => {
     setFilters((prev: TableQueryParams) => ({
@@ -260,18 +243,6 @@ export function MeetingList() {
               编辑
             </Button>
           </Perm>
-          {/* 后端 reprocess 接口暂时禁用，见 PR #321
-          {record.processingStatus === 'COMPLETED' && (
-            <Button
-              type="link"
-              size="small"
-              onClick={() => handleReprocess(record)}
-              loading={reprocessMutation.isPending}
-            >
-              重新处理
-            </Button>
-          )}
-          */}
           <Perm permission={PERMISSIONS.MEETING.DELETE}>
             <Popconfirm
               title="确定要删除吗？"
@@ -291,17 +262,6 @@ export function MeetingList() {
 
   return (
     <div className="meeting-list-page">
-      <div className="meeting-list-heading">
-        <div>
-          <h1>会议</h1>
-          <p>统一查看会议、参会成员与录制处理状态</p>
-        </div>
-        <Perm permission={PERMISSIONS.MEETING.CREATE}>
-          <Button type="primary" onClick={handleCreate}>
-            新增会议
-          </Button>
-        </Perm>
-      </div>
       <div className="meeting-list-toolbar">
         <Search
           placeholder="搜索会议标题"
@@ -330,6 +290,12 @@ export function MeetingList() {
         <RangePicker placeholder={['开始日期', '结束日期']} onChange={handleDateRangeChange} />
 
         <Button onClick={() => refetch()}>刷新</Button>
+
+        <Perm permission={PERMISSIONS.MEETING.CREATE}>
+          <Button className="meeting-create-button" type="primary" onClick={handleCreate}>
+            新增会议
+          </Button>
+        </Perm>
       </div>
 
       <div className="meeting-list-table-card">
