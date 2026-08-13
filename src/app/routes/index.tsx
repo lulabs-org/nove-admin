@@ -22,6 +22,7 @@ import { taskRoutes } from '../../features/tasks/routes';
 import { orderRoutes } from '../../features/orders/routes';
 import { userRoutes } from '../../features/users/routes';
 import { productRoutes } from '../../features/products/routes';
+import { channelRoutes } from '../../features/channels/routes';
 
 export const routes: RouteConfig[] = [
   ...authRoutes,
@@ -32,6 +33,7 @@ export const routes: RouteConfig[] = [
   ...permissionRoutes,
   ...apiKeyRoutes,
   ...productRoutes,
+  ...channelRoutes,
   ...orderRoutes,
   ...meetingRoutes,
   ...taskRoutes,

@@ -30,6 +30,43 @@ export interface OrderRelation {
   email?: string | null;
 }
 
+export interface OrderUserOption {
+  id: string;
+  username: string | null;
+  email: string | null;
+  countryCode: string | null;
+  phone: string | null;
+  profile: {
+    displayName: string | null;
+  } | null;
+}
+
+export interface OrderUserOptionList {
+  items: OrderUserOption[];
+}
+
+export interface OrderProductOption {
+  id: string;
+  productCode: string;
+  name: string;
+  price: number | null;
+  currency: Currency;
+}
+
+export interface OrderProductOptionList {
+  items: OrderProductOption[];
+}
+
+export interface OrderChannelOption {
+  id: number;
+  name: string;
+  code: string;
+}
+
+export interface OrderChannelOptionList {
+  items: OrderChannelOption[];
+}
+
 export interface Order {
   id: string;
   orderCode: string;

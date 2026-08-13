@@ -44,7 +44,7 @@ import type { AdminUser, UserImportResponse, UserListParams, UserWritePayload } 
 import './UserManagement.css';
 
 const { Search } = Input;
-const { Text, Title } = Typography;
+const { Text } = Typography;
 const LIST_KEY = 'admin-users';
 
 function errorMessage(error: unknown, fallback: string): string {
@@ -248,11 +248,7 @@ export function UserManagement() {
 
   return (
     <div className="user-management">
-      <div className="user-management-header">
-        <div>
-          <Title level={2}>用户管理</Title>
-          <Text type="secondary">管理 Nove API 中的全部全局用户</Text>
-        </div>
+      <div className="user-management-actions">
         <Space>
           <Button icon={<ReloadOutlined />} onClick={() => void usersQuery.refetch()}>
             刷新
