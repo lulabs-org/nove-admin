@@ -2,28 +2,9 @@
   padding: 24px;
 }
 
-.meeting-list-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.meeting-list-heading h1 {
-  margin: 0;
-  color: #172033;
-  font-size: 26px;
-  line-height: 36px;
-}
-
-.meeting-list-heading p {
-  margin: 4px 0 0;
-  color: #7c8799;
-}
-
 .meeting-list-toolbar {
   display: flex;
+  align-items: center;
   gap: 12px;
   flex-wrap: wrap;
   padding: 16px;
@@ -31,6 +12,10 @@
   background: #fff;
   border: 1px solid #edf0f5;
   border-radius: 12px;
+}
+
+.meeting-create-button {
+  margin-left: auto;
 }
 
 .meeting-list-table-card {
@@ -60,8 +45,7 @@
   .meeting-list-page {
     padding: 16px;
   }
-  .meeting-list-heading {
-    align-items: stretch;
-    flex-direction: column;
+  .meeting-create-button {
+    margin-left: 0;
   }
 }
