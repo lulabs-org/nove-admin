@@ -248,47 +248,49 @@ export function UserManagement() {
 
   return (
     <div className="user-management">
-      <div className="user-management-actions">
-        <Space>
-          <Button icon={<ReloadOutlined />} onClick={() => void usersQuery.refetch()}>
-            刷新
-          </Button>
-          <Perm permission={PERMISSIONS.USER.CREATE}>
-            <Button
-              icon={<UploadOutlined />}
-              onClick={() => {
-                setFileList([]);
-                setImportResult(null);
-                setImportOpen(true);
-              }}
-            >
-              批量导入
-            </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-              新建用户
-            </Button>
-          </Perm>
-        </Space>
-      </div>
+      <div className="user-management-header">
+        <div className="user-management-filters">
+          <Search
+            allowClear
+            prefix={<SearchOutlined />}
+            placeholder="搜索用户名、邮箱、手机号或显示名称"
+            onSearch={(keyword) =>
+              setFilters((current) => ({ ...current, keyword: keyword || undefined, page: 1 }))
+            }
+          />
+          <Select
+            allowClear
+            placeholder="全部状态"
+            options={[
+              { label: '启用', value: true },
+              { label: '停用', value: false },
+            ]}
+            onChange={(active) => setFilters((current) => ({ ...current, active, page: 1 }))}
+          />
+        </div>
 
-      <div className="user-management-filters">
-        <Search
-          allowClear
-          prefix={<SearchOutlined />}
-          placeholder="搜索用户名、邮箱、手机号或显示名称"
-          onSearch={(keyword) =>
-            setFilters((current) => ({ ...current, keyword: keyword || undefined, page: 1 }))
-          }
-        />
-        <Select
-          allowClear
-          placeholder="全部状态"
-          options={[
-            { label: '启用', value: true },
-            { label: '停用', value: false },
-          ]}
-          onChange={(active) => setFilters((current) => ({ ...current, active, page: 1 }))}
-        />
+        <div className="user-management-actions">
+          <Space>
+            <Button icon={<ReloadOutlined />} onClick={() => void usersQuery.refetch()}>
+              刷新
+            </Button>
+            <Perm permission={PERMISSIONS.USER.CREATE}>
+              <Button
+                icon={<UploadOutlined />}
+                onClick={() => {
+                  setFileList([]);
+                  setImportResult(null);
+                  setImportOpen(true);
+                }}
+              >
+                批量导入
+              </Button>
+              <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+                新建用户
+              </Button>
+            </Perm>
+          </Space>
+        </div>
       </div>
 
       <Table
