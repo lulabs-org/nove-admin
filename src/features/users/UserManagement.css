@@ -4,15 +4,9 @@
   gap: 20px;
 }
 
-.user-management-header {
+.user-management-actions {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.user-management-header h2 {
-  margin: 0 0 4px;
+  justify-content: flex-end;
 }
 
 .user-management-filters {
@@ -82,10 +76,6 @@
 }
 
 @media (max-width: 760px) {
-  .user-management-header {
-    flex-direction: column;
-  }
-
   .user-management-filters {
     grid-template-columns: 1fr;
   }

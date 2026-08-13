@@ -33,6 +33,9 @@ import {
 } from '../../../shared/hooks/useTableQuery';
 import { PERMISSIONS } from '../../../shared/utils/permissions';
 import { orderApi } from '../api/orderApi';
+import { OrderChannelSelect } from '../components/OrderChannelSelect';
+import { OrderProductSelect } from '../components/OrderProductSelect';
+import { OrderUserSelect } from '../components/OrderUserSelect';
 import type {
   CreateOrder,
   Currency,
@@ -611,8 +614,8 @@ export function OrderManagement() {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="productId" label="产品 ID">
-                <Input />
+              <Form.Item name="productId" label="产品">
+                <OrderProductSelect initialProduct={editingOrder?.product} />
               </Form.Item>
             </Col>
             <Col span={8}>
@@ -653,8 +656,8 @@ export function OrderManagement() {
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="channelId" label="渠道 ID">
-                <InputNumber min={1} precision={0} style={{ width: '100%' }} />
+              <Form.Item name="channelId" label="渠道">
+                <OrderChannelSelect initialChannel={editingOrder?.channel} />
               </Form.Item>
             </Col>
             <Col span={8}>
@@ -673,18 +676,27 @@ export function OrderManagement() {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="purchaserId" label="购买者用户 ID">
-                <Input />
+              <Form.Item name="purchaserId" label="购买者用户">
+                <OrderUserSelect
+                  initialUser={editingOrder?.purchaser}
+                  placeholder="搜索并选择购买者"
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="currentOwnerId" label="负责人用户 ID">
-                <Input />
+              <Form.Item name="currentOwnerId" label="负责人">
+                <OrderUserSelect
+                  initialUser={editingOrder?.currentOwner}
+                  placeholder="搜索并选择负责人"
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="financialCloserId" label="财务结单人用户 ID">
-                <Input />
+              <Form.Item name="financialCloserId" label="财务结单人">
+                <OrderUserSelect
+                  initialUser={editingOrder?.financialCloser}
+                  placeholder="搜索并选择财务结单人"
+                />
               </Form.Item>
             </Col>
             <Col span={12}>

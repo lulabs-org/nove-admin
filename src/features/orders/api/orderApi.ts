@@ -1,10 +1,13 @@
 import { mutator } from '../../../shared/lib/api/mutator';
 import type {
   CreateOrder,
+  OrderChannelOptionList,
   Order,
   OrderListData,
   OrderListParams,
+  OrderProductOptionList,
   OrderStatus,
+  OrderUserOptionList,
   UpdateOrder,
 } from '../types';
 
@@ -26,6 +29,45 @@ function cleanParams(params: OrderListParams) {
 }
 
 export const orderApi = {
+  searchChannels(keyword?: string): Promise<OrderChannelOptionList> {
+    return mutator<OrderChannelOptionList>({
+      url: '/admin/channels',
+      method: 'GET',
+      params: {
+        page: 1,
+        pageSize: 20,
+        isActive: true,
+        keyword: keyword || undefined,
+      },
+    });
+  },
+
+  searchProducts(keyword?: string): Promise<OrderProductOptionList> {
+    return mutator<OrderProductOptionList>({
+      url: '/admin/products',
+      method: 'GET',
+      params: {
+        page: 1,
+        pageSize: 20,
+        status: 'ACTIVE',
+        keyword: keyword || undefined,
+      },
+    });
+  },
+
+  searchUsers(keyword?: string): Promise<OrderUserOptionList> {
+    return mutator<OrderUserOptionList>({
+      url: '/admin/users',
+      method: 'GET',
+      params: {
+        page: 1,
+        pageSize: 20,
+        active: true,
+        keyword: keyword || undefined,
+      },
+    });
+  },
+
   async list(params: OrderListParams): Promise<OrderListData> {
     const result = await mutator<RawOrderList>({
       url: '/admin/orders',
