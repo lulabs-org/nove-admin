@@ -23,6 +23,59 @@ export interface MeetingRecording {
   endAt?: string | null;
 }
 
+export interface MeetingParticipantUser {
+  id: string;
+  platform: string;
+  ptUserId: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+  email: string | null;
+  countryCode: string | null;
+  phone: string | null;
+}
+
+export interface MeetingParticipant {
+  id: string;
+  meetingId: string;
+  ptUserId: string | null;
+  firstJoinTime: string | null;
+  lastLeaveTime: string | null;
+  totalDurationSeconds: number | null;
+  user: MeetingParticipantUser | null;
+}
+
+export interface MeetingParticipantListResponse {
+  data: MeetingParticipant[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface MeetingSummary {
+  id: string;
+  title?: string | null;
+  content: string;
+  aiMinutes?: unknown;
+  keyPoints?: unknown;
+  actionItems?: unknown;
+  decisions?: unknown;
+  speakerInsights?: unknown;
+  goldenQuotes?: unknown;
+  keywords?: string[];
+  status?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MeetingSummaryListResponse {
+  data: MeetingSummary[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface MeetingHost {
   id: string;
   displayName?: string | null;
@@ -92,20 +145,31 @@ export interface MeetingListResponse {
 }
 
 export interface CreateMeetingDto {
+  platform: MeetingControllerGetMeetingRecordsPlatform;
+  platformMeetingId: string;
   title: string;
-  description?: string;
-  meetingId?: string;
-  meetingType?: MeetingControllerGetMeetingRecordsPlatform;
-  startTime: string;
-  endTime: string;
-  host?: string;
+  meetingCode?: string;
+  type: MeetingControllerGetMeetingRecordsType;
+  hostUserId?: string;
+  actualStartAt?: string;
+  endedAt?: string;
+  durationSeconds?: number;
+  hasRecording?: boolean;
+  recordingStatus?: MeetingControllerGetMeetingRecordsStatus;
+  processingStatus?: MeetingControllerGetMeetingRecordsStatus;
 }
 
 export interface UpdateMeetingDto {
   title?: string;
-  description?: string;
-  status?: MeetingControllerGetMeetingRecordsStatus;
-  summary?: string;
+  meetingCode?: string;
+  type?: MeetingControllerGetMeetingRecordsType;
+  hostUserId?: string;
+  actualStartAt?: string;
+  endedAt?: string;
+  durationSeconds?: number;
+  participantCount?: number;
+  recordingStatus?: MeetingControllerGetMeetingRecordsStatus;
+  processingStatus?: MeetingControllerGetMeetingRecordsStatus;
 }
 
 export interface MeetingStats {

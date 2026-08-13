@@ -13,13 +13,18 @@ import { useNavigate } from 'react-router-dom';
 import {
   useTableQuery,
   useTableDeleteMutation,
-  // useTableMutation, // 后端 reprocess 接口暂时禁用，见 PR #321
+  useTableMutation,
   type TableQueryParams,
 } from '../../../shared/hooks/useTableQuery';
 import { meetingApi } from '../api/meetingApi';
 import type { MeetingListItem, MeetingListParams } from '../model/types';
 import { MeetingControllerGetMeetingRecordsPlatform } from '../../../shared/lib/api/orval/business/schemas';
 import { formatDateTime, getMeetingPlatformText } from '../utils/formatters';
+import { MeetingFormModal } from '../components/MeetingFormModal';
+import type { CreateMeetingDto, UpdateMeetingDto } from '../model/types';
+import { Perm } from '../../../app/guards/Perm';
+import { PERMISSIONS } from '../../../shared/utils/permissions';
+import './MeetingList.css';
 
 const { Search } = Input;
 const { Option } = Select;
@@ -33,6 +38,8 @@ export function MeetingList() {
     search: '',
     platform: undefined,
   });
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingMeeting, setEditingMeeting] = useState<MeetingListItem | null>(null);
 
   const {
     data: meetingList,
@@ -61,6 +68,28 @@ export function MeetingList() {
     },
   });
 
+  const createMutation = useTableMutation({
+    queryKey: 'meetings',
+    mutationFn: (data: CreateMeetingDto) => meetingApi.create(data),
+    onSuccess: () => {
+      message.success('新增会议成功');
+      setFormOpen(false);
+    },
+    onError: () => message.error('新增会议失败'),
+  });
+
+  const updateMutation = useTableMutation({
+    queryKey: 'meetings',
+    mutationFn: ({ id, data }: { id: string; data: UpdateMeetingDto }) =>
+      meetingApi.update(id, data),
+    onSuccess: () => {
+      message.success('编辑会议成功');
+      setEditingMeeting(null);
+      setFormOpen(false);
+    },
+    onError: () => message.error('编辑会议失败'),
+  });
+
   // 后端 reprocess 接口暂时禁用，见 PR #321
   // const reprocessMutation = useTableMutation({
   //   queryKey: 'meetings',
@@ -74,7 +103,8 @@ export function MeetingList() {
   // });
 
   const handleCreate = () => {
-    message.info('点击了新增会议按钮');
+    setEditingMeeting(null);
+    setFormOpen(true);
   };
 
   const handleView = (record: MeetingListItem) => {
@@ -82,7 +112,8 @@ export function MeetingList() {
   };
 
   const handleEdit = (record: MeetingListItem) => {
-    message.info(`编辑会议: ${record.title}`);
+    setEditingMeeting(record);
+    setFormOpen(true);
   };
 
   const handleDelete = (record: MeetingListItem) => {
@@ -144,6 +175,13 @@ export function MeetingList() {
       dataIndex: 'title',
       key: 'title',
       sorter: true,
+      width: 240,
+      fixed: 'left' as const,
+      render: (title: string, record: MeetingListItem) => (
+        <Button type="link" className="meeting-title-link" onClick={() => handleView(record)}>
+          {title}
+        </Button>
+      ),
     },
     {
       title: '会议平台',
@@ -161,6 +199,7 @@ export function MeetingList() {
       ],
       render: (platform: MeetingControllerGetMeetingRecordsPlatform) =>
         getMeetingPlatformText(platform),
+      width: 130,
     },
     {
       title: '开始时间',
@@ -168,6 +207,7 @@ export function MeetingList() {
       key: 'startAt',
       sorter: true,
       render: (time: unknown) => formatDateTime(time),
+      width: 170,
     },
     {
       title: '结束时间',
@@ -175,18 +215,26 @@ export function MeetingList() {
       key: 'endAt',
       sorter: true,
       render: (time: unknown) => formatDateTime(time),
+      width: 170,
     },
     {
       title: '主持人',
       key: 'host',
       render: (_: unknown, record: MeetingListItem) =>
         record.host?.displayName || record.hostPlatformUserId || '-',
+      width: 160,
+      ellipsis: true,
     },
     {
       title: '参与人数',
       dataIndex: 'participantCount',
       key: 'participantCount',
-      render: (count: number | null | undefined) => count ?? '-',
+      render: (count: number | null | undefined, record: MeetingListItem) => (
+        <Button type="link" size="small" onClick={() => handleView(record)}>
+          {count ?? 0} 人
+        </Button>
+      ),
+      width: 110,
     },
     {
       title: '是否有录制',
@@ -195,18 +243,23 @@ export function MeetingList() {
       render: (hasRecording: boolean) => (
         <Tag color={hasRecording ? 'success' : 'default'}>{hasRecording ? '有录制' : '无录制'}</Tag>
       ),
+      width: 110,
     },
     {
       title: '操作',
       key: 'action',
+      fixed: 'right' as const,
+      width: 180,
       render: (_: unknown, record: MeetingListItem) => (
         <Space size="small">
           <Button type="link" size="small" onClick={() => handleView(record)}>
             查看
           </Button>
-          <Button type="link" size="small" onClick={() => handleEdit(record)}>
-            编辑
-          </Button>
+          <Perm permission={PERMISSIONS.MEETING.UPDATE}>
+            <Button type="link" size="small" onClick={() => handleEdit(record)}>
+              编辑
+            </Button>
+          </Perm>
           {/* 后端 reprocess 接口暂时禁用，见 PR #321
           {record.processingStatus === 'COMPLETED' && (
             <Button
@@ -219,28 +272,37 @@ export function MeetingList() {
             </Button>
           )}
           */}
-          <Popconfirm
-            title="确定要删除吗？"
-            onConfirm={() => handleDelete(record)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="link" size="small" danger loading={deleteMutation.isPending}>
-              删除
-            </Button>
-          </Popconfirm>
+          <Perm permission={PERMISSIONS.MEETING.DELETE}>
+            <Popconfirm
+              title="确定要删除吗？"
+              onConfirm={() => handleDelete(record)}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Button type="link" size="small" danger loading={deleteMutation.isPending}>
+                删除
+              </Button>
+            </Popconfirm>
+          </Perm>
         </Space>
       ),
     },
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <div style={{ marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <Button type="primary" onClick={handleCreate}>
-          新增会议
-        </Button>
-
+    <div className="meeting-list-page">
+      <div className="meeting-list-heading">
+        <div>
+          <h1>会议</h1>
+          <p>统一查看会议、参会成员与录制处理状态</p>
+        </div>
+        <Perm permission={PERMISSIONS.MEETING.CREATE}>
+          <Button type="primary" onClick={handleCreate}>
+            新增会议
+          </Button>
+        </Perm>
+      </div>
+      <div className="meeting-list-toolbar">
         <Search
           placeholder="搜索会议标题"
           allowClear
@@ -270,19 +332,37 @@ export function MeetingList() {
         <Button onClick={() => refetch()}>刷新</Button>
       </div>
 
-      <Table
-        columns={columns}
-        dataSource={meetingList?.data || []}
-        rowKey="id"
-        loading={isLoading}
-        pagination={{
-          current: filters.page,
-          pageSize: filters.pageSize,
-          total: meetingList?.total || 0,
-          showSizeChanger: true,
-          showTotal: (total) => `共 ${total} 条`,
+      <div className="meeting-list-table-card">
+        <Table
+          columns={columns}
+          dataSource={meetingList?.data || []}
+          rowKey="id"
+          loading={isLoading}
+          pagination={{
+            current: filters.page,
+            pageSize: filters.pageSize,
+            total: meetingList?.total || 0,
+            showSizeChanger: true,
+            showTotal: (total) => `共 ${total} 条`,
+          }}
+          scroll={{ x: 1270 }}
+          onChange={handleTableChange}
+        />
+      </div>
+
+      <MeetingFormModal
+        open={formOpen}
+        meeting={editingMeeting}
+        submitting={createMutation.isPending || updateMutation.isPending}
+        onCancel={() => {
+          setFormOpen(false);
+          setEditingMeeting(null);
         }}
-        onChange={handleTableChange}
+        onSubmit={(data) => {
+          if (editingMeeting)
+            updateMutation.mutate({ id: editingMeeting.id, data: data as UpdateMeetingDto });
+          else createMutation.mutate(data as CreateMeetingDto);
+        }}
       />
     </div>
   );
