@@ -97,6 +97,12 @@ export const PERMISSIONS = {
     PAUSE: 'task:pause',
     RESUME: 'task:resume',
   },
+  TRACKING_REPORT: {
+    READ: 'tracking-report:read',
+    CREATE: 'tracking-report:create',
+    UPDATE: 'tracking-report:update',
+    DELETE: 'tracking-report:delete',
+  },
 } as const;
 
 export type Permission =

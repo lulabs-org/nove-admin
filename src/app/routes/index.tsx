@@ -18,6 +18,7 @@ import { apiKeyRoutes } from '../../features/api-keys/routes';
 import { settingsRoutes } from '../../features/settings/routes';
 import { authRoutes } from '../../features/auth/routes';
 import { meetingRoutes } from '../../features/meetings/routes';
+import { trackingReportRoutes } from '../../features/tracking-reports/routes';
 import { taskRoutes } from '../../features/tasks/routes';
 import { orderRoutes } from '../../features/orders/routes';
 import { orderRefundRoutes } from '../../features/order-refunds';
@@ -38,6 +39,7 @@ export const routes: RouteConfig[] = [
   ...orderRoutes,
   ...orderRefundRoutes,
   ...meetingRoutes,
+  ...trackingReportRoutes,
   ...taskRoutes,
   ...settingsRoutes,
 ];
