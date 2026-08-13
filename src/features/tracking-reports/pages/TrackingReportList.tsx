@@ -4,7 +4,6 @@ import Space from 'antd/es/space';
 import Table from 'antd/es/table';
 import message from 'antd/es/message';
 import Popconfirm from 'antd/es/popconfirm';
-import Input from 'antd/es/input';
 import Select from 'antd/es/select';
 import DatePicker from 'antd/es/date-picker';
 import Switch from 'antd/es/switch';
@@ -26,14 +25,15 @@ import type {
 } from '../model/types';
 import { GenerateReportModal } from '../components/GenerateReportModal';
 import { TrackingReportDetail } from '../components/TrackingReportDetail';
+import { UserSearchSelect } from '../components/UserSearchSelect';
+import type { UserFilterValue } from '../components/UserSearchSelect';
 import { Perm } from '../../../app/guards/Perm';
 import { PERMISSIONS } from '../../../shared/utils/permissions';
 
 const { RangePicker } = DatePicker;
 
 interface Filters {
-  platformUserId?: string;
-  subjectUserId?: string;
+  userFilter?: UserFilterValue;
   trackingType?: TrackingReportType;
   cadence?: TrackingCadence;
   periodStart?: string;
@@ -55,8 +55,8 @@ export function TrackingReportList() {
   const [detailId, setDetailId] = useState<string | null>(null);
 
   const queryParams: TrackingReportListParams = {
-    platformUserId: filters.platformUserId || undefined,
-    subjectUserId: filters.subjectUserId || undefined,
+    platformUserId: filters.userFilter?.platformUserId,
+    subjectUserId: filters.userFilter?.subjectUserId,
     trackingType: filters.trackingType,
     cadence: filters.cadence,
     periodStart: filters.periodStart,
@@ -92,6 +92,10 @@ export function TrackingReportList() {
 
   const setFilter = useCallback(<K extends keyof Filters>(key: K, value: Filters[K]) => {
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
+  }, []);
+
+  const handleUserChange = useCallback((val: UserFilterValue | undefined) => {
+    setFilters((prev) => ({ ...prev, userFilter: val, page: 1 }));
   }, []);
 
   const handleDateRangeChange = (dates: [Dayjs | null, Dayjs | null] | null) => {
@@ -224,21 +228,7 @@ export function TrackingReportList() {
           alignItems: 'center',
         }}
       >
-        <Input.Search
-          placeholder="平台用户 ID"
-          allowClear
-          style={{ width: 200 }}
-          onSearch={(value) => setFilter('platformUserId', value || undefined)}
-          onChange={(e) => !e.target.value && setFilter('platformUserId', undefined)}
-        />
-
-        <Input.Search
-          placeholder="主体用户 ID"
-          allowClear
-          style={{ width: 200 }}
-          onSearch={(value) => setFilter('subjectUserId', value || undefined)}
-          onChange={(e) => !e.target.value && setFilter('subjectUserId', undefined)}
-        />
+        <UserSearchSelect value={filters.userFilter} onChange={handleUserChange} />
 
         <Select
           placeholder="报告类型"

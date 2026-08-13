@@ -17,6 +17,8 @@ export interface RouteConfig {
   icon?: ReactElement;
   permission?: string;
   menu?: boolean;
+  /** 仅作为菜单分组使用，不创建实际路由，子路由会被展平注册 */
+  menuOnly?: boolean;
   children?: RouteConfig[];
   redirect?: string;
   hidden?: boolean;

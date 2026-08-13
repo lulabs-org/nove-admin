@@ -10,28 +10,26 @@
  */
 
 import type { RouteConfig } from '../../shared/types';
+import { authRoutes } from '../../features/auth/routes';
 import { dashboardRoutes } from '../../features/dashboard/routes';
+import { userGroupRoutes } from '../../features/user-group/routes';
 import { orgMemberRoutes } from '../../features/org-members/routes';
-import { platformUserRoutes } from '../../features/platform-users/routes';
 import { permissionRoutes } from '../../features/permissions';
 import { apiKeyRoutes } from '../../features/api-keys/routes';
-import { settingsRoutes } from '../../features/settings/routes';
-import { authRoutes } from '../../features/auth/routes';
+import { productRoutes } from '../../features/products/routes';
+import { channelRoutes } from '../../features/channels/routes';
+import { orderRoutes } from '../../features/orders/routes';
+import { orderRefundRoutes } from '../../features/order-refunds';
 import { meetingRoutes } from '../../features/meetings/routes';
 import { trackingReportRoutes } from '../../features/tracking-reports/routes';
 import { taskRoutes } from '../../features/tasks/routes';
-import { orderRoutes } from '../../features/orders/routes';
-import { orderRefundRoutes } from '../../features/order-refunds';
-import { userRoutes } from '../../features/users/routes';
-import { productRoutes } from '../../features/products/routes';
-import { channelRoutes } from '../../features/channels/routes';
+import { settingsRoutes } from '../../features/settings/routes';
 
 export const routes: RouteConfig[] = [
   ...authRoutes,
   ...dashboardRoutes,
-  ...userRoutes,
+  ...userGroupRoutes,
   ...orgMemberRoutes,
-  ...platformUserRoutes,
   ...permissionRoutes,
   ...apiKeyRoutes,
   ...productRoutes,

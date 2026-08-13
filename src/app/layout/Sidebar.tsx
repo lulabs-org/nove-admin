@@ -45,8 +45,7 @@ export function Sidebar({ routes, collapsed }: SidebarProps) {
   const menuItems = generateMenuItems(routes);
   const selectedKeys = [location.pathname];
   const activeParentKeys = findActiveParentKeys(routes, location.pathname);
-  const [manualOpenKeys, setManualOpenKeys] = useState<string[]>([]);
-  const openKeys = Array.from(new Set([...manualOpenKeys, ...activeParentKeys]));
+  const [openKeys, setOpenKeys] = useState<string[]>(activeParentKeys);
 
   function generateMenuItems(routes: RouteConfig[]): MenuProps['items'] {
     return routes
@@ -79,7 +78,7 @@ export function Sidebar({ routes, collapsed }: SidebarProps) {
       mode="inline"
       selectedKeys={selectedKeys}
       openKeys={collapsed ? [] : openKeys}
-      onOpenChange={setManualOpenKeys}
+      onOpenChange={setOpenKeys}
       onClick={handleMenuClick}
       items={menuItems}
       inlineCollapsed={collapsed}
