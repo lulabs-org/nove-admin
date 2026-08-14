@@ -38,9 +38,9 @@ jobs:
           config.model: "openai/${{ secrets.OPENAI_MODEL }}"
           config.fallback_models: '["openai/${{ secrets.OPENAI_MODEL }}"]'
           # DeepSeek 等自定义模型不在 PR-Agent 内置 MAX_TOKENS 表里，必须显式声明上下文窗口
-          # deepseek-chat 为 64K 上下文；若用 V4 系列（128K）可调高
-          config.custom_model_max_tokens: "64000"
-
+          # deepseek-v4-flash 为 128K 上下文；若用 V4-flash 为 1M 上下文
+          config.custom_model_max_tokens: "128000"
+          config.response_language: "zh-CN"
           # ===== 自动触发的工具 =====
           # PR 打开/重开/同步时自动跑 describe + review + improve
           github_action_config.auto_review: "true"
