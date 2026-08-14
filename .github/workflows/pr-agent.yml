@@ -1,0 +1,69 @@
+name: PR Agent
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+  issue_comment:
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: write
+
+concurrency:
+  group: pr-agent-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  pr_agent_job:
+    # 跳过 bot 事件，避免评论循环；fork PR 默认无 secrets 会在 action 内部兜底跳过
+    if: ${{ github.event.sender.type != 'Bot' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    name: Run pr agent on every pull request, respond to user comments
+    steps:
+      - name: PR Agent action step
+        id: pragent
+        # 锁定版本避免上游 main 变更导致行为漂移；如需跟随最新可改为 @main
+        uses: the-pr-agent/pr-agent@v0.42.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          # ===== 复用现有 DeepSeek（OpenAI 兼容）配置 =====
+          # secrets.OPENAI_BASE_URL / OPENAI_API_KEY / OPENAI_MODEL 与旧 ai-review.yml 一致
+          # litellm 通过 openai/ 前缀走 OpenAI 兼容协议，api_base 指向 DeepSeek 端点
+          OPENAI__API_BASE: ${{ secrets.OPENAI_BASE_URL }}
+          OPENAI__KEY: ${{ secrets.OPENAI_API_KEY }}
+          # secrets.OPENAI_MODEL 内部值例如 deepseek-chat，PR-Agent 需加 openai/ 前缀
+          config.model: "openai/${{ secrets.OPENAI_MODEL }}"
+          config.fallback_models: '["openai/${{ secrets.OPENAI_MODEL }}"]'
+          # DeepSeek 等自定义模型不在 PR-Agent 内置 MAX_TOKENS 表里，必须显式声明上下文窗口
+          # deepseek-chat 为 64K 上下文；若用 V4 系列（128K）可调高
+          config.custom_model_max_tokens: "64000"
+
+          # ===== 自动触发的工具 =====
+          # PR 打开/重开/同步时自动跑 describe + review + improve
+          github_action_config.auto_review: "true"
+          github_action_config.auto_describe: "true"
+          github_action_config.auto_improve: "true"
+          github_action_config.pr_actions: '["opened", "reopened", "ready_for_review", "synchronize"]'
+
+          # ===== 保留旧 ai-review.yml 的审查重点（React/TS 技术栈） =====
+          # 这些 extra_instructions 会被注入到 /review 与 /improve 的 prompt 中
+          pr_reviewer.extra_instructions: >-
+            技术栈：React 19、Ant Design 6、TanStack Query、Zustand、React Hook Form、Zod、Vite、Orval。
+            只关注有实际影响的问题：bug、安全风险、数据丢失、内存泄漏、性能反模式、类型安全漏洞。
+            不要报告纯风格/格式问题（缩进、引号、命名、注释缺失、import 顺序）——这些由 ESLint/Prettier 处理。
+            重点检查：
+            1. React：hooks 依赖数组遗漏/多余、useEffect 未清理（定时器/监听/订阅）、setState 闭包陷阱、列表 key、不必要的 re-render
+            2. TanStack Query：queryKey 是否能正确缓存/失效、mutation 后 invalidate 是否覆盖、staleTime/gcTime 配置
+            3. Zustand：selector 粒度（避免全量订阅导致 re-render）、store 中混入派生数据
+            4. 类型安全：unsafe 类型断言（as unknown as）、隐式 any、Zod schema 与 TS 类型不一致、可选链缺失
+            5. 安全：硬编码密钥/token、XSS（dangerouslySetInnerHTML 未转义）、未校验的用户输入
+            发现疑似硬编码密钥/token/凭证时直接报告，值做部分遮蔽展示（如 sk-***xxxx），不要输出任何密钥本身。
+          pr_code_suggestions.num_code_suggestions: "6"
+          # tests_review 对前端项目意义不大（多数变更无后端测试），关闭以减少噪音
+          pr_reviewer.require_tests_review: "false"
+
+          # ===== fork PR 兜底：未配置 secrets 时由 action 内部跳过，避免报错 =====
+          # 不需要额外配置 pull_request_target —— PR-Agent 通过 API 拉 PR 数据，无需 checkout
