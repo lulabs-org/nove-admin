@@ -17,7 +17,7 @@ import {
   type TableQueryParams,
 } from '../../../shared/hooks/useTableQuery';
 import { meetingApi } from '../api/meetingApi';
-import type { MeetingListItem, MeetingListParams } from '../model/types';
+import type { Meeting, MeetingListItem, MeetingListParams } from '../model/types';
 import { MeetingControllerGetMeetingRecordsPlatform } from '../../../shared/lib/api/orval/business/schemas';
 import { formatDateTime, getMeetingPlatformText } from '../utils/formatters';
 import { MeetingFormModal } from '../components/MeetingFormModal';
@@ -39,7 +39,8 @@ export function MeetingList() {
     platform: undefined,
   });
   const [formOpen, setFormOpen] = useState(false);
-  const [editingMeeting, setEditingMeeting] = useState<MeetingListItem | null>(null);
+  const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
+  const [editingMeetingId, setEditingMeetingId] = useState<string | null>(null);
 
   const {
     data: meetingList,
@@ -47,12 +48,18 @@ export function MeetingList() {
     refetch,
   } = useTableQuery<MeetingListItem>({
     queryKey: 'meetings',
-    queryFn: (params) => {
+    queryFn: async (params) => {
       const { pageSize, ...restParams } = params;
-      return meetingApi.list({
+      const response = await meetingApi.list({
         ...restParams,
         limit: pageSize,
       } as unknown as MeetingListParams);
+      return {
+        data: response.data,
+        total: response.total,
+        page: response.page,
+        pageSize: response.limit,
+      };
     },
     params: filters,
   });
@@ -99,9 +106,17 @@ export function MeetingList() {
     navigate(`/meetings/${record.id}`);
   };
 
-  const handleEdit = (record: MeetingListItem) => {
-    setEditingMeeting(record);
-    setFormOpen(true);
+  const handleEdit = async (record: MeetingListItem) => {
+    setEditingMeetingId(record.id);
+    try {
+      const meeting = await meetingApi.getById(record.id);
+      setEditingMeeting(meeting);
+      setFormOpen(true);
+    } catch {
+      message.error('获取会议详情失败');
+    } finally {
+      setEditingMeetingId(null);
+    }
   };
 
   const handleDelete = (record: MeetingListItem) => {
@@ -204,7 +219,7 @@ export function MeetingList() {
       title: '主持人',
       key: 'host',
       render: (_: unknown, record: MeetingListItem) =>
-        record.host?.displayName || record.hostPlatformUserId || '-',
+        record.host?.displayName || record.host?.platformUserId || '-',
       width: 160,
       ellipsis: true,
     },
@@ -239,7 +254,12 @@ export function MeetingList() {
             查看
           </Button>
           <Perm permission={PERMISSIONS.MEETING.UPDATE}>
-            <Button type="link" size="small" onClick={() => handleEdit(record)}>
+            <Button
+              type="link"
+              size="small"
+              loading={editingMeetingId === record.id}
+              onClick={() => void handleEdit(record)}
+            >
               编辑
             </Button>
           </Perm>
