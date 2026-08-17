@@ -74,7 +74,7 @@ export function MeetingFormModal({ open, meeting, submitting, onCancel, onSubmit
             title: meeting.title,
             meetingCode: meeting.meetingCode ?? undefined,
             type: meeting.type,
-            hostUserId: meeting.hostPlatformUserId ?? undefined,
+            hostUserId: meeting.host?.id ?? undefined,
             timeRange:
               meeting.startAt && meeting.endAt
                 ? [dayjs(meeting.startAt), dayjs(meeting.endAt)]

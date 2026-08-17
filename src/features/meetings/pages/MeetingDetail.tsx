@@ -238,7 +238,7 @@ export function MeetingDetail() {
     );
 
   const status = getProcessingStatusText(meeting.processingStatus);
-  const hostDisplayName = meeting.host?.displayName || meeting.hostPlatformUserId || '-';
+  const hostDisplayName = meeting.host?.displayName || meeting.host?.id || '-';
 
   const summaryPane = summary ? (
     <div className="meeting-summary-pane">

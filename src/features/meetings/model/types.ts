@@ -92,15 +92,14 @@ export interface Meeting {
   id: string;
   platform: MeetingControllerGetMeetingRecordsPlatform;
   meetingId: string;
-  subMeetingId?: string | null;
+  subMeetingId: string;
   externalId?: string | null;
   title: string;
   description?: string | null;
   meetingCode?: string | null;
   type: MeetingControllerGetMeetingRecordsType;
   language?: string | null;
-  tags?: string[];
-  hostPlatformUserId?: string | null;
+  tags: string[];
   host?: MeetingHost | null;
   participantCount?: number | null;
   scheduledStartAt?: string | null;
@@ -133,14 +132,22 @@ export interface MeetingListParams {
   endDate?: string;
 }
 
-export type MeetingListItem = Omit<Meeting, 'metadata'>;
+export interface MeetingListItem {
+  id: string;
+  title: string;
+  platform: MeetingControllerGetMeetingRecordsPlatform;
+  startAt?: string | null;
+  endAt?: string | null;
+  host?: MeetingHost | null;
+  participantCount?: number | null;
+  hasRecording: boolean;
+}
 
 export interface MeetingListResponse {
   data: MeetingListItem[];
   total: number;
   page: number;
   limit: number;
-  pageSize: number;
   totalPages: number;
 }
 
