@@ -261,7 +261,7 @@ export function ApiKeyManagement() {
         onSubmit={(data) => createMutation.mutate(data)}
         loading={createMutation.isPending}
         result={createResult}
-        onCopyComplete={() => {
+        onComplete={() => {
           setCreateModalOpen(false);
           setCreateResult(undefined);
           refetch();

@@ -4,7 +4,11 @@ import Input from 'antd/es/input';
 import DatePicker from 'antd/es/date-picker';
 import Button from 'antd/es/button';
 import message from 'antd/es/message';
-import { CopyOutlined } from '@ant-design/icons';
+import Alert from 'antd/es/alert';
+import Descriptions from 'antd/es/descriptions';
+import Tag from 'antd/es/tag';
+import { CheckCircleFilled, CheckOutlined, CopyOutlined } from '@ant-design/icons';
+import { useState } from 'react';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import type { CreateApiKeyResult } from '../types';
 import { ScopeSelector } from './ScopeSelector';
@@ -15,7 +19,7 @@ interface CreateApiKeyModalProps {
   onSubmit: (data: { name: string; scopes?: string[]; expiresAt?: string }) => void;
   loading: boolean;
   result?: CreateApiKeyResult;
-  onCopyComplete?: () => void;
+  onComplete?: () => void;
 }
 
 export function CreateApiKeyModal({
@@ -24,9 +28,10 @@ export function CreateApiKeyModal({
   onSubmit,
   loading,
   result,
-  onCopyComplete,
+  onComplete,
 }: CreateApiKeyModalProps) {
   const [form] = Form.useForm();
+  const [copied, setCopied] = useState(false);
   const { user } = useAuth();
 
   const userPermissions = user?.permissions || [];
@@ -48,15 +53,30 @@ export function CreateApiKeyModal({
   };
 
   const handleCancel = () => {
-    if (!result) form.resetFields();
+    form.resetFields();
+    setCopied(false);
     onCancel();
   };
 
-  const handleCopyKey = () => {
+  const handleComplete = () => {
+    setCopied(false);
+    onComplete?.();
+  };
+
+  const handleClose = () => {
+    if (result) handleComplete();
+    else handleCancel();
+  };
+
+  const handleCopyKey = async () => {
     if (result?.key) {
-      navigator.clipboard.writeText(result.key);
-      message.success('API Key 已复制到剪贴板');
-      onCopyComplete?.();
+      try {
+        await navigator.clipboard.writeText(result.key);
+        setCopied(true);
+        message.success('API Key 已复制到剪贴板');
+      } catch {
+        message.error('复制失败，请手动复制 API Key');
+      }
     }
   };
 
@@ -64,45 +84,87 @@ export function CreateApiKeyModal({
     <Modal
       title="创建 API Key"
       open={open}
-      onOk={result ? handleCancel : handleSubmit}
-      onCancel={handleCancel}
-      okText={result ? '完成' : '创建'}
+      onOk={result ? handleComplete : handleSubmit}
+      onCancel={handleClose}
+      okText={result ? '我已保存，完成' : '创建'}
       cancelButtonProps={result ? { style: { display: 'none' } } : undefined}
       confirmLoading={result ? false : loading}
       width={720}
     >
       {result ? (
-        <div style={{ padding: '20px 0' }}>
-          <div style={{ marginBottom: 16, color: '#ff4d4f', fontWeight: 500 }}>
-            ⚠️ 请立即复制您的 API Key，它只会显示这一次！
+        <div style={{ padding: '8px 0 4px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <CheckCircleFilled style={{ color: '#52c41a', fontSize: 48 }} />
+            <div style={{ marginTop: 10, fontSize: 20, fontWeight: 600 }}>API Key 创建成功</div>
+            <div style={{ marginTop: 4, color: '#666' }}>现在可以使用此密钥访问已授权的服务</div>
           </div>
+
           <div
             style={{
-              padding: 12,
-              backgroundColor: '#f5f5f5',
-              borderRadius: 4,
-              fontFamily: 'monospace',
-              fontSize: 14,
-              wordBreak: 'break-all',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 8,
+              padding: 16,
+              backgroundColor: '#f0f7ff',
+              border: '1px solid #91caff',
+              borderRadius: 8,
             }}
           >
-            <span>{result.key}</span>
-            <Button type="primary" size="small" icon={<CopyOutlined />} onClick={handleCopyKey}>
-              复制
-            </Button>
+            <div style={{ marginBottom: 8, color: '#666', fontSize: 12, fontWeight: 500 }}>
+              API Key
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <code
+                style={{
+                  flex: 1,
+                  fontSize: 14,
+                  lineHeight: 1.6,
+                  wordBreak: 'break-all',
+                }}
+              >
+                {result.key}
+              </code>
+              <Button
+                type="primary"
+                icon={copied ? <CheckOutlined /> : <CopyOutlined />}
+                onClick={handleCopyKey}
+              >
+                {copied ? '已复制' : '复制密钥'}
+              </Button>
+            </div>
           </div>
-          <div style={{ marginTop: 16, color: '#666', fontSize: 12 }}>
-            <p>• 名称: {result.name}</p>
-            <p>• 前缀: {result.prefix}</p>
-            <p>• 状态: {result.status}</p>
-          </div>
+
+          <Alert
+            showIcon
+            type="warning"
+            title="请立即复制并妥善保存"
+            description="关闭此窗口后，完整 API Key 将无法再次查看。请勿通过聊天、邮件或截图分享密钥。"
+            style={{ marginTop: 16 }}
+          />
+
+          <Descriptions
+            size="small"
+            column={2}
+            style={{ marginTop: 20 }}
+            items={[
+              { key: 'name', label: '名称', children: result.name },
+              {
+                key: 'status',
+                label: '状态',
+                children: <Tag color="success">有效</Tag>,
+              },
+              {
+                key: 'prefix',
+                label: '识别前缀',
+                children: <code>{result.prefix}</code>,
+              },
+              {
+                key: 'scopes',
+                label: '权限范围',
+                children: `${result.scopes.length} 项`,
+              },
+            ]}
+          />
         </div>
       ) : (
-        <Form form={form} layout="vertical">
+        <Form form={form} layout="vertical" preserve={false}>
           <Form.Item
             label="名称"
             name="name"
