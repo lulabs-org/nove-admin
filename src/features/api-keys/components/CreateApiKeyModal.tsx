@@ -48,7 +48,7 @@ export function CreateApiKeyModal({
   };
 
   const handleCancel = () => {
-    form.resetFields();
+    if (!result) form.resetFields();
     onCancel();
   };
 
@@ -64,9 +64,11 @@ export function CreateApiKeyModal({
     <Modal
       title="创建 API Key"
       open={open}
-      onOk={handleSubmit}
+      onOk={result ? handleCancel : handleSubmit}
       onCancel={handleCancel}
-      confirmLoading={loading}
+      okText={result ? '完成' : '创建'}
+      cancelButtonProps={result ? { style: { display: 'none' } } : undefined}
+      confirmLoading={result ? false : loading}
       width={720}
     >
       {result ? (
