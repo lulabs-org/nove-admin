@@ -195,7 +195,7 @@ export function ApiKeyManagement() {
                 size="small"
                 icon={<RotateRightOutlined />}
                 onClick={() => handleRotate(record)}
-                loading={rotateMutation.isPending}
+                loading={rotateMutation.isPending && rotateMutation.variables === record.id}
               />
             </Tooltip>
           </Perm>
@@ -208,7 +208,12 @@ export function ApiKeyManagement() {
               okText="确定"
               cancelText="取消"
             >
-              <Button type="link" size="small" danger loading={revokeMutation.isPending}>
+              <Button
+                type="link"
+                size="small"
+                danger
+                loading={revokeMutation.isPending && revokeMutation.variables === record.id}
+              >
                 撤销
               </Button>
             </Popconfirm>
