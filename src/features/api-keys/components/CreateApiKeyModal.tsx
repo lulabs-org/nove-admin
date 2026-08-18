@@ -2,14 +2,12 @@ import Modal from 'antd/es/modal';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
 import DatePicker from 'antd/es/date-picker';
-import Select from 'antd/es/select';
 import Button from 'antd/es/button';
 import message from 'antd/es/message';
 import { CopyOutlined } from '@ant-design/icons';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import type { CreateApiKeyResult } from '../types';
-
-const { Option } = Select;
+import { ScopeSelector } from './ScopeSelector';
 
 interface CreateApiKeyModalProps {
   open: boolean;
@@ -69,7 +67,7 @@ export function CreateApiKeyModal({
       onOk={handleSubmit}
       onCancel={handleCancel}
       confirmLoading={loading}
-      width={600}
+      width={720}
     >
       {result ? (
         <div style={{ padding: '20px 0' }}>
@@ -112,13 +110,7 @@ export function CreateApiKeyModal({
           </Form.Item>
 
           <Form.Item label="权限范围" name="scopes" tooltip="指定 API Key 可以访问的资源范围">
-            <Select mode="tags" placeholder="选择或输入权限范围">
-              {userPermissions.map((permission) => (
-                <Option key={permission} value={permission}>
-                  {permission}
-                </Option>
-              ))}
-            </Select>
+            <ScopeSelector options={userPermissions} />
           </Form.Item>
 
           <Form.Item label="过期时间" name="expiresAt" tooltip="留空表示永不过期">
