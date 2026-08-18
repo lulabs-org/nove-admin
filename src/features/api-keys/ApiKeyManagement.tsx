@@ -3,7 +3,6 @@ import Space from 'antd/es/space';
 import Table from 'antd/es/table';
 import message from 'antd/es/message';
 import Popconfirm from 'antd/es/popconfirm';
-import Tag from 'antd/es/tag';
 import Tooltip from 'antd/es/tooltip';
 import type { TableProps } from 'antd/es/table';
 import { Perm } from '../../app/guards/Perm';
@@ -19,6 +18,7 @@ import type { ApiKey, UpdateApiKey, CreateApiKeyResult, RotateApiKeyResult } fro
 import { CreateApiKeyModal } from './components/CreateApiKeyModal';
 import { EditApiKeyModal } from './components/EditApiKeyModal';
 import { RotateApiKeyModal } from './components/RotateApiKeyModal';
+import { ScopeSummary } from './components/ScopeSummary';
 import { KeyOutlined, RotateRightOutlined } from '@ant-design/icons';
 
 export function ApiKeyManagement() {
@@ -150,15 +150,8 @@ export function ApiKeyManagement() {
       title: '权限范围',
       dataIndex: 'scopes',
       key: 'scopes',
-      render: (scopes: string[]) => (
-        <Space size={[4, 4]} wrap>
-          {scopes?.map((scope) => (
-            <Tag key={scope} color="blue">
-              {scope}
-            </Tag>
-          ))}
-        </Space>
-      ),
+      width: 360,
+      render: (scopes: string[]) => <ScopeSummary scopes={scopes} />,
     },
     {
       title: '过期时间',
@@ -202,7 +195,7 @@ export function ApiKeyManagement() {
                 size="small"
                 icon={<RotateRightOutlined />}
                 onClick={() => handleRotate(record)}
-                loading={rotateMutation.isPending}
+                loading={rotateMutation.isPending && rotateMutation.variables === record.id}
               />
             </Tooltip>
           </Perm>
@@ -215,7 +208,12 @@ export function ApiKeyManagement() {
               okText="确定"
               cancelText="取消"
             >
-              <Button type="link" size="small" danger loading={revokeMutation.isPending}>
+              <Button
+                type="link"
+                size="small"
+                danger
+                loading={revokeMutation.isPending && revokeMutation.variables === record.id}
+              >
                 撤销
               </Button>
             </Popconfirm>
@@ -263,7 +261,7 @@ export function ApiKeyManagement() {
         onSubmit={(data) => createMutation.mutate(data)}
         loading={createMutation.isPending}
         result={createResult}
-        onCopyComplete={() => {
+        onComplete={() => {
           setCreateModalOpen(false);
           setCreateResult(undefined);
           refetch();
