@@ -11,5 +11,6 @@
 export type { LoginRequest, LoginResponse, User } from './model/types';
 export { login, getMe, logout } from './api/api';
 export { authService } from './api/service';
-export { LoginPage } from './pages/LoginPage';
+
 export { useAuthStore } from './model/authStore';
+export { authRoutes } from './routes';

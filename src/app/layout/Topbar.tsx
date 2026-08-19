@@ -12,7 +12,7 @@ import Layout from 'antd/es/layout';
 import Dropdown from 'antd/es/dropdown';
 import Avatar from 'antd/es/avatar';
 import Space from 'antd/es/space';
-import { UserOutlined, LogoutOutlined } from '@ant-design/icons';
+import { SafetyOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../shared/hooks/useAuth';
 
@@ -24,9 +24,24 @@ interface TopbarProps {
 }
 
 export function Topbar({ collapsed, sidebarWidth }: TopbarProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, checkPermission } = useAuth();
 
   const menuItems = [
+    {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: <Link to="/settings/profile">个人资料</Link>,
+    },
+    ...(checkPermission('system:config')
+      ? [
+          {
+            key: 'security',
+            icon: <SafetyOutlined />,
+            label: <Link to="/settings/security">安全设置</Link>,
+          },
+        ]
+      : []),
+    { type: 'divider' as const },
     {
       key: 'logout',
       icon: <LogoutOutlined />,

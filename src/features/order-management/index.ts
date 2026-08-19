@@ -1,1 +1,0 @@
-export { orderManagementRoutes } from './routes';
