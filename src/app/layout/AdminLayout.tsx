@@ -62,7 +62,14 @@ export function AdminLayout({ routes, children }: AdminLayoutProps) {
           >
             {collapsed ? 'Nove' : 'Nove System'}
           </div>
-          <div style={{ flex: 1, overflow: 'hidden' }}>
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              overflowX: 'hidden',
+              overflowY: 'auto',
+            }}
+          >
             <Sidebar routes={routes} collapsed={collapsed} />
           </div>
           <div style={{ padding: '8px 12px 16px' }}>
