@@ -41,9 +41,13 @@ export interface PlatformUserListResponse {
 
 export interface LocalUserOption {
   id: string;
-  name: string;
+  username?: string;
   email?: string;
-  avatar?: string;
+  phone?: string;
+  profile?: {
+    displayName?: string;
+    avatar?: string;
+  };
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────

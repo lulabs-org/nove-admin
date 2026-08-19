@@ -8,6 +8,7 @@ import Select from 'antd/es/select';
 import DatePicker from 'antd/es/date-picker';
 import Switch from 'antd/es/switch';
 import Tag from 'antd/es/tag';
+import Tooltip from 'antd/es/tooltip';
 import type { TableProps } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -26,9 +27,11 @@ import type {
 import { GenerateReportModal } from '../components/GenerateReportModal';
 import { TrackingReportDetail } from '../components/TrackingReportDetail';
 import { UserSearchSelect } from '../components/UserSearchSelect';
+import { ReportSubjectSummary } from '../components/ReportSubject';
 import type { UserFilterValue } from '../components/UserSearchSelect';
 import { Perm } from '../../../app/guards/Perm';
 import { PERMISSIONS } from '../../../shared/utils/permissions';
+import './TrackingReportList.css';
 
 const { RangePicker } = DatePicker;
 
@@ -126,19 +129,16 @@ export function TrackingReportList() {
 
   const columns: TableProps<TrackingReportListItem>['columns'] = [
     {
-      title: '主体名称',
-      dataIndex: 'subjectNameSnapshot',
-      key: 'subjectNameSnapshot',
+      title: (
+        <Tooltip title="优先显示本地用户；未关联时显示平台用户；项目报告显示项目">
+          <span>报告对象</span>
+        </Tooltip>
+      ),
+      key: 'subject',
       width: 160,
-      ellipsis: true,
-    },
-    {
-      title: '平台用户 ID',
-      dataIndex: 'platformUserId',
-      key: 'platformUserId',
-      width: 160,
-      ellipsis: true,
-      render: (v: string | null) => v ?? '-',
+      render: (_: unknown, record: TrackingReportListItem) => (
+        <ReportSubjectSummary subject={record.subject} identityReportId={record.id} />
+      ),
     },
     {
       title: '报告类型',
@@ -148,42 +148,36 @@ export function TrackingReportList() {
       render: (v: TrackingReportType) => TRACKING_REPORT_TYPE_LABELS[v] ?? v,
     },
     {
-      title: '周期',
-      dataIndex: 'cadence',
-      key: 'cadence',
-      width: 90,
-      render: (v: TrackingCadence) => TRACKING_CADENCE_LABELS[v] ?? v,
+      title: '报告周期',
+      key: 'period',
+      width: 210,
+      render: (_: unknown, record: TrackingReportListItem) => (
+        <div className="tracking-report-period">
+          <span>
+            {new Date(record.periodStart).toLocaleDateString('zh-CN')} –{' '}
+            {new Date(record.periodEnd).toLocaleDateString('zh-CN')}
+          </span>
+          <span className="tracking-report-period__cadence">
+            {TRACKING_CADENCE_LABELS[record.cadence] ?? record.cadence}
+          </span>
+        </div>
+      ),
     },
     {
-      title: '开始日期',
-      dataIndex: 'periodStart',
-      key: 'periodStart',
-      width: 120,
-      render: (v: string) => new Date(v).toLocaleDateString('zh-CN'),
+      title: '版本状态',
+      key: 'versionStatus',
+      width: 110,
+      render: (_: unknown, record: TrackingReportListItem) => (
+        <div className="tracking-report-version">
+          <Tag color={record.isLatest ? 'success' : 'default'}>
+            {record.isLatest ? '最新' : '历史'}
+          </Tag>
+          <span>v{record.version}</span>
+        </div>
+      ),
     },
     {
-      title: '结束日期',
-      dataIndex: 'periodEnd',
-      key: 'periodEnd',
-      width: 120,
-      render: (v: string) => new Date(v).toLocaleDateString('zh-CN'),
-    },
-    {
-      title: '是否最新',
-      dataIndex: 'isLatest',
-      key: 'isLatest',
-      width: 90,
-      render: (v: boolean) => <Tag color={v ? 'success' : 'default'}>{v ? '最新' : '历史'}</Tag>,
-    },
-    {
-      title: '版本',
-      dataIndex: 'version',
-      key: 'version',
-      width: 70,
-      render: (v: number) => `v${v}`,
-    },
-    {
-      title: '创建时间',
+      title: '生成时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: 170,
@@ -219,15 +213,7 @@ export function TrackingReportList() {
   return (
     <div style={{ padding: '0 4px' }}>
       {/* Toolbar */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 8,
-          marginBottom: 16,
-          alignItems: 'center',
-        }}
-      >
+      <div className="tracking-report-list-toolbar">
         <UserSearchSelect value={filters.userFilter} onChange={handleUserChange} />
 
         <Select
@@ -244,7 +230,7 @@ export function TrackingReportList() {
         </Select>
 
         <Select
-          placeholder="周期类型"
+          placeholder="周期单位"
           allowClear
           style={{ width: 110 }}
           onChange={(value) => setFilter('cadence', value)}
@@ -291,7 +277,7 @@ export function TrackingReportList() {
             showTotal: (total) => `共 ${total} 条`,
             pageSizeOptions: ['10', '20', '50'],
           }}
-          scroll={{ x: 1200 }}
+          scroll={{ x: 970 }}
           onChange={handleTableChange}
         />
       </div>

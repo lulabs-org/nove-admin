@@ -1,10 +1,13 @@
 import Drawer from 'antd/es/drawer';
 import Descriptions from 'antd/es/descriptions';
 import Tag from 'antd/es/tag';
-import Typography from 'antd/es/typography';
 import Collapse from 'antd/es/collapse';
 import Spin from 'antd/es/spin';
+import Card from 'antd/es/card';
+import Divider from 'antd/es/divider';
 import { useQuery } from '@tanstack/react-query';
+import DOMPurify from 'dompurify';
+import { marked } from 'marked';
 import { trackingReportApi } from '../api/trackingReportApi';
 import {
   TRACKING_CADENCE_LABELS,
@@ -12,8 +15,8 @@ import {
   TrackingCadence,
   TrackingReportType,
 } from '../model/types';
-
-const { Text, Paragraph } = Typography;
+import { ReportSubjectSummary, SubjectIdentityDetails } from './ReportSubject';
+import './TrackingReportDetail.css';
 
 interface TrackingReportDetailProps {
   id: string | null;
@@ -26,25 +29,37 @@ export function TrackingReportDetail({ id, onClose }: TrackingReportDetailProps)
     queryFn: () => trackingReportApi.getById(id!),
     enabled: !!id,
   });
+  const reportContentHtml = report
+    ? DOMPurify.sanitize(marked.parse(report.content, { gfm: true }) as string)
+    : '';
 
   return (
-    <Drawer title="追踪报告详情" open={!!id} onClose={onClose} width={640} destroyOnHidden>
+    <Drawer title="追踪报告详情" open={!!id} onClose={onClose} width={720} destroyOnHidden>
       {isLoading && (
         <div style={{ textAlign: 'center', padding: 40 }}>
           <Spin />
         </div>
       )}
       {report && !isLoading && (
-        <>
-          <Descriptions bordered column={2} size="small" style={{ marginBottom: 20 }}>
-            <Descriptions.Item label="主体名称" span={2}>
-              {report.subjectNameSnapshot}
-            </Descriptions.Item>
+        <div className="tracking-report-detail">
+          <Card size="small" className="tracking-report-subject-card">
+            <ReportSubjectSummary subject={report.subject} size="large" />
+            <Divider />
+            <SubjectIdentityDetails subject={report.subject} />
+          </Card>
+
+          <Descriptions
+            title="报告信息"
+            bordered
+            column={2}
+            size="small"
+            className="tracking-report-info"
+          >
             <Descriptions.Item label="报告类型">
               {TRACKING_REPORT_TYPE_LABELS[report.trackingType as TrackingReportType] ??
                 report.trackingType}
             </Descriptions.Item>
-            <Descriptions.Item label="周期类型">
+            <Descriptions.Item label="周期单位">
               {TRACKING_CADENCE_LABELS[report.cadence as TrackingCadence] ?? report.cadence}
             </Descriptions.Item>
             <Descriptions.Item label="周期开始">
@@ -63,40 +78,20 @@ export function TrackingReportDetail({ id, onClose }: TrackingReportDetailProps)
             <Descriptions.Item label="创建时间">
               {new Date(report.createdAt).toLocaleString('zh-CN')}
             </Descriptions.Item>
-            {report.platformUserId && (
-              <Descriptions.Item label="平台用户 ID" span={2}>
-                <Text copyable>{report.platformUserId}</Text>
-              </Descriptions.Item>
-            )}
-            {report.subjectUserId && (
-              <Descriptions.Item label="主体用户 ID" span={2}>
-                <Text copyable>{report.subjectUserId}</Text>
-              </Descriptions.Item>
-            )}
-            {report.projectId && (
-              <Descriptions.Item label="项目 ID" span={2}>
-                <Text copyable>{report.projectId}</Text>
-              </Descriptions.Item>
-            )}
           </Descriptions>
 
           <Collapse
+            className="tracking-report-content"
             defaultActiveKey={['content']}
             items={[
               {
                 key: 'content',
                 label: '报告内容',
                 children: (
-                  <Paragraph
-                    style={{
-                      whiteSpace: 'pre-wrap',
-                      maxHeight: 400,
-                      overflowY: 'auto',
-                      margin: 0,
-                    }}
-                  >
-                    {report.content}
-                  </Paragraph>
+                  <div
+                    className="tracking-report-markdown"
+                    dangerouslySetInnerHTML={{ __html: reportContentHtml }}
+                  />
                 ),
               },
               ...(report.structuredData && Object.keys(report.structuredData).length > 0
@@ -124,7 +119,7 @@ export function TrackingReportDetail({ id, onClose }: TrackingReportDetailProps)
                 : []),
             ]}
           />
-        </>
+        </div>
       )}
     </Drawer>
   );
