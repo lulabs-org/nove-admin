@@ -28,6 +28,7 @@ import type {
   Meeting,
   MeetingParticipant,
   MeetingSummary,
+  RecordingParticipantSummary,
   TranscriptSegment,
   UpdateMeetingDto,
 } from '../model/types';
@@ -91,10 +92,17 @@ export function MeetingDetail() {
   const [participantTotal, setParticipantTotal] = useState(0);
   const [participantResultTotal, setParticipantResultTotal] = useState(0);
   const [participantSearch, setParticipantSearch] = useState('');
+  const [participantSummaries, setParticipantSummaries] = useState<
+    Record<string, RecordingParticipantSummary[]>
+  >({});
+  const [participantSummariesLoading, setParticipantSummariesLoading] = useState(false);
+  const [participantSummariesError, setParticipantSummariesError] = useState<string | null>(null);
+  const [expandedParticipantId, setExpandedParticipantId] = useState<string | null>(null);
   const [summary, setSummary] = useState<MeetingSummary | null>(null);
   const [transcripts, setTranscripts] = useState<Record<string, TranscriptSegment[]>>({});
   const [loading, setLoading] = useState(true);
   const [participantsLoading, setParticipantsLoading] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const [transcriptLoading, setTranscriptLoading] = useState(false);
   const [transcriptError, setTranscriptError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('summary');
@@ -127,6 +135,19 @@ export function MeetingDetail() {
     [id]
   );
 
+  const fetchTranscript = useCallback(async (recordingId: string) => {
+    setTranscriptLoading(true);
+    setTranscriptError(null);
+    try {
+      const segments = await meetingApi.getTranscript(recordingId);
+      setTranscripts((current) => ({ ...current, [recordingId]: segments }));
+    } catch {
+      setTranscriptError('转写记录暂时无法读取');
+    } finally {
+      setTranscriptLoading(false);
+    }
+  }, []);
+
   const fetchMeetingDetail = useCallback(async () => {
     if (!id) return;
     setLoading(true);
@@ -136,48 +157,77 @@ export function MeetingDetail() {
       setActiveRecordingId(data.recordings?.[0]?.id ?? null);
       setTranscriptError(null);
       setVisibleTranscriptCount(200);
-
-      const [participantResult, summaryResult] = await Promise.allSettled([
-        meetingApi.getParticipants(id, { page: 1, limit: 100 }),
-        meetingApi.getSummaries(id),
-      ]);
-      if (participantResult.status === 'fulfilled') {
-        setParticipants(participantResult.value.data);
-        setParticipantTotal(participantResult.value.total);
-        setParticipantResultTotal(participantResult.value.total);
-        setParticipantSearch('');
-      }
-      if (summaryResult.status === 'fulfilled') {
-        setSummary(summaryResult.value.data[0] ?? null);
-      }
-
-      const recordings = data.recordings ?? [];
       setTranscripts({});
-      if (recordings.length) {
-        setTranscriptLoading(true);
-        const transcriptResults = await Promise.allSettled(
-          recordings.map((recording) => meetingApi.getTranscript(recording.id))
-        );
-        const transcriptMap: Record<string, TranscriptSegment[]> = {};
-        transcriptResults.forEach((result, index) => {
-          if (result.status === 'fulfilled') transcriptMap[recordings[index].id] = result.value;
-        });
-        setTranscripts(transcriptMap);
-        if (transcriptResults.every((result) => result.status === 'rejected')) {
-          setTranscriptError('转写记录暂时无法读取');
-        }
-        setTranscriptLoading(false);
-      }
+      setParticipantSummaries({});
+      setParticipantSummariesError(null);
+      setExpandedParticipantId(null);
+      setLoading(false);
+
+      setParticipantsLoading(true);
+      setSummaryLoading(true);
+      const participantRequest = meetingApi
+        .getParticipants(id, { page: 1, limit: 100 })
+        .then((result) => {
+          setParticipants(result.data);
+          setParticipantTotal(result.total);
+          setParticipantResultTotal(result.total);
+          setParticipantSearch('');
+        })
+        .finally(() => setParticipantsLoading(false));
+      const summaryRequest = meetingApi
+        .getSummaries(id)
+        .then((result) => setSummary(result.data[0] ?? null))
+        .finally(() => setSummaryLoading(false));
+
+      await Promise.allSettled([participantRequest, summaryRequest]);
     } catch {
       message.error('获取会议详情失败');
     } finally {
       setLoading(false);
+      setParticipantsLoading(false);
+      setSummaryLoading(false);
     }
   }, [id]);
 
   useEffect(() => {
     void fetchMeetingDetail();
   }, [fetchMeetingDetail]);
+
+  useEffect(() => {
+    if (
+      activeTab !== 'transcript' ||
+      !activeRecordingId ||
+      activeRecordingId in transcripts ||
+      transcriptLoading
+    ) {
+      return;
+    }
+    void fetchTranscript(activeRecordingId);
+  }, [activeRecordingId, activeTab, fetchTranscript, transcriptLoading, transcripts]);
+
+  useEffect(() => {
+    if (
+      activeTab !== 'participants' ||
+      !id ||
+      !activeRecordingId ||
+      activeRecordingId in participantSummaries ||
+      participantSummariesLoading
+    ) {
+      return;
+    }
+    setParticipantSummariesLoading(true);
+    setParticipantSummariesError(null);
+    meetingApi
+      .getParticipantSummaries(id, activeRecordingId)
+      .then((result) => {
+        setParticipantSummaries((current) => ({
+          ...current,
+          [activeRecordingId]: result.data,
+        }));
+      })
+      .catch(() => setParticipantSummariesError('当前录制的成员总结暂时无法读取'))
+      .finally(() => setParticipantSummariesLoading(false));
+  }, [activeRecordingId, activeTab, id, participantSummaries, participantSummariesLoading]);
 
   const activeRecording = meeting?.recordings?.find((item) => item.id === activeRecordingId);
   const activeTranscriptCount = activeRecordingId
@@ -193,7 +243,9 @@ export function MeetingDetail() {
 
   const selectRecording = (recordingId: string) => {
     setActiveRecordingId(recordingId);
+    setTranscriptError(null);
     setVisibleTranscriptCount(200);
+    setExpandedParticipantId(null);
   };
 
   const handleDelete = async () => {
@@ -238,9 +290,30 @@ export function MeetingDetail() {
     );
 
   const status = getProcessingStatusText(meeting.processingStatus);
+  const recordingStatus = getProcessingStatusText(meeting.recordingStatus);
   const hostDisplayName = meeting.host?.displayName || meeting.host?.platformUserId || '-';
+  const derivedDurationSeconds = (() => {
+    if (meeting.durationSeconds) return meeting.durationSeconds;
+    if (!meeting.startAt || !meeting.endAt) return null;
+    const start = new Date(meeting.startAt).getTime();
+    const end = new Date(meeting.endAt).getTime();
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+    return Math.round((end - start) / 1000);
+  })();
 
-  const summaryPane = summary ? (
+  const copyInfoValue = async (label: string, value?: string | null) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      message.success(`${label}已复制`);
+    } catch {
+      message.error(`${label}复制失败`);
+    }
+  };
+
+  const summaryPane = summaryLoading ? (
+    <Skeleton active paragraph={{ rows: 8 }} />
+  ) : summary ? (
     <div className="meeting-summary-pane">
       <div className="meeting-section-heading">
         <div>
@@ -279,12 +352,29 @@ export function MeetingDetail() {
     <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无会议纪要" />
   );
 
+  const currentParticipantSummaries = activeRecordingId
+    ? (participantSummaries[activeRecordingId] ?? [])
+    : [];
+  const summaryForParticipant = (participant: MeetingParticipant) =>
+    currentParticipantSummaries.find(
+      (item) =>
+        item.meetingParticipantId === participant.id ||
+        item.platformUserId === participant.ptUserId ||
+        item.platformUserId === participant.user?.ptUserId
+    );
+
   const participantPane = (
     <div className="meeting-participant-pane">
       <div className="meeting-participant-toolbar">
         <div className="meeting-participant-counts">
           <span>共 {participantTotal} 位参会成员</span>
           {participantSearch ? <small>筛选出 {participantResultTotal} 位</small> : null}
+          {activeRecording ? (
+            <small>
+              录制 {Math.max(0, meeting.recordings?.indexOf(activeRecording) ?? 0) + 1} · 已生成{' '}
+              {currentParticipantSummaries.length} 份总结
+            </small>
+          ) : null}
         </div>
         <Input.Search
           allowClear
@@ -295,26 +385,61 @@ export function MeetingDetail() {
           }}
         />
       </div>
-      {participantsLoading ? (
+      {participantSummariesError ? (
+        <div className="meeting-participant-summary-error">{participantSummariesError}</div>
+      ) : null}
+      {participantsLoading || participantSummariesLoading ? (
         <Skeleton active paragraph={{ rows: 5 }} />
       ) : participants.length ? (
         <div className="meeting-participant-list">
-          {participants.map((participant) => (
-            <div className="meeting-participant-row" key={participant.id}>
-              <Avatar src={participant.user?.avatarUrl}>
-                {participantName(participant).slice(0, 1)}
-              </Avatar>
-              <div className="meeting-participant-identity">
-                <strong>{participantName(participant)}</strong>
-                <span>{participantContact(participant)}</span>
+          {participants.map((participant) => {
+            const participantSummary = summaryForParticipant(participant);
+            const expanded = expandedParticipantId === participant.id;
+            return (
+              <div className="meeting-participant-item" key={participant.id}>
+                <div className="meeting-participant-row">
+                  <Avatar src={participant.user?.avatarUrl}>
+                    {participantName(participant).slice(0, 1)}
+                  </Avatar>
+                  <div className="meeting-participant-identity">
+                    <strong>{participantName(participant)}</strong>
+                    <span>{participantContact(participant)}</span>
+                  </div>
+                  <div className="meeting-participant-time">
+                    <span>加入 {formatDateTime(participant.firstJoinTime)}</span>
+                    <span>离开 {formatDateTime(participant.lastLeaveTime)}</span>
+                  </div>
+                  <div className="meeting-participant-actions">
+                    <Tag>{formatDuration(participant.totalDurationSeconds)}</Tag>
+                    {participantSummary ? (
+                      <Button
+                        type="link"
+                        size="small"
+                        onClick={() => setExpandedParticipantId(expanded ? null : participant.id)}
+                      >
+                        {expanded ? '收起总结' : '查看总结'}
+                      </Button>
+                    ) : (
+                      <span className="meeting-participant-summary-empty">暂无总结</span>
+                    )}
+                  </div>
+                </div>
+                {participantSummary && expanded ? (
+                  <div className="meeting-participant-summary">
+                    {participantSummary.keywords.length ? (
+                      <Space size={[4, 4]} wrap>
+                        {participantSummary.keywords.map((keyword) => (
+                          <Tag key={keyword}>{keyword}</Tag>
+                        ))}
+                      </Space>
+                    ) : null}
+                    <p>{participantSummary.partSummary}</p>
+                    <small>更新于 {formatDateTime(participantSummary.updatedAt)}</small>
+                  </div>
+                ) : null}
               </div>
-              <div className="meeting-participant-time">
-                <span>加入 {formatDateTime(participant.firstJoinTime)}</span>
-                <span>离开 {formatDateTime(participant.lastLeaveTime)}</span>
-              </div>
-              <Tag>{formatDuration(participant.totalDurationSeconds)}</Tag>
-            </div>
-          ))}
+            );
+          })}
           {!participantSearch && participantTotal > participants.length ? (
             <div className="meeting-list-hint">当前展示前 {participants.length} 位成员</div>
           ) : null}
@@ -334,6 +459,7 @@ export function MeetingDetail() {
       <div className="meeting-transcript-recordings" role="group" aria-label="选择录制逐字稿">
         {meeting.recordings.map((recording, index) => {
           const count = transcripts[recording.id]?.length ?? 0;
+          const loaded = recording.id in transcripts;
           return (
             <button
               type="button"
@@ -342,7 +468,7 @@ export function MeetingDetail() {
               onClick={() => selectRecording(recording.id)}
             >
               <span>录制 {index + 1}</span>
-              <small>{count} 条</small>
+              <small>{loaded ? `${count} 条` : '未加载'}</small>
             </button>
           );
         })}
@@ -390,88 +516,107 @@ export function MeetingDetail() {
 
   const infoPane = (
     <div className="meeting-info-pane">
-      <div className="meeting-section-heading">
-        <div>
-          <h2>会议信息</h2>
-          <span>会议基础属性与处理状态</span>
+      <section className="meeting-info-section">
+        <h3>会议概览</h3>
+        <div className="meeting-info-highlights">
+          <div>
+            <span>会议平台</span>
+            <strong>{getMeetingPlatformText(meeting.platform)}</strong>
+          </div>
+          <div>
+            <span>会议类型</span>
+            <strong>{getMeetingTypeText(meeting.type)}</strong>
+          </div>
+          <div>
+            <span>主持人</span>
+            <strong title={hostDisplayName}>{hostDisplayName}</strong>
+          </div>
+          <div>
+            <span>参会人数</span>
+            <strong>{participantTotal || meeting.participantCount || 0} 人</strong>
+          </div>
         </div>
-      </div>
-      <dl className="meeting-info-grid">
-        <div>
-          <dt>会议平台</dt>
-          <dd>{getMeetingPlatformText(meeting.platform)}</dd>
+      </section>
+
+      <section className="meeting-info-section">
+        <h3>时间安排</h3>
+        <div className="meeting-info-time-range">
+          <div>
+            <span>开始</span>
+            <strong>{formatDateTime(meeting.startAt)}</strong>
+          </div>
+          <div className="meeting-info-time-line" aria-hidden="true" />
+          <div>
+            <span>结束</span>
+            <strong>{formatDateTime(meeting.endAt)}</strong>
+          </div>
+          <Tag>{formatDuration(derivedDurationSeconds)}</Tag>
         </div>
-        <div>
-          <dt>会议类型</dt>
-          <dd>{getMeetingTypeText(meeting.type)}</dd>
-        </div>
-        <div>
-          <dt>主持人</dt>
-          <dd>{hostDisplayName}</dd>
-        </div>
-        <div>
-          <dt>参会人数</dt>
-          <dd>{participantTotal || meeting.participantCount || 0} 人</dd>
-        </div>
-        <div>
-          <dt>开始时间</dt>
-          <dd>{formatDateTime(meeting.startAt)}</dd>
-        </div>
-        <div>
-          <dt>结束时间</dt>
-          <dd>{formatDateTime(meeting.endAt)}</dd>
-        </div>
-        <div>
-          <dt>会议时长</dt>
-          <dd>{formatDuration(meeting.durationSeconds)}</dd>
-        </div>
-        <div>
-          <dt>会议状态</dt>
-          <dd>
+      </section>
+
+      <section className="meeting-info-section">
+        <h3>处理状态</h3>
+        <div className="meeting-info-processing">
+          <div>
+            <span>会议数据</span>
             <Tag color={status.color}>{status.text}</Tag>
-          </dd>
+          </div>
+          <div>
+            <span>录制数据</span>
+            <Tag color={recordingStatus.color}>{recordingStatus.text}</Tag>
+          </div>
         </div>
-        <div>
-          <dt>会议号</dt>
-          <dd>{meeting.meetingCode || '-'}</dd>
+      </section>
+
+      <section className="meeting-info-section">
+        <h3>会议标识</h3>
+        <div className="meeting-info-identifiers">
+          {(
+            [
+              ['会议号', meeting.meetingCode],
+              ['平台会议 ID', meeting.meetingId],
+              ['内部会议 ID', meeting.id],
+              ['子会议 ID', meeting.subMeetingId],
+            ] as const
+          ).map(([label, value]) => (
+            <div key={label}>
+              <span>{label}</span>
+              <code title={value || undefined}>{value || '-'}</code>
+              {value ? (
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<CopyOutlined />}
+                  aria-label={`复制${label}`}
+                  onClick={() => void copyInfoValue(label, value)}
+                />
+              ) : null}
+            </div>
+          ))}
         </div>
-        <div>
-          <dt>平台会议 ID</dt>
-          <dd title={meeting.meetingId}>{meeting.meetingId}</dd>
-        </div>
-        <div>
-          <dt>内部会议 ID</dt>
-          <dd title={meeting.id}>{meeting.id}</dd>
-        </div>
-        <div>
-          <dt>子会议 ID</dt>
-          <dd title={meeting.subMeetingId || ''}>{meeting.subMeetingId || '-'}</dd>
-        </div>
-        <div>
-          <dt>录制处理</dt>
-          <dd>{getProcessingStatusText(meeting.recordingStatus).text}</dd>
-        </div>
-        <div>
-          <dt>会议处理</dt>
-          <dd>{status.text}</dd>
-        </div>
-        <div>
-          <dt>语言</dt>
-          <dd>{meeting.language || '-'}</dd>
-        </div>
-        <div>
-          <dt>时区</dt>
-          <dd>{meeting.timezone || '-'}</dd>
-        </div>
-        <div>
-          <dt>创建时间</dt>
-          <dd>{formatDateTime(meeting.createdAt)}</dd>
-        </div>
-        <div>
-          <dt>更新时间</dt>
-          <dd>{formatDateTime(meeting.updatedAt)}</dd>
-        </div>
-      </dl>
+      </section>
+
+      <section className="meeting-info-section meeting-info-system">
+        <h3>其他信息</h3>
+        <dl>
+          <div>
+            <dt>语言</dt>
+            <dd>{meeting.language || '-'}</dd>
+          </div>
+          <div>
+            <dt>时区</dt>
+            <dd>{meeting.timezone || '-'}</dd>
+          </div>
+          <div>
+            <dt>创建时间</dt>
+            <dd>{formatDateTime(meeting.createdAt)}</dd>
+          </div>
+          <div>
+            <dt>更新时间</dt>
+            <dd>{formatDateTime(meeting.updatedAt)}</dd>
+          </div>
+        </dl>
+      </section>
       {meeting.description ? (
         <section className="meeting-info-description">
           <h3>会议描述</h3>
@@ -558,7 +703,11 @@ export function MeetingDetail() {
                   value={activeRecordingId ?? undefined}
                   options={meeting.recordings.map((recording, index) => ({
                     value: recording.id,
-                    label: `录制 ${index + 1} · ${transcripts[recording.id]?.length ?? 0} 条`,
+                    label: `录制 ${index + 1} · ${
+                      recording.id in transcripts
+                        ? `${transcripts[recording.id]?.length ?? 0} 条`
+                        : '未加载'
+                    }`,
                   }))}
                   onChange={selectRecording}
                   popupMatchSelectWidth={false}
@@ -570,7 +719,11 @@ export function MeetingDetail() {
               <strong>{activeRecording ? '会议录制' : '暂无录制'}</strong>
               <span>
                 {activeRecording
-                  ? `${formatDateTime(activeRecording.startAt)} · ${activeTranscriptCount} 条转写`
+                  ? `${formatDateTime(activeRecording.startAt)} · ${
+                      activeRecording.id in transcripts
+                        ? `${activeTranscriptCount} 条转写`
+                        : '逐字稿未加载'
+                    }`
                   : '该会议没有可用录制记录'}
               </span>
             </div>

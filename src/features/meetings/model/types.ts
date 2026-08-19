@@ -52,6 +52,29 @@ export interface MeetingParticipantListResponse {
   totalPages: number;
 }
 
+export interface RecordingParticipantSummary {
+  id: string;
+  meetingId: string;
+  meetingRecordingId: string;
+  platformUserId: string;
+  meetingParticipantId: string | null;
+  userName: string;
+  partSummary: string;
+  keywords: string[];
+  version: number;
+  isLatest: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RecordingParticipantSummaryListResponse {
+  data: RecordingParticipantSummary[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface MeetingSummary {
   id: string;
   title?: string | null;

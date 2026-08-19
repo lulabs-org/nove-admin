@@ -17,6 +17,7 @@ import type {
   TranscriptSegment,
   MeetingParticipantListResponse,
   MeetingSummaryListResponse,
+  RecordingParticipantSummaryListResponse,
 } from '../model/types';
 
 export const meetingApi = {
@@ -67,6 +68,17 @@ export const meetingApi = {
       url: `/meetings/${meetingId}/summaries`,
       method: 'GET',
       params: { page: 1, limit: 1, isLatest: true },
+    });
+  },
+
+  getParticipantSummaries: (
+    meetingId: string,
+    recordingId: string
+  ): Promise<RecordingParticipantSummaryListResponse> => {
+    return mutator<RecordingParticipantSummaryListResponse>({
+      url: `/meetings/${meetingId}/recordings/${recordingId}/participant-summaries`,
+      method: 'GET',
+      params: { page: 1, limit: 100 },
     });
   },
 
