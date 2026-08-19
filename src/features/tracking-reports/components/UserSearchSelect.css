@@ -1,0 +1,22 @@
+.tracking-report-search-option {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.tracking-report-search-option > div {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tracking-report-search-option > .ant-typography {
+  overflow: hidden;
+  max-width: 360px;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

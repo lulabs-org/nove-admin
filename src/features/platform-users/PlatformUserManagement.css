@@ -141,7 +141,47 @@
 /* ─── Edit Form ───────────────────────────────────────────────────────────── */
 
 .platform-user-edit-form {
-  padding: 22px 24px 84px;
+  padding: 24px;
+}
+
+.platform-user-phone-fields {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.platform-user-drawer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.platform-user-local-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-block: 6px;
+}
+
+.platform-user-local-option .ant-avatar {
+  flex: none;
+}
+
+.platform-user-local-option-content {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.platform-user-local-option-meta,
+.platform-user-local-option-id {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.platform-user-local-option-id {
+  color: #8f959e;
 }
 
 /* ─── Responsive ──────────────────────────────────────────────────────────── */
@@ -154,5 +194,9 @@
 
   .platform-users-filters {
     width: 100%;
+  }
+
+  .platform-user-phone-fields {
+    grid-template-columns: 1fr;
   }
 }

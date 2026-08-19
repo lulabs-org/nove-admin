@@ -6,6 +6,7 @@ import type {
   CreateTrackingReportDto,
   UpdateTrackingReportDto,
   TriggerSummaryDto,
+  TrackingReportSubject,
 } from '../model/types';
 
 const BASE = '/tracking-reports';
@@ -16,6 +17,9 @@ export const trackingReportApi = {
 
   getById: (id: string): Promise<TrackingReport> =>
     mutator<TrackingReport>({ url: `${BASE}/${id}`, method: 'GET' }),
+
+  getSubject: (id: string): Promise<TrackingReportSubject> =>
+    mutator<TrackingReportSubject>({ url: `${BASE}/${id}/subject`, method: 'GET' }),
 
   create: (data: CreateTrackingReportDto): Promise<TrackingReport> =>
     mutator<TrackingReport>({ url: BASE, method: 'POST', data }),

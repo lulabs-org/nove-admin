@@ -4,7 +4,6 @@ import Drawer from 'antd/es/drawer';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
 import message from 'antd/es/message';
-import Modal from 'antd/es/modal';
 import Popconfirm from 'antd/es/popconfirm';
 import Select from 'antd/es/select';
 import Space from 'antd/es/space';
@@ -63,9 +62,14 @@ interface EditFormValues {
   localUserId?: string;
 }
 
+type DetailMode = 'view' | 'edit';
+
 // ─── Query Keys ───────────────────────────────────────────────────────────────
 
 const PLATFORM_USER_LIST_KEY = 'platform-users-list';
+
+const getLocalUserLabel = (user: LocalUserOption) =>
+  user.profile?.displayName ?? user.username ?? user.email ?? user.phone ?? '未命名用户';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -78,9 +82,9 @@ export function PlatformUserManagement() {
     pageSize: 20,
   });
 
-  // ── Drawer / Modal state ──────────────────────────────────────────────────
+  // ── Detail drawer state ──────────────────────────────────────────────────
   const [detailId, setDetailId] = useState<string | null>(null);
-  const [editTarget, setEditTarget] = useState<PlatformUser | null>(null);
+  const [detailMode, setDetailMode] = useState<DetailMode>('view');
   const [editForm] = Form.useForm<EditFormValues>();
 
   const [localUsers, setLocalUsers] = useState<LocalUserOption[]>([]);
@@ -107,11 +111,12 @@ export function PlatformUserManagement() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdatePlatformUser }) =>
       platformUserApi.update(id, data),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       void message.success('更新成功');
-      setEditTarget(null);
+      setDetailMode('view');
       editForm.resetFields();
       void invalidateList();
+      void queryClient.invalidateQueries({ queryKey: ['platform-user-detail', variables.id] });
     },
     onError: () => void message.error('更新失败'),
   });
@@ -170,8 +175,14 @@ export function PlatformUserManagement() {
     setSearchTimeout(timeout);
   };
 
-  const openEdit = (record: PlatformUser) => {
-    setEditTarget(record);
+  const openDetail = (record: PlatformUser) => {
+    setDetailMode('view');
+    setDetailId(record.id);
+  };
+
+  const openEdit = (record: PlatformUser | PlatformUserDetail) => {
+    setDetailId(record.id);
+    setDetailMode('edit');
     editForm.setFieldsValue({
       displayName: record.displayName,
       phone: record.phone,
@@ -186,9 +197,22 @@ export function PlatformUserManagement() {
     }
   };
 
+  const closeDetail = () => {
+    setDetailId(null);
+    setDetailMode('view');
+    editForm.resetFields();
+    setLocalUsers([]);
+  };
+
+  const cancelEdit = () => {
+    setDetailMode('view');
+    editForm.resetFields();
+    setLocalUsers([]);
+  };
+
   const handleEditSubmit = () => {
     editForm.validateFields().then((vals) => {
-      if (!editTarget) return;
+      if (!detailId) return;
 
       const payload: UpdatePlatformUser = { ...vals };
       if (vals.localUserId === undefined && 'localUserId' in vals) {
@@ -196,7 +220,7 @@ export function PlatformUserManagement() {
         payload.localUserId = null;
       }
 
-      updateMutation.mutate({ id: editTarget.id, data: payload });
+      updateMutation.mutate({ id: detailId, data: payload });
     });
   };
 
@@ -221,7 +245,7 @@ export function PlatformUserManagement() {
       key: 'displayName',
       width: 160,
       render: (_: unknown, record: PlatformUser) => (
-        <button className="platform-user-name-cell" onClick={() => setDetailId(record.id)}>
+        <button className="platform-user-name-cell" onClick={() => openDetail(record)}>
           <Avatar size={28} icon={<UserOutlined />} />
           <span>{record.displayName ?? '—'}</span>
         </button>
@@ -307,7 +331,7 @@ export function PlatformUserManagement() {
               type="text"
               size="small"
               icon={<EyeOutlined />}
-              onClick={() => setDetailId(record.id)}
+              onClick={() => openDetail(record)}
             />
           </Tooltip>
           <Tooltip title="编辑">
@@ -429,85 +453,118 @@ export function PlatformUserManagement() {
         }}
       />
 
-      {/* Detail Drawer */}
+      {/* Detail / Edit Drawer */}
       <Drawer
         className="platform-user-detail-drawer"
-        title={null}
+        title={detailMode === 'edit' ? '编辑平台用户' : '平台用户详情'}
         placement="right"
         width={480}
         open={!!detailId}
-        onClose={() => setDetailId(null)}
-        destroyOnClose
-      >
-        <DetailPanel detail={detailData ?? null} loading={detailLoading} />
-      </Drawer>
-
-      {/* Edit Modal */}
-      <Modal
-        title="编辑平台用户"
-        open={!!editTarget}
-        onCancel={() => {
-          setEditTarget(null);
-          editForm.resetFields();
-        }}
-        onOk={handleEditSubmit}
-        confirmLoading={updateMutation.isPending}
-        destroyOnClose
-      >
-        <Form
-          form={editForm}
-          layout="vertical"
-          className="platform-user-edit-form"
-          style={{ padding: 0, paddingTop: 16 }}
-        >
-          <Form.Item label="显示名称" name="displayName">
-            <Input placeholder="请输入显示名称" />
-          </Form.Item>
-          <Form.Item label="手机号" style={{ marginBottom: 0 }}>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Form.Item name="countryCode" noStyle>
-                <Select placeholder="区号" allowClear style={{ width: 180 }}>
-                  <Option value="+86">🇨🇳 +86 中国大陆</Option>
-                  <Option value="+852">🇭🇰 +852 香港</Option>
-                  <Option value="+853">🇲🇴 +853 澳门</Option>
-                  <Option value="+886">🇹🇼 +886 台湾</Option>
-                  <Option value="+1">🇺🇸 +1 美国/加拿大</Option>
-                  <Option value="+44">🇬🇧 +44 英国</Option>
-                  <Option value="+81">🇯🇵 +81 日本</Option>
-                  <Option value="+82">🇰🇷 +82 韩国</Option>
-                  <Option value="+65">🇸🇬 +65 新加坡</Option>
-                  <Option value="+61">🇦🇺 +61 澳大利亚</Option>
-                  <Option value="+49">🇩🇪 +49 德国</Option>
-                  <Option value="+33">🇫🇷 +33 法国</Option>
-                </Select>
-              </Form.Item>
-              <Form.Item name="phone" noStyle>
-                <Input placeholder="请输入手机号" style={{ flex: 1 }} />
-              </Form.Item>
+        onClose={closeDetail}
+        extra={
+          detailMode === 'view' && detailData ? (
+            <Button icon={<EditOutlined />} onClick={() => openEdit(detailData)}>
+              编辑
+            </Button>
+          ) : null
+        }
+        footer={
+          detailMode === 'edit' ? (
+            <div className="platform-user-drawer-actions">
+              <Button onClick={cancelEdit}>取消</Button>
+              <Button type="primary" onClick={handleEditSubmit} loading={updateMutation.isPending}>
+                保存
+              </Button>
             </div>
-          </Form.Item>
-          <Form.Item label="关联本地用户" name="localUserId">
-            <Select
-              showSearch
-              allowClear
-              placeholder="搜索并选择本地用户"
-              filterOption={false}
-              onSearch={fetchLocalUsers}
-              notFoundContent={searchingUsers ? '搜索中...' : '无匹配结果'}
-              options={localUsers.map((u) => ({
-                value: u.id,
-                label: `${u.name || ''} (${u.email || u.id})`,
-              }))}
-            />
-          </Form.Item>
-          <Form.Item label="状态" name="active">
-            <Select>
-              <Option value={true}>活跃</Option>
-              <Option value={false}>停用</Option>
-            </Select>
-          </Form.Item>
-        </Form>
-      </Modal>
+          ) : null
+        }
+        destroyOnClose
+      >
+        {detailMode === 'view' ? (
+          <DetailPanel detail={detailData ?? null} loading={detailLoading} />
+        ) : (
+          <Form form={editForm} layout="vertical" className="platform-user-edit-form">
+            <Form.Item label="显示名称" name="displayName">
+              <Input placeholder="请输入显示名称" />
+            </Form.Item>
+            <Form.Item label="手机号" style={{ marginBottom: 0 }}>
+              <div className="platform-user-phone-fields">
+                <Form.Item name="countryCode" noStyle>
+                  <Select placeholder="区号" allowClear>
+                    <Option value="+86">🇨🇳 +86 中国大陆</Option>
+                    <Option value="+852">🇭🇰 +852 香港</Option>
+                    <Option value="+853">🇲🇴 +853 澳门</Option>
+                    <Option value="+886">🇹🇼 +886 台湾</Option>
+                    <Option value="+1">🇺🇸 +1 美国/加拿大</Option>
+                    <Option value="+44">🇬🇧 +44 英国</Option>
+                    <Option value="+81">🇯🇵 +81 日本</Option>
+                    <Option value="+82">🇰🇷 +82 韩国</Option>
+                    <Option value="+65">🇸🇬 +65 新加坡</Option>
+                    <Option value="+61">🇦🇺 +61 澳大利亚</Option>
+                    <Option value="+49">🇩🇪 +49 德国</Option>
+                    <Option value="+33">🇫🇷 +33 法国</Option>
+                  </Select>
+                </Form.Item>
+                <Form.Item name="phone" noStyle>
+                  <Input placeholder="请输入手机号" />
+                </Form.Item>
+              </div>
+            </Form.Item>
+            <Form.Item label="关联本地用户" name="localUserId">
+              <Select
+                showSearch
+                allowClear
+                virtual={false}
+                optionLabelProp="label"
+                placeholder="搜索并选择本地用户"
+                filterOption={false}
+                onSearch={fetchLocalUsers}
+                notFoundContent={searchingUsers ? '搜索中...' : '无匹配结果'}
+              >
+                {localUsers.map((user) => (
+                  <Option key={user.id} value={user.id} label={getLocalUserLabel(user)}>
+                    <LocalUserOptionContent user={user} />
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Form.Item label="状态" name="active">
+              <Select>
+                <Option value={true}>活跃</Option>
+                <Option value={false}>停用</Option>
+              </Select>
+            </Form.Item>
+          </Form>
+        )}
+      </Drawer>
+    </div>
+  );
+}
+
+function LocalUserOptionContent({ user }: { user: LocalUserOption }) {
+  const primaryLabel = getLocalUserLabel(user);
+  const identifiers = [
+    user.username && user.username !== primaryLabel ? `@${user.username}` : null,
+    user.email && user.email !== primaryLabel ? user.email : null,
+    user.phone && user.phone !== primaryLabel ? user.phone : null,
+  ].filter(Boolean);
+
+  return (
+    <div className="platform-user-local-option">
+      <Avatar size={32} src={user.profile?.avatar} icon={<UserOutlined />} />
+      <div className="platform-user-local-option-content">
+        <Text strong ellipsis>
+          {primaryLabel}
+        </Text>
+        {identifiers.length > 0 && (
+          <Text type="secondary" ellipsis className="platform-user-local-option-meta">
+            {identifiers.join(' · ')}
+          </Text>
+        )}
+        <Text type="secondary" ellipsis className="platform-user-local-option-id">
+          ID: {user.id}
+        </Text>
+      </div>
     </div>
   );
 }
