@@ -23,7 +23,7 @@ import type {
 } from '../../../../shared/lib/api/orval/business/schemas';
 
 export type PermissionItem = PermissionTreeDto;
-export type PermissionListParams = PermControllerFindAllParams;
+export type PermissionListParams = PermControllerFindAllParams & { keyword?: string };
 export type CreatePermission = CreatePermissionDto;
 export type UpdatePermission = UpdatePermissionDto;
 export type DataPermissionRule = DataPermissionRuleDto;

@@ -53,8 +53,7 @@ type PermissionType = CreatePermission['type'];
 interface PermissionFilters {
   page: number;
   pageSize: number;
-  name?: string;
-  code?: string;
+  keyword?: string;
   resource?: string;
   type?: PermissionType;
   active?: boolean;
@@ -658,23 +657,9 @@ export function PermissionManagement() {
           allowClear
           className="permission-search"
           prefix={<SearchOutlined />}
-          placeholder="搜索权限名称"
-          value={permissionFilters.name}
-          onChange={(event) => handlePermissionFilterChange('name', event.target.value)}
-        />
-        <Input
-          allowClear
-          className="permission-code-input"
-          placeholder="权限编码"
-          value={permissionFilters.code}
-          onChange={(event) => handlePermissionFilterChange('code', event.target.value)}
-        />
-        <Input
-          allowClear
-          className="permission-resource-input"
-          placeholder="资源标识"
-          value={permissionFilters.resource}
-          onChange={(event) => handlePermissionFilterChange('resource', event.target.value)}
+          placeholder="搜索名称、编码、资源或动作"
+          value={permissionFilters.keyword}
+          onChange={(event) => handlePermissionFilterChange('keyword', event.target.value)}
         />
         <Select
           allowClear
