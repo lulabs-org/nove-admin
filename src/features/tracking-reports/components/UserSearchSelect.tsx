@@ -5,8 +5,11 @@ import Space from 'antd/es/space';
 import Typography from 'antd/es/typography';
 import { UserOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
-import { platformUserApi } from '../../platform-users/api/platformUserApi';
-import type { LocalUserOption, PlatformUser } from '../../platform-users/api/platformUserApi';
+import { platformUserApi } from '../../user-group/platform-users/api/platformUserApi';
+import type {
+  LocalUserOption,
+  PlatformUser,
+} from '../../user-group/platform-users/api/platformUserApi';
 import { localUserMeta, platformLabel } from '../lib/reportSubject';
 import './UserSearchSelect.css';
 

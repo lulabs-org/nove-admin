@@ -40,7 +40,7 @@ src/
 │   ├── users/               # 用户管理
 │   ├── courses/             # 课程管理
 │   ├── students/            # 学生管理
-│   ├── orders/              # 订单管理
+│   ├── order-management/    # 订单管理（订单、售后）
 │   └── ai-center/           # AI相关管理（提示词、对话记录、审核、评价）
 │
 └── assets/                  # 静态资源
@@ -261,12 +261,9 @@ features/
 │   ├── ui/
 │   ├── pages/
 │   └── routes.tsx
-├── orders/                  # 订单管理
-│   ├── api/
-│   ├── model/
-│   ├── ui/
-│   ├── pages/
-│   └── routes.tsx
+├── order-management/        # 订单管理
+│   ├── orders/              # 订单列表
+│   └── order-refunds/       # 订单售后
 └── ai-center/               # AI相关管理
     ├── api/
     ├── model/
@@ -358,7 +355,7 @@ export const userRoutes: RouteConfig[] = [
 **❌ 不推荐：直接 import**
 
 ```typescript
-// features/orders/pages/OrderDetail.tsx
+// features/order-management/orders/pages/OrderDetail.tsx
 import { getUserInfo } from '@/features/users/api'; // ❌ 避免
 ```
 
@@ -368,7 +365,7 @@ import { getUserInfo } from '@/features/users/api'; // ❌ 避免
 // shared/api/orval/business.ts
 // Orval 生成的 hooks 已经在 shared 中
 
-// features/orders/pages/OrderDetail.tsx
+// features/order-management/orders/pages/OrderDetail.tsx
 import { useGetUser } from '@/shared/api/orval/business'; // ✅ 推荐
 ```
 
@@ -382,7 +379,7 @@ export const userService = {
   },
 };
 
-// features/orders/pages/OrderDetail.tsx
+// features/order-management/orders/pages/OrderDetail.tsx
 import { userService } from '@/shared/services/userService'; // ✅ 推荐
 ```
 
