@@ -1,4 +1,3 @@
-import { ShoppingCartOutlined } from '@ant-design/icons';
 import type { RouteConfig } from '../../../shared/types/index';
 import { PERMISSIONS } from '../../../shared/utils/permissions';
 import { OrderManagement } from './pages/OrderManagement';
@@ -10,6 +9,5 @@ export const orderRoutes: RouteConfig[] = [
     title: '订单列表',
     menu: true,
     permission: PERMISSIONS.ORDER.READ,
-    icon: <ShoppingCartOutlined />,
   },
 ];

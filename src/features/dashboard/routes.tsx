@@ -16,7 +16,7 @@ export const dashboardRoutes: RouteConfig[] = [
   {
     path: '/',
     element: <DashboardPage />,
-    title: '首页',
+    title: '企业概览',
     menu: true,
     icon: <PieChartOutlined />,
   },

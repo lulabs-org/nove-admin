@@ -42,7 +42,7 @@ import {
 } from './api/permissionManagementApi';
 import './PermissionManagement.css';
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 type ActiveTab = 'permissions' | 'dataRules';
@@ -841,20 +841,16 @@ export function PermissionManagement() {
 
   return (
     <div className="permission-management-page">
-      <div className="permission-page-header">
-        <div className="permission-page-title">
-          <Title level={4}>权限管理</Title>
-          <div className="permission-stat-row">
+      <Tabs
+        activeKey={activeTab}
+        onChange={(key) => setActiveTab(key as ActiveTab)}
+        tabBarExtraContent={
+          <div className="permission-tab-summary">
             <span>当前范围：{selectedScopeName}</span>
             <span>权限项 {permissionListQuery.data?.total || 0}</span>
             <span>数据规则 {dataRuleListQuery.data?.total || 0}</span>
           </div>
-        </div>
-      </div>
-
-      <Tabs
-        activeKey={activeTab}
-        onChange={(key) => setActiveTab(key as ActiveTab)}
+        }
         items={[
           { key: 'permissions', label: '权限项', children: renderPermissions() },
           { key: 'dataRules', label: '数据规则', children: renderDataRules() },

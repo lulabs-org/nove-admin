@@ -3,30 +3,13 @@
   color: #1f2329;
 }
 
-.permission-page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.permission-page-title {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.permission-page-title .ant-typography {
-  margin: 0;
-}
-
-.permission-stat-row {
+.permission-tab-summary {
   display: inline-flex;
+  align-items: center;
   gap: 14px;
   color: #646a73;
   font-size: 13px;
+  white-space: nowrap;
 }
 
 .permission-content-shell {
@@ -206,7 +189,6 @@
 }
 
 @media (max-width: 760px) {
-  .permission-page-header,
   .permission-toolbar {
     align-items: stretch;
     flex-direction: column;

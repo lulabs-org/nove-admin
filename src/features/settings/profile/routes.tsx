@@ -1,4 +1,3 @@
-import { UserOutlined } from '@ant-design/icons';
 import type { RouteConfig } from '../../../shared/types';
 import { ProfilePage } from './ProfilePage';
 
@@ -8,6 +7,5 @@ export const profileRoutes: RouteConfig[] = [
     element: <ProfilePage />,
     title: '个人资料',
     menu: true,
-    icon: <UserOutlined />,
   },
 ];
