@@ -13,6 +13,7 @@ import { MeetingList } from './pages/MeetingList';
 import { MeetingDetail } from './pages/MeetingDetail';
 import { PERMISSIONS } from '../../shared/utils/permissions';
 import { CalendarOutlined } from '@ant-design/icons';
+import { Navigate } from 'react-router-dom';
 
 export const meetingRoutes: RouteConfig[] = [
   {
@@ -25,6 +26,8 @@ export const meetingRoutes: RouteConfig[] = [
   },
   {
     path: '/meetings/list',
+    element: <Navigate to="/meetings" replace />,
+    title: '会议列表重定向',
     redirect: '/meetings',
     menu: false,
   },

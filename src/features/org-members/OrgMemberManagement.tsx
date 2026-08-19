@@ -150,7 +150,8 @@ function getMemberName(member: OrgMember | OrgMemberDetail) {
     displayString(member.user?.username) ||
     displayString(member.user?.email) ||
     displayString(member.user?.phone) ||
-    member.userId
+    member.userId ||
+    member.id
   );
 }
 
@@ -809,12 +810,7 @@ export function OrgMemberManagement() {
       title: '部门',
       key: 'department',
       ellipsis: true,
-      render: (_, record) =>
-        record.primaryDept?.name ||
-        (displayString(record.primaryDeptId)
-          ? departmentIndex.get(displayString(record.primaryDeptId))?.name
-          : '') ||
-        '-',
+      render: (_, record) => record.primaryDept?.name || '-',
     },
     {
       title: '工号',
