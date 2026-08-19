@@ -1,4 +1,4 @@
-import type { LocalUserOption } from '../../platform-users/api/platformUserApi';
+import type { LocalUserOption } from '../../user-group/platform-users/api/platformUserApi';
 
 const PLATFORM_LABELS: Record<string, string> = {
   TENCENT_MEETING: '腾讯会议',

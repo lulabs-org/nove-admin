@@ -1,0 +1,1 @@
+export { userGroupRoutes } from './routes';

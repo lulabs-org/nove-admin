@@ -9,41 +9,19 @@
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
 import type { RouteConfig } from '../../shared/types/index';
-import { SettingOutlined, UserOutlined, SafetyOutlined } from '@ant-design/icons';
+import { SettingOutlined } from '@ant-design/icons';
 import { Outlet } from 'react-router-dom';
-import { ProfilePage } from './ProfilePage';
-import { systemConfigRoutes } from '../system-config';
+import { profileRoutes } from './profile';
+import { securityRoutes } from './security';
+import { systemConfigRoutes } from './system-config';
 
-export const settingsRoutes: RouteConfig[] = [
+export const settingsModuleRoutes: RouteConfig[] = [
   {
     path: '/settings',
     element: <Outlet />,
     title: '系统设置',
     menu: true,
     icon: <SettingOutlined />,
-    children: [
-      {
-        path: '/settings/profile',
-        element: <ProfilePage />,
-        title: '个人资料',
-        menu: true,
-        icon: <UserOutlined />,
-      },
-      {
-        path: '/settings/security',
-        element: <div>Security</div>,
-        title: '安全设置',
-        menu: true,
-        permission: 'system:config',
-        icon: <SafetyOutlined />,
-      },
-      ...systemConfigRoutes,
-    ],
-  },
-  {
-    path: '/404',
-    element: <div>Not Found</div>,
-    title: '404',
-    hidden: true,
+    children: [...profileRoutes, ...securityRoutes, ...systemConfigRoutes],
   },
 ];

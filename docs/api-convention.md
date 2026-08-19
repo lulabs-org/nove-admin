@@ -279,7 +279,7 @@ const UserList = () => {
 当需要在一个 feature 中调用另一个 feature 的 API 时，应该通过 `shared/api/orval` 调用，而不是直接 import 其他 feature 的 api.ts。
 
 ```typescript
-// features/orders/pages/OrderDetail.tsx
+// features/order-management/orders/pages/OrderDetail.tsx
 // ❌ 不推荐：直接 import 其他 feature 的 api
 import { useGetUser } from '@/features/users/api';
 

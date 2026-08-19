@@ -52,6 +52,7 @@ export function Sidebar({ routes, collapsed }: SidebarProps) {
       .filter((route) => {
         if (!route.menu || route.hidden) return false;
         if (route.permission && !checkPermission(route.permission)) return false;
+        if (route.children?.length && generateMenuItems(route.children)?.length === 0) return false;
         return true;
       })
       .map((route) => {
