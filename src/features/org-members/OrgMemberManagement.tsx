@@ -803,12 +803,21 @@ export function OrgMemberManagement() {
     {
       title: '登录邮箱/用户名',
       key: 'contact',
-      ellipsis: true,
-      render: (_, record) => getMemberContact(record),
+      width: 260,
+      ellipsis: { showTitle: false },
+      render: (_, record) => {
+        const contact = getMemberContact(record);
+        return (
+          <Tooltip title={contact === '-' ? undefined : contact} placement="topLeft">
+            <span className="org-member-contact-cell">{contact}</span>
+          </Tooltip>
+        );
+      },
     },
     {
       title: '部门',
       key: 'department',
+      width: 160,
       ellipsis: true,
       render: (_, record) => record.primaryDept?.name || '-',
     },
@@ -823,6 +832,7 @@ export function OrgMemberManagement() {
       title: '职位',
       dataIndex: 'title',
       key: 'title',
+      width: 140,
       ellipsis: true,
       render: (value: unknown) => displayString(value) || '-',
     },
@@ -1370,7 +1380,7 @@ export function OrgMemberManagement() {
             showSizeChanger: true,
             showTotal: (total) => `共 ${total} 条`,
           }}
-          scroll={{ x: 1040 }}
+          scroll={{ x: 1380 }}
           onChange={handleTableChange}
         />
       </>

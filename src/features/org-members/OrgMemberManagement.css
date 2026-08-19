@@ -202,6 +202,13 @@
   white-space: nowrap;
 }
 
+.org-member-contact-cell {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .org-member-detail-drawer .ant-drawer-body {
   padding: 0;
 }
