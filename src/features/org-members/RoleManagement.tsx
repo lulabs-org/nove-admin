@@ -649,8 +649,6 @@ export function RoleManagement() {
         />
       )}
 
-      <div className="org-role-breadcrumb">组织架构 〉角色管理</div>
-
       <div className="org-role-shell">
         <aside className="org-role-list-pane">
           <Input

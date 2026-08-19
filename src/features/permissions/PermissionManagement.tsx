@@ -841,7 +841,6 @@ export function PermissionManagement() {
 
   return (
     <div className="permission-management-page">
-      <div className="permission-breadcrumb">权限管理</div>
       <div className="permission-page-header">
         <div className="permission-page-title">
           <Title level={4}>权限管理</Title>

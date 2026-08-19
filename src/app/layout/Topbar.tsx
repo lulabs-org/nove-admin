@@ -17,7 +17,12 @@ import { useAuth } from '../../shared/hooks/useAuth';
 
 const { Header } = Layout;
 
-export function Topbar() {
+interface TopbarProps {
+  collapsed: boolean;
+  sidebarWidth: number;
+}
+
+export function Topbar({ collapsed, sidebarWidth }: TopbarProps) {
   const { user, logout } = useAuth();
 
   const menuItems = [
@@ -35,11 +40,9 @@ export function Topbar() {
     <Header
       style={{
         background: '#fff',
-        padding: '0 24px',
+        padding: 0,
         display: 'flex',
-        justifyContent: 'flex-end',
         alignItems: 'center',
-        borderBottom: '1px solid #f0f0f0',
         position: 'fixed',
         top: 0,
         right: 0,
@@ -47,12 +50,27 @@ export function Topbar() {
         zIndex: 100,
       }}
     >
-      <Dropdown menu={{ items: menuItems }} placement="bottomRight">
-        <Space style={{ cursor: 'pointer' }}>
-          <Avatar src={user?.avatar} icon={!user?.avatar && <UserOutlined />} />
-          <span>{user?.name || user?.email || 'Admin'}</span>
-        </Space>
-      </Dropdown>
+      <div
+        style={{
+          width: sidebarWidth,
+          flex: `0 0 ${sidebarWidth}px`,
+          textAlign: 'center',
+          fontSize: 18,
+          fontWeight: 600,
+          color: '#17233d',
+          transition: 'all 0.2s',
+        }}
+      >
+        {collapsed ? 'Nove' : 'Nove System'}
+      </div>
+      <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', padding: '0 24px' }}>
+        <Dropdown menu={{ items: menuItems }} placement="bottomRight">
+          <Space style={{ cursor: 'pointer' }}>
+            <Avatar src={user?.avatar} icon={!user?.avatar && <UserOutlined />} />
+            <span>{user?.name || user?.email || 'Admin'}</span>
+          </Space>
+        </Dropdown>
+      </div>
     </Header>
   );
 }

@@ -15,11 +15,14 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import type { MenuProps } from 'antd/es/menu';
 import { useAuth } from '../../shared/hooks/useAuth';
 import { useState } from 'react';
+import './Sidebar.css';
 
 interface SidebarProps {
   routes: RouteConfig[];
   collapsed?: boolean;
 }
+
+export const SIDEBAR_BACKGROUND = '#f5f6f8';
 
 function findActiveParentKeys(
   routes: RouteConfig[],
@@ -63,7 +66,18 @@ export function Sidebar({ routes, collapsed }: SidebarProps) {
         };
 
         if (route.children && route.children.length > 0) {
-          (item as { children?: MenuProps['items'] }).children = generateMenuItems(route.children);
+          const childItems = generateMenuItems(route.children) ?? [];
+          (item as { children?: MenuProps['items'] }).children = collapsed
+            ? [
+                {
+                  key: `${route.path}__popup-heading`,
+                  label: <span className="sidebar-popup-heading-label">{route.title}</span>,
+                  disabled: true,
+                  className: 'sidebar-popup-heading',
+                },
+                ...childItems,
+              ]
+            : childItems;
         }
 
         return item;
@@ -78,12 +92,15 @@ export function Sidebar({ routes, collapsed }: SidebarProps) {
     <Menu
       mode="inline"
       selectedKeys={selectedKeys}
-      openKeys={collapsed ? [] : openKeys}
+      openKeys={collapsed ? undefined : openKeys}
       onOpenChange={setOpenKeys}
       onClick={handleMenuClick}
       items={menuItems}
       inlineCollapsed={collapsed}
-      style={{ height: '100%', borderRight: 0 }}
+      triggerSubMenuAction="hover"
+      subMenuOpenDelay={0.12}
+      subMenuCloseDelay={0.18}
+      style={{ height: '100%', borderRight: 0, background: SIDEBAR_BACKGROUND }}
     />
   );
 }

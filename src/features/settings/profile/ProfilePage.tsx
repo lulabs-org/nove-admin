@@ -187,7 +187,6 @@ export function ProfilePage() {
 
   return (
     <div className="profile-page">
-      <div className="profile-breadcrumb">系统设置 / 个人资料</div>
       <div className="profile-page-header">
         <div className="profile-page-title">
           <Title level={3}>个人资料</Title>
