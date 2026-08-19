@@ -3,7 +3,7 @@
  * @Date: 2026-08-10
  * @LastEditors: 杨仕明 shiming.y@qq.com
  * @LastEditTime: 2026-08-10
- * @FilePath: /nove-admin/src/features/dashboard/DashboardPage.tsx
+ * @FilePath: /nove-admin/src/features/enterprise-overview/DashboardPage.tsx
  * @Description: Dashboard page showing organization overview, user info, quick links and stats
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
