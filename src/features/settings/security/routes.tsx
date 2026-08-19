@@ -1,4 +1,3 @@
-import { SafetyOutlined } from '@ant-design/icons';
 import type { RouteConfig } from '../../../shared/types';
 import { SecurityPage } from './SecurityPage';
 
@@ -9,6 +8,5 @@ export const securityRoutes: RouteConfig[] = [
     title: '安全设置',
     menu: true,
     permission: 'system:config',
-    icon: <SafetyOutlined />,
   },
 ];

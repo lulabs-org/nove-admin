@@ -1,4 +1,3 @@
-import { UserOutlined } from '@ant-design/icons';
 import type { RouteConfig } from '../../../shared/types';
 import { PERMISSIONS } from '../../../shared/utils/permissions';
 import { UserManagement } from './UserManagement';
@@ -10,6 +9,5 @@ export const userRoutes: RouteConfig[] = [
     title: '本地用户',
     menu: true,
     permission: PERMISSIONS.USER.READ,
-    icon: <UserOutlined />,
   },
 ];

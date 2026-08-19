@@ -50,23 +50,24 @@ export function Sidebar({ routes, collapsed }: SidebarProps) {
   const activeParentKeys = findActiveParentKeys(routes, location.pathname);
   const [openKeys, setOpenKeys] = useState<string[]>(activeParentKeys);
 
-  function generateMenuItems(routes: RouteConfig[]): MenuProps['items'] {
+  function generateMenuItems(routes: RouteConfig[], depth = 0): MenuProps['items'] {
     return routes
       .filter((route) => {
         if (!route.menu || route.hidden) return false;
         if (route.permission && !checkPermission(route.permission)) return false;
-        if (route.children?.length && generateMenuItems(route.children)?.length === 0) return false;
+        if (route.children?.length && generateMenuItems(route.children, depth + 1)?.length === 0)
+          return false;
         return true;
       })
       .map((route) => {
         const item: NonNullable<MenuProps['items']>[number] = {
           key: route.path,
           label: route.title,
-          icon: route.icon,
+          icon: depth === 0 ? route.icon : undefined,
         };
 
         if (route.children && route.children.length > 0) {
-          const childItems = generateMenuItems(route.children) ?? [];
+          const childItems = generateMenuItems(route.children, depth + 1) ?? [];
           (item as { children?: MenuProps['items'] }).children = collapsed
             ? [
                 {

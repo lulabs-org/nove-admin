@@ -187,20 +187,6 @@ export function ProfilePage() {
 
   return (
     <div className="profile-page">
-      <div className="profile-page-header">
-        <div className="profile-page-title">
-          <Title level={3}>个人资料</Title>
-          <Text type="secondary">维护登录账号、联系信息和对外展示资料。</Text>
-        </div>
-        <Button
-          icon={<ReloadOutlined />}
-          loading={profileQuery.isFetching}
-          onClick={() => profileQuery.refetch()}
-        >
-          刷新
-        </Button>
-      </div>
-
       {profileQuery.isError ? (
         <Alert
           className="profile-alert"
@@ -223,6 +209,14 @@ export function ProfilePage() {
             <Tag color="cyan">权限 {permissions.length}</Tag>
           </Space>
         </div>
+        <Button
+          className="profile-refresh-button"
+          icon={<ReloadOutlined />}
+          loading={profileQuery.isFetching}
+          onClick={() => profileQuery.refetch()}
+        >
+          刷新
+        </Button>
         <div className="profile-identity-meta">
           <DetailItem icon={<MailOutlined />} label="邮箱" value={displayText(profile?.email)} />
           <DetailItem
