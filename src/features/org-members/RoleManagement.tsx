@@ -31,11 +31,11 @@ import {
   UserSwitchOutlined,
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState, type Key } from 'react';
+import { useDeferredValue, useMemo, useState, type Key } from 'react';
 import { Perm } from '../../app/guards/Perm';
 import { useAuth } from '../../shared/hooks/useAuth';
 import { PERMISSIONS } from '../../shared/utils/permissions';
-import { orgMemberApi, type OrgMemberDetail, type OrgMemberListParams } from './api/orgMemberApi';
+import { orgMemberApi, type MemberRoleOption } from './api/orgMemberApi';
 import {
   roleManagementApi,
   type CreateRole,
@@ -88,23 +88,12 @@ function displayString(value: unknown) {
   return typeof value === 'string' && value.trim() ? value : '';
 }
 
-function getProfileDisplayName(profile: unknown) {
-  if (!profile || typeof profile !== 'object') return '';
-  return displayString((profile as { displayName?: unknown }).displayName);
+function getMemberName(member: MemberRoleOption) {
+  return displayString(member.displayName) || displayString(member.email) || member.userId;
 }
 
-function getMemberName(member: OrgMemberDetail) {
-  return (
-    displayString(member.orgDisplayName) ||
-    getProfileDisplayName(member.user?.profile) ||
-    displayString(member.user?.username) ||
-    displayString(member.user?.email) ||
-    member.userId
-  );
-}
-
-function getMemberEmail(member: OrgMemberDetail) {
-  return displayString(member.user?.email) || '-';
+function getMemberEmail(member: MemberRoleOption) {
+  return displayString(member.email) || '-';
 }
 
 function getAvatarText(name: string) {
@@ -123,11 +112,8 @@ function getRoleDescription(role?: Role | null) {
   return typeof role.description === 'string' ? role.description : '';
 }
 
-function getDepartmentText(member: OrgMemberDetail) {
-  if (member.departments?.length) {
-    return member.departments.map((dept) => dept.name).join('、');
-  }
-  return member.primaryDept?.name || '-';
+function getDepartmentText(member: MemberRoleOption) {
+  return member.departmentNames.length ? member.departmentNames.join('、') : '-';
 }
 
 function flattenPermissionTree(tree: PermissionItem[], depth = 0): FlatPermission[] {
@@ -191,6 +177,10 @@ export function RoleManagement() {
   const currentOrgId = user?.currentOrgId;
   const [roleKeyword, setRoleKeyword] = useState('');
   const [memberKeyword, setMemberKeyword] = useState('');
+  const deferredMemberKeyword = useDeferredValue(memberKeyword);
+  const [memberPage, setMemberPage] = useState(1);
+  const [eligibleKeyword, setEligibleKeyword] = useState('');
+  const deferredEligibleKeyword = useDeferredValue(eligibleKeyword);
   const [selectedRoleId, setSelectedRoleId] = useState<string>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
   const [roleModalOpen, setRoleModalOpen] = useState(false);
@@ -214,22 +204,44 @@ export function RoleManagement() {
       }),
   });
 
+  const roles = rolesQuery.data?.data || [];
+  const selectedRole = roles.find((role) => role.id === selectedRoleId) || roles[0];
+
   const membersQuery = useQuery({
-    queryKey: ['role-management-members', currentOrgId],
-    queryFn: async () => {
-      if (!currentOrgId) return [];
-      const params: OrgMemberListParams = {
+    queryKey: [
+      'role-management-members',
+      currentOrgId,
+      selectedRole?.id,
+      deferredMemberKeyword,
+      memberPage,
+    ],
+    queryFn: () =>
+      orgMemberApi.roleOptions(currentOrgId!, {
+        page: memberPage,
+        pageSize: 20,
+        keyword: deferredMemberKeyword.trim() || undefined,
+        roleId: selectedRole!.id,
+        assignment: 'assigned',
+      }),
+    enabled: !!currentOrgId && !!selectedRole,
+  });
+
+  const eligibleMembersQuery = useQuery({
+    queryKey: [
+      'role-management-eligible-members',
+      currentOrgId,
+      selectedRole?.id,
+      deferredEligibleKeyword,
+    ],
+    queryFn: () =>
+      orgMemberApi.roleOptions(currentOrgId!, {
         page: 1,
-        pageSize: 500,
-        includeChildren: true,
-      };
-      const result = await orgMemberApi.list(currentOrgId, params);
-      const details = await Promise.all(
-        result.data.map((member) => orgMemberApi.getById(member.id).catch(() => null))
-      );
-      return details.filter((member): member is OrgMemberDetail => Boolean(member));
-    },
-    enabled: !!currentOrgId,
+        pageSize: 100,
+        keyword: deferredEligibleKeyword.trim() || undefined,
+        roleId: selectedRole!.id,
+        assignment: 'unassigned',
+      }),
+    enabled: addMemberOpen && !!currentOrgId && !!selectedRole,
   });
 
   const permissionTreeQuery = useQuery({
@@ -237,9 +249,7 @@ export function RoleManagement() {
     queryFn: permissionManagementApi.permissionTree,
   });
 
-  const roles = rolesQuery.data?.data || [];
-  const selectedRole = roles.find((role) => role.id === selectedRoleId) || roles[0];
-  const permissionTree = permissionTreeQuery.data || [];
+  const permissionTree = useMemo(() => permissionTreeQuery.data || [], [permissionTreeQuery.data]);
   const flatPermissions = useMemo(() => flattenPermissionTree(permissionTree), [permissionTree]);
   const filteredPermissionTree = useMemo(
     () => filterPermissionTree(permissionTree, permissionKeyword),
@@ -250,25 +260,8 @@ export function RoleManagement() {
     [permissionCheckedKeys]
   );
 
-  const roleMembers = useMemo(() => {
-    if (!selectedRole) return [];
-    const keyword = memberKeyword.trim().toLowerCase();
-    return (membersQuery.data || [])
-      .filter((member) => member.roles?.some((role) => role.id === selectedRole.id))
-      .filter((member) => {
-        if (!keyword) return true;
-        const name = getMemberName(member).toLowerCase();
-        const email = getMemberEmail(member).toLowerCase();
-        return name.includes(keyword) || email.includes(keyword);
-      });
-  }, [memberKeyword, membersQuery.data, selectedRole]);
-
-  const eligibleMembers = useMemo(() => {
-    if (!selectedRole) return [];
-    return (membersQuery.data || []).filter(
-      (member) => !member.roles?.some((role) => role.id === selectedRole.id)
-    );
-  }, [membersQuery.data, selectedRole]);
+  const roleMembers = membersQuery.data?.data || [];
+  const eligibleMembers = eligibleMembersQuery.data?.data || [];
 
   const saveRoleMutation = useMutation({
     mutationFn: (values: RoleFormValues) => {
@@ -300,6 +293,7 @@ export function RoleManagement() {
       roleForm.resetFields();
       await queryClient.invalidateQueries({ queryKey: ['role-management-roles'] });
       setSelectedRoleId(role.id);
+      setMemberPage(1);
     },
     onError: () => {
       message.error(roleModalMode === 'edit' ? '更新角色失败' : '新增角色失败');
@@ -334,8 +328,14 @@ export function RoleManagement() {
     onSuccess: async () => {
       message.success('成员已添加到角色');
       setAddMemberOpen(false);
+      setEligibleKeyword('');
       addMemberForm.resetFields();
-      await queryClient.invalidateQueries({ queryKey: ['role-management-members', currentOrgId] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['role-management-members', currentOrgId] }),
+        queryClient.invalidateQueries({
+          queryKey: ['role-management-eligible-members', currentOrgId],
+        }),
+      ]);
     },
     onError: () => {
       message.error('添加角色成员失败');
@@ -443,17 +443,38 @@ export function RoleManagement() {
     },
   ];
 
-  const exportMembers = () => {
-    if (!selectedRole) return;
-    downloadCsv(`${selectedRole.name}-成员.csv`, [
-      ['姓名', '电子邮箱', '所属部门', '管理范围'],
-      ...roleMembers.map((member) => [
-        getMemberName(member),
-        getMemberEmail(member),
-        getDepartmentText(member),
-        '全部',
-      ]),
-    ]);
+  const exportMembers = async () => {
+    if (!selectedRole || !currentOrgId) return;
+    try {
+      const firstPage = await orgMemberApi.roleOptions(currentOrgId, {
+        page: 1,
+        pageSize: 100,
+        roleId: selectedRole.id,
+        assignment: 'assigned',
+      });
+      const remainingPages = await Promise.all(
+        Array.from({ length: Math.max(0, firstPage.totalPages - 1) }, (_, index) =>
+          orgMemberApi.roleOptions(currentOrgId, {
+            page: index + 2,
+            pageSize: 100,
+            roleId: selectedRole.id,
+            assignment: 'assigned',
+          })
+        )
+      );
+      const members = [firstPage, ...remainingPages].flatMap((page) => page.data);
+      downloadCsv(`${selectedRole.name}-成员.csv`, [
+        ['姓名', '电子邮箱', '所属部门', '管理范围'],
+        ...members.map((member) => [
+          getMemberName(member),
+          getMemberEmail(member),
+          getDepartmentText(member),
+          '全部',
+        ]),
+      ]);
+    } catch {
+      message.error('导出角色成员失败');
+    }
   };
 
   const importExportItems: MenuProps['items'] = [
@@ -470,7 +491,7 @@ export function RoleManagement() {
     },
   ];
 
-  const memberColumns: TableProps<OrgMemberDetail>['columns'] = [
+  const memberColumns: TableProps<MemberRoleOption>['columns'] = [
     {
       title: '姓名',
       key: 'name',
@@ -482,10 +503,7 @@ export function RoleManagement() {
             <Avatar
               size={32}
               style={{ backgroundColor: getAvatarColor(record.id) }}
-              src={
-                displayString((record.user?.profile as { avatar?: unknown } | null)?.avatar) ||
-                undefined
-              }
+              src={displayString(record.avatar) || undefined}
             >
               {getAvatarText(name)}
             </Avatar>
@@ -554,6 +572,7 @@ export function RoleManagement() {
             onClick={() => {
               setSelectedRoleId(role.id);
               setSelectedRowKeys([]);
+              setMemberPage(1);
             }}
           >
             <UserSwitchOutlined />
@@ -669,7 +688,7 @@ export function RoleManagement() {
                 </div>
                 <span className="org-role-count">
                   <UserOutlined />
-                  {roleMembers.length}
+                  {membersQuery.data?.total || 0}
                 </span>
               </div>
 
@@ -680,7 +699,10 @@ export function RoleManagement() {
                   prefix={<SearchOutlined />}
                   placeholder="搜索成员姓名"
                   value={memberKeyword}
-                  onChange={(event) => setMemberKeyword(event.target.value)}
+                  onChange={(event) => {
+                    setMemberKeyword(event.target.value);
+                    setMemberPage(1);
+                  }}
                 />
                 <Space size="small" wrap>
                   <Perm permission={PERMISSIONS.ROLE.ASSIGN_PERMISSION}>
@@ -702,6 +724,7 @@ export function RoleManagement() {
                       icon={<PlusOutlined />}
                       onClick={() => {
                         addMemberForm.resetFields();
+                        setEligibleKeyword('');
                         setAddMemberOpen(true);
                       }}
                       disabled={!currentOrgId || !selectedRole.active}
@@ -713,7 +736,7 @@ export function RoleManagement() {
                     menu={{
                       items: importExportItems,
                       onClick: ({ key }) => {
-                        if (key === 'export') exportMembers();
+                        if (key === 'export') void exportMembers();
                       },
                     }}
                   >
@@ -736,7 +759,13 @@ export function RoleManagement() {
                   selectedRowKeys,
                   onChange: setSelectedRowKeys,
                 }}
-                pagination={false}
+                pagination={{
+                  current: membersQuery.data?.page || memberPage,
+                  pageSize: membersQuery.data?.pageSize || 20,
+                  total: membersQuery.data?.total || 0,
+                  showSizeChanger: false,
+                  onChange: setMemberPage,
+                }}
                 locale={{
                   emptyText: (
                     <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无角色成员" />
@@ -803,6 +832,7 @@ export function RoleManagement() {
         }
         onCancel={() => {
           setAddMemberOpen(false);
+          setEligibleKeyword('');
           addMemberForm.resetFields();
         }}
         confirmLoading={addMemberMutation.isPending}
@@ -819,7 +849,10 @@ export function RoleManagement() {
           >
             <Select
               mode="multiple"
-              showSearch={{ optionFilterProp: 'label' }}
+              showSearch
+              filterOption={false}
+              onSearch={setEligibleKeyword}
+              loading={eligibleMembersQuery.isLoading || eligibleMembersQuery.isFetching}
               placeholder="搜索并选择成员"
               options={eligibleMembers.map((member) => {
                 const name = getMemberName(member);

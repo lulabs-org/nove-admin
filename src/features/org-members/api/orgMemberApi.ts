@@ -15,6 +15,7 @@ import {
 } from '../../../shared/lib/api/orval/business/admin-departments';
 import { organizationControllerGetOrganization } from '../../../shared/lib/api/orval/business/admin-organizations';
 import { roleControllerFindAll } from '../../../shared/lib/api/orval/business/admin-roles';
+import { mutator } from '../../../shared/lib/api/mutator';
 import type {
   CreateDepartmentDto,
   CreateOrgMemberDto,
@@ -31,8 +32,41 @@ import type {
   UpdateOrgMemberDto,
 } from '../../../shared/lib/api/orval/business/schemas';
 
-export type OrgMember = OrgMemberDto;
+export interface OrgMember {
+  id: string;
+  userId: string;
+  type: OrgMemberDto['type'];
+  status: OrgMemberDto['status'];
+  orgDisplayName?: string | null;
+  employeeNo?: string | null;
+  title?: string | null;
+  joinedAt: string;
+  user?: {
+    username?: string | null;
+    email?: string | null;
+    countryCode?: string | null;
+    phone?: string | null;
+    profile?: { displayName?: string | null; avatar?: string | null } | null;
+  } | null;
+  primaryDept?: { id: string; name: string } | null;
+}
 export type OrgMemberDetail = OrgMemberDetailDto;
+export interface MemberRoleOption {
+  id: string;
+  userId: string;
+  displayName?: string | null;
+  email?: string | null;
+  avatar?: string | null;
+  departmentNames: string[];
+  roleIds: string[];
+}
+export interface MemberRoleOptionParams {
+  page?: number;
+  pageSize?: number;
+  keyword?: string;
+  roleId?: string;
+  assignment?: 'assigned' | 'unassigned';
+}
 export type OrgMemberListParams = OrgMemberControllerListMembersParams;
 export type CreateOrgMember = CreateOrgMemberDto;
 export type UpdateOrgMember = UpdateOrgMemberDto;
@@ -54,9 +88,41 @@ export interface OrgMemberListResponse {
   totalPages: number;
 }
 
+export interface MemberRoleOptionListResponse {
+  data: MemberRoleOption[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export const orgMemberApi = {
   async list(orgId: string, params: OrgMemberListParams): Promise<OrgMemberListResponse> {
     const result = await orgMemberControllerListMembers(orgId, params);
+    return {
+      data: result.items as unknown as OrgMember[],
+      total: result.total,
+      page: result.page,
+      pageSize: result.pageSize,
+      totalPages: result.totalPages,
+    };
+  },
+
+  async roleOptions(
+    orgId: string,
+    params: MemberRoleOptionParams
+  ): Promise<MemberRoleOptionListResponse> {
+    const result = await mutator<{
+      items: MemberRoleOption[];
+      total: number;
+      page: number;
+      pageSize: number;
+      totalPages: number;
+    }>({
+      url: `/admin/orgs/${orgId}/member-role-options`,
+      method: 'GET',
+      params,
+    });
     return {
       data: result.items,
       total: result.total,
