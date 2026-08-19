@@ -23,7 +23,11 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  align-self: start;
+  height: calc(100vh - 258px);
+  min-height: 420px;
   min-width: 0;
+  overflow: hidden;
   padding: 18px 16px 16px 0;
   border-right: 1px solid #eff0f1;
 }
@@ -39,7 +43,28 @@
 
 .permission-tree-list {
   flex: 1;
-  overflow: auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-color: rgba(31, 35, 41, 0.28) transparent;
+  scrollbar-width: thin;
+}
+
+.permission-tree-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.permission-tree-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.permission-tree-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(31, 35, 41, 0.24);
+}
+
+.permission-tree-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(31, 35, 41, 0.38);
 }
 
 .permission-tree-node {
@@ -121,7 +146,7 @@
 }
 
 .permission-search {
-  width: 220px;
+  width: 320px;
 }
 
 .permission-code-input,
@@ -177,6 +202,8 @@
   }
 
   .permission-tree-pane {
+    height: auto;
+    min-height: 0;
     max-height: 340px;
     padding-right: 0;
     border-right: 0;
