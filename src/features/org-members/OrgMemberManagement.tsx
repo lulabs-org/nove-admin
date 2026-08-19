@@ -1399,8 +1399,6 @@ export function OrgMemberManagement() {
         />
       )}
 
-      <div className="org-members-breadcrumb">组织架构 〉成员与部门</div>
-
       <Tabs
         activeKey={activeTab}
         onChange={handleTabChange}
