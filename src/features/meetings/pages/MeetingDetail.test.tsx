@@ -32,7 +32,7 @@ const meeting: Meeting = {
   hasRecording: true,
   recordingStatus: 'COMPLETED',
   processingStatus: 'COMPLETED',
-  recordings: [{ id: 'recording-1', status: 'COMPLETED' }],
+  minutes: [{ id: 'recording-1', status: 'COMPLETED' }],
   createdAt: '2026-08-19T00:00:00.000Z',
   updatedAt: '2026-08-19T00:00:00.000Z',
 };
@@ -103,10 +103,7 @@ describe('MeetingDetail', () => {
     fireEvent.click(screen.getByRole('tab', { name: /参会成员/ }));
 
     await waitFor(() => {
-      expect(meetingApiMock.getParticipantSummaries).toHaveBeenCalledWith(
-        'meeting-1',
-        'recording-1'
-      );
+      expect(meetingApiMock.getParticipantSummaries).toHaveBeenCalledWith('recording-1');
     });
   });
 });

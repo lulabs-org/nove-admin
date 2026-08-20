@@ -28,7 +28,7 @@ import type {
   Meeting,
   MeetingParticipant,
   MeetingSummary,
-  RecordingParticipantSummary,
+  MinuteParticipantSummary,
   TranscriptSegment,
   UpdateMeetingDto,
 } from '../model/types';
@@ -93,7 +93,7 @@ export function MeetingDetail() {
   const [participantResultTotal, setParticipantResultTotal] = useState(0);
   const [participantSearch, setParticipantSearch] = useState('');
   const [participantSummaries, setParticipantSummaries] = useState<
-    Record<string, RecordingParticipantSummary[]>
+    Record<string, MinuteParticipantSummary[]>
   >({});
   const [participantSummariesLoading, setParticipantSummariesLoading] = useState(false);
   const [participantSummariesError, setParticipantSummariesError] = useState<string | null>(null);
@@ -154,7 +154,7 @@ export function MeetingDetail() {
     try {
       const data = await meetingApi.getById(id);
       setMeeting(data);
-      setActiveRecordingId(data.recordings?.[0]?.id ?? null);
+      setActiveRecordingId(data.minutes?.[0]?.id ?? null);
       setTranscriptError(null);
       setVisibleTranscriptCount(200);
       setTranscripts({});
@@ -218,7 +218,7 @@ export function MeetingDetail() {
     setParticipantSummariesLoading(true);
     setParticipantSummariesError(null);
     meetingApi
-      .getParticipantSummaries(id, activeRecordingId)
+      .getParticipantSummaries(activeRecordingId)
       .then((result) => {
         setParticipantSummaries((current) => ({
           ...current,
@@ -229,13 +229,13 @@ export function MeetingDetail() {
       .finally(() => setParticipantSummariesLoading(false));
   }, [activeRecordingId, activeTab, id, participantSummaries, participantSummariesLoading]);
 
-  const activeRecording = meeting?.recordings?.find((item) => item.id === activeRecordingId);
+  const activeRecording = meeting?.minutes?.find((item) => item.id === activeRecordingId);
   const activeTranscriptCount = activeRecordingId
     ? (transcripts[activeRecordingId]?.length ?? 0)
     : 0;
   const allTranscriptSegments = useMemo(
-    () => meeting?.recordings?.flatMap((recording) => transcripts[recording.id] ?? []) ?? [],
-    [meeting?.recordings, transcripts]
+    () => meeting?.minutes?.flatMap((recording) => transcripts[recording.id] ?? []) ?? [],
+    [meeting?.minutes, transcripts]
   );
   const selectedTranscriptSegments = activeRecordingId
     ? (transcripts[activeRecordingId] ?? [])
@@ -371,7 +371,7 @@ export function MeetingDetail() {
           {participantSearch ? <small>筛选出 {participantResultTotal} 位</small> : null}
           {activeRecording ? (
             <small>
-              录制 {Math.max(0, meeting.recordings?.indexOf(activeRecording) ?? 0) + 1} · 已生成{' '}
+              录制 {Math.max(0, meeting.minutes?.indexOf(activeRecording) ?? 0) + 1} · 已生成{' '}
               {currentParticipantSummaries.length} 份总结
             </small>
           ) : null}
@@ -454,10 +454,10 @@ export function MeetingDetail() {
     <Skeleton active paragraph={{ rows: 8 }} />
   ) : transcriptError ? (
     <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={transcriptError} />
-  ) : meeting.recordings?.length ? (
+  ) : meeting.minutes?.length ? (
     <div className="meeting-transcript-pane">
       <div className="meeting-transcript-recordings" role="group" aria-label="选择录制逐字稿">
-        {meeting.recordings.map((recording, index) => {
+        {meeting.minutes.map((recording, index) => {
           const count = transcripts[recording.id]?.length ?? 0;
           const loaded = recording.id in transcripts;
           return (
@@ -694,14 +694,14 @@ export function MeetingDetail() {
 
         <aside className="meeting-media-column">
           <div className="meeting-player">
-            {meeting.recordings?.length ? (
+            {meeting.minutes?.length ? (
               <div className="meeting-player-topbar">
-                <span>共 {meeting.recordings.length} 个录制</span>
+                <span>共 {meeting.minutes.length} 个录制</span>
                 <Select
                   aria-label="选择会议录制"
                   size="small"
                   value={activeRecordingId ?? undefined}
-                  options={meeting.recordings.map((recording, index) => ({
+                  options={meeting.minutes.map((recording, index) => ({
                     value: recording.id,
                     label: `录制 ${index + 1} · ${
                       recording.id in transcripts

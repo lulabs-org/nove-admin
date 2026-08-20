@@ -14,7 +14,7 @@ import type {
   MeetingControllerGetMeetingRecordsType,
 } from '../../../shared/lib/api/orval/business/schemas';
 
-export interface MeetingRecording {
+export interface MeetingMinute {
   id: string;
   externalId?: string | null;
   source?: string;
@@ -52,10 +52,10 @@ export interface MeetingParticipantListResponse {
   totalPages: number;
 }
 
-export interface RecordingParticipantSummary {
+export interface MinuteParticipantSummary {
   id: string;
   meetingId: string;
-  meetingRecordingId: string;
+  meetingMinuteId: string;
   platformUserId: string;
   meetingParticipantId: string | null;
   userName: string;
@@ -67,8 +67,8 @@ export interface RecordingParticipantSummary {
   updatedAt: string;
 }
 
-export interface RecordingParticipantSummaryListResponse {
-  data: RecordingParticipantSummary[];
+export interface MinuteParticipantSummaryListResponse {
+  data: MinuteParticipantSummary[];
   total: number;
   page: number;
   limit: number;
@@ -135,7 +135,7 @@ export interface Meeting {
   hasRecording: boolean;
   recordingStatus: MeetingControllerGetMeetingRecordsStatus;
   processingStatus: MeetingControllerGetMeetingRecordsStatus;
-  recordings?: MeetingRecording[];
+  minutes?: MeetingMinute[];
   metadata?: unknown;
   recordingUrl?: string;
   transcriptUrl?: string;

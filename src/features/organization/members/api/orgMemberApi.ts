@@ -23,7 +23,7 @@ import type {
   DepartmentTreeDto,
   OrgMemberControllerListMembersParams,
   OrgMemberDetailDto,
-  OrgMemberDto,
+  OrgMemberListItemDto,
   OrganizationDto,
   RoleDto,
   UpdateDepartmentDto,
@@ -35,8 +35,8 @@ import type {
 export interface OrgMember {
   id: string;
   userId: string;
-  type: OrgMemberDto['type'];
-  status: OrgMemberDto['status'];
+  type: OrgMemberListItemDto['type'];
+  status: OrgMemberListItemDto['status'];
   orgDisplayName?: string | null;
   employeeNo?: string | null;
   title?: string | null;
