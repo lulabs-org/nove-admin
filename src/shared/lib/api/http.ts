@@ -12,7 +12,6 @@
 import axios, { type AxiosError, type AxiosRequestConfig } from 'axios';
 import { message } from 'antd';
 import { authService } from '../../../features/auth/api/service';
-import { useAuthStore } from '../../../features/auth/model/authStore';
 
 type RetryableRequestConfig = AxiosRequestConfig & {
   _retry?: boolean;
@@ -104,7 +103,8 @@ http.interceptors.response.use(
         setAuthorizationHeader(originalRequest, accessToken);
         return http(originalRequest);
       } catch (refreshError) {
-        useAuthStore.getState().clearAuth();
+        authService.clear();
+        window.dispatchEvent(new Event('auth-unauthorized'));
         return Promise.reject(refreshError);
       }
     }
