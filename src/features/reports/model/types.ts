@@ -140,7 +140,7 @@ export interface CreateTrackingReportDto {
   timezone?: string;
   content: string;
   structuredData?: Record<string, unknown>;
-  recordingSummaryIds?: string[];
+  minuteSummaryIds?: string[];
   sourceReportIds?: string[];
 }
 
@@ -149,7 +149,7 @@ export interface UpdateTrackingReportDto {
   timezone?: string;
   content?: string;
   structuredData?: Record<string, unknown>;
-  recordingSummaryIds?: string[];
+  minuteSummaryIds?: string[];
   sourceReportIds?: string[];
 }
 
