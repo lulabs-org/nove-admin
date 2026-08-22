@@ -32,12 +32,12 @@ export const PERMISSIONS = {
     DELETE: 'department:delete',
   },
   API_KEY: {
-    READ: 'api_key:read',
-    CREATE: 'api_key:create',
-    UPDATE: 'api_key:update',
-    DELETE: 'api_key:delete',
-    REVOKE: 'api_key:revoke',
-    ROTATE: 'api_key:rotate',
+    READ: 'api-key:read',
+    CREATE: 'api-key:create',
+    UPDATE: 'api-key:update',
+    DELETE: 'api-key:delete',
+    REVOKE: 'api-key:revoke',
+    ROTATE: 'api-key:rotate',
   },
   PRODUCT: {
     READ: 'product:read',

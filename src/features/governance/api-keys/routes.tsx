@@ -11,6 +11,7 @@
 import type { RouteConfig } from '../../../shared/types/index';
 import { ApiKeyManagement } from './ApiKeyManagement';
 import { KeyOutlined } from '@ant-design/icons';
+import { PERMISSIONS } from '../../../shared/utils/permissions';
 
 export const apiKeyRoutes: RouteConfig[] = [
   {
@@ -18,7 +19,7 @@ export const apiKeyRoutes: RouteConfig[] = [
     element: <ApiKeyManagement />,
     title: 'API Keys',
     menu: true,
-    permission: 'api_key:read',
+    permission: PERMISSIONS.API_KEY.READ,
     icon: <KeyOutlined />,
   },
 ];
