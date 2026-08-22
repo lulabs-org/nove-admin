@@ -15,6 +15,7 @@ import Space from 'antd/es/space';
 import { SafetyOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../shared/hooks/useAuth';
+import './Topbar.css';
 
 const { Header } = Layout;
 
@@ -69,6 +70,7 @@ export function Topbar({ collapsed, sidebarWidth }: TopbarProps) {
       <Link
         to="/"
         aria-label="返回企业概览"
+        className={`admin-brand-link${collapsed ? ' is-collapsed' : ''}`}
         style={{
           width: sidebarWidth,
           flex: `0 0 ${sidebarWidth}px`,
@@ -76,16 +78,16 @@ export function Topbar({ collapsed, sidebarWidth }: TopbarProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 10,
           fontSize: 18,
           fontWeight: 600,
           color: '#17233d',
           textDecoration: 'none',
-          transition: 'all 0.2s',
         }}
       >
-        <img src="/favicon.svg" alt="" width={32} height={32} />
-        {collapsed ? null : <span>Nove System</span>}
+        <img className="admin-brand-logo" src="/favicon.svg" alt="" width={32} height={32} />
+        <span className="admin-brand-title" aria-hidden={collapsed}>
+          Nove System
+        </span>
       </Link>
       <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', padding: '0 24px' }}>
         <Dropdown menu={{ items: menuItems }} placement="bottomRight">

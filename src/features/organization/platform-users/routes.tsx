@@ -1,5 +1,6 @@
 import type { RouteConfig } from '../../../shared/types/index';
 import { PlatformUserManagement } from './PlatformUserManagement';
+import { PERMISSIONS } from '../../../shared/utils/permissions';
 
 export const platformUserRoutes: RouteConfig[] = [
   {
@@ -7,6 +8,6 @@ export const platformUserRoutes: RouteConfig[] = [
     element: <PlatformUserManagement />,
     title: '平台用户',
     menu: true,
-    permission: 'user:read',
+    permission: PERMISSIONS.USER.READ,
   },
 ];

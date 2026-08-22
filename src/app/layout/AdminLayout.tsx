@@ -16,6 +16,7 @@ import type { RouteConfig } from '../../shared/types';
 import { Sidebar, SIDEBAR_BACKGROUND } from './Sidebar';
 import { Topbar } from './Topbar';
 import { RouteBreadcrumb } from './RouteBreadcrumb';
+import './AdminLayout.css';
 
 const { Content, Sider } = Layout;
 const MOBILE_SIDER_QUERY = '(max-width: 760px)';
@@ -58,6 +59,7 @@ export function AdminLayout({ routes, children }: AdminLayoutProps) {
   return (
     <Layout style={{ height: '100vh', overflow: 'hidden' }}>
       <Sider
+        className="admin-sidebar"
         width={EXPANDED_SIDER_WIDTH}
         theme="light"
         collapsible
@@ -108,7 +110,10 @@ export function AdminLayout({ routes, children }: AdminLayoutProps) {
           </div>
         </div>
       </Sider>
-      <Layout style={{ marginLeft: collapsed ? COLLAPSED_SIDER_WIDTH : EXPANDED_SIDER_WIDTH }}>
+      <Layout
+        className="admin-main-layout"
+        style={{ marginLeft: collapsed ? COLLAPSED_SIDER_WIDTH : EXPANDED_SIDER_WIDTH }}
+      >
         <Topbar
           collapsed={collapsed}
           sidebarWidth={collapsed ? COLLAPSED_SIDER_WIDTH : EXPANDED_SIDER_WIDTH}

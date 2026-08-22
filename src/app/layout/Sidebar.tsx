@@ -14,7 +14,8 @@ import type { RouteConfig } from '../../shared/types';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { MenuProps } from 'antd/es/menu';
 import { useAuth } from '../../shared/hooks/useAuth';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { getStoredOpenKeys, mergeOpenKeys, persistOpenKeys } from './sidebarOpenKeys';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -47,8 +48,12 @@ export function Sidebar({ routes, collapsed }: SidebarProps) {
 
   const menuItems = generateMenuItems(routes);
   const selectedKeys = [location.pathname];
-  const activeParentKeys = findActiveParentKeys(routes, location.pathname);
-  const [openKeys, setOpenKeys] = useState<string[]>(activeParentKeys);
+  const activeParentKeys = useMemo(
+    () => findActiveParentKeys(routes, location.pathname),
+    [routes, location.pathname]
+  );
+  const [openKeys, setOpenKeys] = useState<string[]>(getStoredOpenKeys);
+  const visibleOpenKeys = mergeOpenKeys(openKeys, activeParentKeys);
 
   function generateMenuItems(routes: RouteConfig[], depth = 0): MenuProps['items'] {
     return routes
@@ -89,12 +94,17 @@ export function Sidebar({ routes, collapsed }: SidebarProps) {
     navigate(key);
   };
 
+  const handleOpenChange: MenuProps['onOpenChange'] = (nextOpenKeys) => {
+    setOpenKeys(nextOpenKeys);
+    persistOpenKeys(nextOpenKeys);
+  };
+
   return (
     <Menu
       mode="inline"
       selectedKeys={selectedKeys}
-      openKeys={collapsed ? undefined : openKeys}
-      onOpenChange={setOpenKeys}
+      openKeys={collapsed ? undefined : visibleOpenKeys}
+      onOpenChange={handleOpenChange}
       onClick={handleMenuClick}
       items={menuItems}
       inlineCollapsed={collapsed}
