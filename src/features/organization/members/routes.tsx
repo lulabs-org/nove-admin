@@ -1,6 +1,7 @@
 import type { RouteConfig } from '../../../shared/types';
 import { OrgMemberManagement } from './OrgMemberManagement';
 import { RoleManagement } from './RoleManagement';
+import { PERMISSIONS } from '../../../shared/utils/permissions';
 
 export const memberRoutes: RouteConfig[] = [
   {
@@ -8,13 +9,13 @@ export const memberRoutes: RouteConfig[] = [
     element: <OrgMemberManagement />,
     title: '成员部门',
     menu: true,
-    permission: 'user:read',
+    permission: PERMISSIONS.USER.READ,
   },
   {
     path: '/users/roles',
     element: <RoleManagement />,
     title: '角色管理',
     menu: true,
-    permission: 'role:read',
+    permission: PERMISSIONS.ROLE.READ,
   },
 ];
