@@ -18,8 +18,8 @@ import type {
   MeetingStats,
   TranscriptSegment,
   MeetingParticipantListResponse,
-  MeetingSummaryListResponse,
-  MinuteParticipantSummaryListResponse,
+  MeetingSummary,
+  SpeakerSummaryListResponse,
 } from '../model/types';
 
 export const meetingApi = {
@@ -72,17 +72,23 @@ export const meetingApi = {
     });
   },
 
-  getSummaries: (meetingId: string): Promise<MeetingSummaryListResponse> => {
-    return mutator<MeetingSummaryListResponse>({
-      url: `/meetings/${meetingId}/summaries`,
-      method: 'GET',
-      params: { page: 1, limit: 1, isLatest: true },
-    });
+  getSummary: async (minuteId: string): Promise<MeetingSummary | null> => {
+    try {
+      return await mutator<MeetingSummary>({
+        url: `/minutes/${minuteId}/summary`,
+        method: 'GET',
+      });
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
   },
 
-  getParticipantSummaries: (minuteId: string): Promise<MinuteParticipantSummaryListResponse> => {
-    return mutator<MinuteParticipantSummaryListResponse>({
-      url: `/minutes/${minuteId}/participant-summaries`,
+  getSpeakerSummaries: (minuteId: string): Promise<SpeakerSummaryListResponse> => {
+    return mutator<SpeakerSummaryListResponse>({
+      url: `/minutes/${minuteId}/speaker-summaries`,
       method: 'GET',
       params: { page: 1, limit: 100 },
     });

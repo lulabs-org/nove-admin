@@ -23,24 +23,34 @@ export interface MeetingMinute {
   endAt?: string | null;
 }
 
-export interface MeetingParticipantUser {
+export interface MeetingParticipantPlatformUser {
   id: string;
   platform: string;
-  ptUserId: string | null;
   displayName: string | null;
   avatarUrl: string | null;
+}
+
+export interface MeetingParticipantUserProfile {
+  displayName: string | null;
+  avatar: string | null;
+}
+
+export interface MeetingParticipantUser {
+  id: string;
+  username: string | null;
   email: string | null;
   countryCode: string | null;
   phone: string | null;
+  profile: MeetingParticipantUserProfile | null;
 }
 
 export interface MeetingParticipant {
   id: string;
   meetingId: string;
-  ptUserId: string | null;
   firstJoinTime: string | null;
   lastLeaveTime: string | null;
   totalDurationSeconds: number | null;
+  platformUser: MeetingParticipantPlatformUser | null;
   user: MeetingParticipantUser | null;
 }
 
@@ -52,23 +62,20 @@ export interface MeetingParticipantListResponse {
   totalPages: number;
 }
 
-export interface MinuteParticipantSummary {
+export interface SpeakerSummary {
   id: string;
-  meetingId: string;
-  meetingMinuteId: string;
+  minuteId: string;
   platformUserId: string;
-  meetingParticipantId: string | null;
-  userName: string;
   partSummary: string;
   keywords: string[];
-  version: number;
-  isLatest: boolean;
+  generatedBy?: string;
+  aiModel?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface MinuteParticipantSummaryListResponse {
-  data: MinuteParticipantSummary[];
+export interface SpeakerSummaryListResponse {
+  data: SpeakerSummary[];
   total: number;
   page: number;
   limit: number;
@@ -77,16 +84,17 @@ export interface MinuteParticipantSummaryListResponse {
 
 export interface MeetingSummary {
   id: string;
-  title?: string | null;
   content: string;
   aiMinutes?: unknown;
   keyPoints?: unknown;
   actionItems?: unknown;
   decisions?: unknown;
-  speakerInsights?: unknown;
   goldenQuotes?: unknown;
   keywords?: string[];
-  status?: string;
+  metadata?: unknown;
+  minuteId?: string;
+  aiModel?: string;
+  generatedBy?: string;
   createdAt: string;
   updatedAt: string;
 }
