@@ -1,6 +1,16 @@
+export const TrackingTargetType = {
+  USER: 'USER',
+  PLATFORM_USER: 'PLATFORM_USER',
+  PROJECT: 'PROJECT',
+  ORGANIZATION: 'ORGANIZATION',
+} as const;
+
+export type TrackingTargetType = (typeof TrackingTargetType)[keyof typeof TrackingTargetType];
+
 export const TrackingReportType = {
-  PERIODIC_MEETING_SUMMARY: 'PERIODIC_MEETING_SUMMARY',
+  MEETING_SUMMARY: 'MEETING_SUMMARY',
   TRAINING_PLAN: 'TRAINING_PLAN',
+  DEVELOPMENT_PLAN: 'DEVELOPMENT_PLAN',
   PROJECT_PROGRESS: 'PROJECT_PROGRESS',
   USER_PROFILE: 'USER_PROFILE',
 } as const;
@@ -12,110 +22,103 @@ export const TrackingCadence = {
   WEEKLY: 'WEEKLY',
   MONTHLY: 'MONTHLY',
   QUARTERLY: 'QUARTERLY',
+  YEARLY: 'YEARLY',
 } as const;
 
 export type TrackingCadence = (typeof TrackingCadence)[keyof typeof TrackingCadence];
 
+export const TrackingSourceType = {
+  SPEAKER_SUMMARY: 'SPEAKER_SUMMARY',
+  TRACKING_REPORT: 'TRACKING_REPORT',
+  DOCUMENT: 'DOCUMENT',
+  MEETING: 'MEETING',
+} as const;
+
+export type TrackingSourceType = (typeof TrackingSourceType)[keyof typeof TrackingSourceType];
+export type GenerationMethod = 'AI' | 'MANUAL';
+
+export const TRACKING_TARGET_TYPE_LABELS: Record<TrackingTargetType, string> = {
+  USER: '本地用户',
+  PLATFORM_USER: '平台用户',
+  PROJECT: '项目',
+  ORGANIZATION: '组织',
+};
+
 export const TRACKING_REPORT_TYPE_LABELS: Record<TrackingReportType, string> = {
-  [TrackingReportType.PERIODIC_MEETING_SUMMARY]: '会议总结',
-  [TrackingReportType.TRAINING_PLAN]: '培训计划',
-  [TrackingReportType.PROJECT_PROGRESS]: '项目进展',
-  [TrackingReportType.USER_PROFILE]: '用户画像',
+  MEETING_SUMMARY: '会议总结',
+  TRAINING_PLAN: '培训计划',
+  DEVELOPMENT_PLAN: '培养方案',
+  PROJECT_PROGRESS: '项目进度',
+  USER_PROFILE: '用户画像',
 };
 
 export const TRACKING_CADENCE_LABELS: Record<TrackingCadence, string> = {
-  [TrackingCadence.DAILY]: '单日',
-  [TrackingCadence.WEEKLY]: '一周',
-  [TrackingCadence.MONTHLY]: '一月',
-  [TrackingCadence.QUARTERLY]: '一季度',
+  DAILY: '每日',
+  WEEKLY: '每周',
+  MONTHLY: '每月',
+  QUARTERLY: '每季度',
+  YEARLY: '每年',
 };
 
-export type TrackingReportSubjectKind = 'LOCAL_USER' | 'PLATFORM_USER' | 'PROJECT';
+export const TRACKING_SOURCE_TYPE_LABELS: Record<TrackingSourceType, string> = {
+  SPEAKER_SUMMARY: '发言总结',
+  TRACKING_REPORT: '历史报告',
+  DOCUMENT: '文档',
+  MEETING: '会议',
+};
 
-export interface TrackingReportLocalUser {
+export interface TrackingTargetSummary {
   id: string;
-  username?: string | null;
-  email?: string | null;
-  countryCode?: string | null;
-  phone?: string | null;
-  displayName?: string | null;
-  avatar?: string | null;
-}
-
-export interface TrackingReportPlatformUser {
-  id: string;
-  platform: string;
-  ptUserId?: string | null;
-  ptUnionId: string;
-  displayName?: string | null;
-}
-
-export interface TrackingReportProject {
-  id: string;
-  title: string;
-  subtitle?: string | null;
-  category?: string | null;
-  image?: string | null;
-}
-
-export interface TrackingReportSubjectSummary {
-  kind: TrackingReportSubjectKind;
-  displayName: string;
-  avatar?: string | null;
-  isLinked: boolean;
-}
-
-export interface TrackingReportSubject extends TrackingReportSubjectSummary {
+  targetType: TrackingTargetType;
+  targetId: string;
   nameSnapshot: string;
-  localUser?: TrackingReportLocalUser | null;
-  platformUser?: TrackingReportPlatformUser | null;
-  project?: TrackingReportProject | null;
 }
 
-export interface TrackingReport {
+export interface TrackingTarget extends TrackingTargetSummary {
+  metadata: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TrackingReportSource {
   id: string;
-  subject: TrackingReportSubject;
+  sourceType: TrackingSourceType;
+  sourceId: string;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TrackingReportListItem {
+  id: string;
+  target: TrackingTargetSummary;
   trackingType: TrackingReportType;
   cadence: TrackingCadence;
+  periodKey?: string | null;
   periodStart: string;
   periodEnd: string;
   timezone: string;
-  content: string;
-  structuredData?: Record<string, unknown> | null;
-  isLatest: boolean;
-  version: number;
-  versionGroupKey: string;
-  previousReportId?: string | null;
+  generatedBy?: GenerationMethod | null;
+  aiModel?: string | null;
+  sourceCount: number;
   createdAt: string;
   updatedAt: string;
-  deletedAt?: string | null;
 }
 
-export type TrackingReportListItem = Omit<
-  Pick<
-    TrackingReport,
-    | 'id'
-    | 'subject'
-    | 'trackingType'
-    | 'cadence'
-    | 'periodStart'
-    | 'periodEnd'
-    | 'isLatest'
-    | 'version'
-    | 'createdAt'
-  >,
-  'subject'
-> & { subject: TrackingReportSubjectSummary };
+export interface TrackingReport extends Omit<TrackingReportListItem, 'target'> {
+  target: TrackingTarget;
+  content: string;
+  sources: TrackingReportSource[];
+}
 
 export interface TrackingReportListParams {
-  subjectUserId?: string;
-  platformUserId?: string;
-  projectId?: string;
+  targetType?: TrackingTargetType;
+  targetId?: string;
+  keyword?: string;
   trackingType?: TrackingReportType;
   cadence?: TrackingCadence;
   periodStart?: string;
   periodEnd?: string;
-  isLatest?: boolean;
   page?: number;
   limit?: number;
 }
@@ -128,36 +131,30 @@ export interface TrackingReportListResponse {
   totalPages: number;
 }
 
+export interface TrackingReportSourceInput {
+  sourceType: TrackingSourceType;
+  sourceId: string;
+  metadata?: Record<string, unknown>;
+}
+
 export interface CreateTrackingReportDto {
-  subjectUserId?: string;
-  platformUserId?: string;
-  projectId?: string;
-  subjectNameSnapshot: string;
+  targetType: TrackingTargetType;
+  targetId: string;
+  targetName: string;
+  targetMetadata?: Record<string, unknown>;
   trackingType: TrackingReportType;
   cadence: TrackingCadence;
-  periodStart: string;
-  periodEnd: string;
+  baseDate: string;
   timezone?: string;
   content: string;
-  structuredData?: Record<string, unknown>;
-  minuteSummaryIds?: string[];
-  sourceReportIds?: string[];
+  generatedBy?: GenerationMethod;
+  aiModel?: string;
+  sources?: TrackingReportSourceInput[];
 }
 
 export interface UpdateTrackingReportDto {
-  subjectNameSnapshot?: string;
-  timezone?: string;
   content?: string;
-  structuredData?: Record<string, unknown>;
-  minuteSummaryIds?: string[];
-  sourceReportIds?: string[];
-}
-
-export interface TriggerSummaryDto {
-  cadence: TrackingCadence;
-  baseDate?: string;
-  platformUserIds?: string[];
-  subjectUserIds?: string[];
-  trackingType?: TrackingReportType;
-  force?: boolean;
+  generatedBy?: GenerationMethod | null;
+  aiModel?: string | null;
+  sources?: TrackingReportSourceInput[];
 }
