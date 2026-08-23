@@ -28,7 +28,7 @@ import type {
   Meeting,
   MeetingParticipant,
   MeetingSummary,
-  MinuteParticipantSummary,
+  SpeakerSummary,
   TranscriptSegment,
   UpdateMeetingDto,
 } from '../model/types';
@@ -43,19 +43,18 @@ import './MeetingDetail.css';
 
 function participantName(participant: MeetingParticipant) {
   return (
-    participant.user?.displayName ||
+    participant.user?.profile?.displayName ||
+    participant.user?.username ||
+    participant.platformUser?.displayName ||
     participant.user?.email ||
-    participant.user?.ptUserId ||
     '未知成员'
   );
 }
 
 function participantContact(participant: MeetingParticipant) {
   const user = participant.user;
-  if (!user) return '未关联平台用户';
-  return (
-    user.email || [user.countryCode, user.phone].filter(Boolean).join(' ') || user.ptUserId || '-'
-  );
+  if (user) return user.email || [user.countryCode, user.phone].filter(Boolean).join(' ') || '-';
+  return participant.platformUser?.platform || '未关联用户';
 }
 
 function renderStructuredValue(value: unknown): React.ReactNode {
@@ -93,14 +92,17 @@ export function MeetingDetail() {
   const [participantResultTotal, setParticipantResultTotal] = useState(0);
   const [participantSearch, setParticipantSearch] = useState('');
   const [participantSummaries, setParticipantSummaries] = useState<
-    Record<string, MinuteParticipantSummary[]>
+    Record<string, SpeakerSummary[]>
   >({});
   const [participantSummariesLoading, setParticipantSummariesLoading] = useState(false);
   const [participantSummariesError, setParticipantSummariesError] = useState<string | null>(null);
   const [expandedParticipantId, setExpandedParticipantId] = useState<string | null>(null);
   const [summary, setSummary] = useState<MeetingSummary | null>(null);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
   const [transcripts, setTranscripts] = useState<Record<string, TranscriptSegment[]>>({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [participantsError, setParticipantsError] = useState<string | null>(null);
   const [participantsLoading, setParticipantsLoading] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [transcriptLoading, setTranscriptLoading] = useState(false);
@@ -116,6 +118,7 @@ export function MeetingDetail() {
       if (!id) return;
       const normalizedSearch = search?.trim() ?? '';
       setParticipantsLoading(true);
+      setParticipantsError(null);
       try {
         const result = await meetingApi.getParticipants(id, {
           page: 1,
@@ -127,6 +130,7 @@ export function MeetingDetail() {
         setParticipantSearch(normalizedSearch);
         if (!normalizedSearch) setParticipantTotal(result.total);
       } catch {
+        setParticipantsError('参会成员暂时无法读取');
         message.error('获取参会成员失败');
       } finally {
         setParticipantsLoading(false);
@@ -148,9 +152,23 @@ export function MeetingDetail() {
     }
   }, []);
 
+  const fetchSummary = useCallback(async (minuteId: string) => {
+    setSummaryLoading(true);
+    setSummaryError(null);
+    try {
+      setSummary(await meetingApi.getSummary(minuteId));
+    } catch {
+      setSummary(null);
+      setSummaryError('会议纪要暂时无法读取');
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, []);
+
   const fetchMeetingDetail = useCallback(async () => {
     if (!id) return;
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await meetingApi.getById(id);
       setMeeting(data);
@@ -162,36 +180,29 @@ export function MeetingDetail() {
       setParticipantSummariesError(null);
       setExpandedParticipantId(null);
       setLoading(false);
-
-      setParticipantsLoading(true);
-      setSummaryLoading(true);
-      const participantRequest = meetingApi
-        .getParticipants(id, { page: 1, limit: 100 })
-        .then((result) => {
-          setParticipants(result.data);
-          setParticipantTotal(result.total);
-          setParticipantResultTotal(result.total);
-          setParticipantSearch('');
-        })
-        .finally(() => setParticipantsLoading(false));
-      const summaryRequest = meetingApi
-        .getSummaries(id)
-        .then((result) => setSummary(result.data[0] ?? null))
-        .finally(() => setSummaryLoading(false));
-
-      await Promise.allSettled([participantRequest, summaryRequest]);
+      void fetchParticipants();
     } catch {
+      setMeeting(null);
+      setLoadError('会议详情暂时无法读取');
       message.error('获取会议详情失败');
     } finally {
       setLoading(false);
-      setParticipantsLoading(false);
-      setSummaryLoading(false);
     }
-  }, [id]);
+  }, [fetchParticipants, id]);
 
   useEffect(() => {
     void fetchMeetingDetail();
   }, [fetchMeetingDetail]);
+
+  useEffect(() => {
+    if (!activeRecordingId) {
+      setSummary(null);
+      setSummaryError(null);
+      setSummaryLoading(false);
+      return;
+    }
+    void fetchSummary(activeRecordingId);
+  }, [activeRecordingId, fetchSummary]);
 
   useEffect(() => {
     if (
@@ -218,7 +229,7 @@ export function MeetingDetail() {
     setParticipantSummariesLoading(true);
     setParticipantSummariesError(null);
     meetingApi
-      .getParticipantSummaries(activeRecordingId)
+      .getSpeakerSummaries(activeRecordingId)
       .then((result) => {
         setParticipantSummaries((current) => ({
           ...current,
@@ -244,6 +255,7 @@ export function MeetingDetail() {
   const selectRecording = (recordingId: string) => {
     setActiveRecordingId(recordingId);
     setTranscriptError(null);
+    setParticipantSummariesError(null);
     setVisibleTranscriptCount(200);
     setExpandedParticipantId(null);
   };
@@ -285,7 +297,9 @@ export function MeetingDetail() {
   if (!meeting)
     return (
       <div className="meeting-detail-loading">
-        <Empty description="会议不存在" />
+        <Empty description={loadError || '会议不存在'}>
+          {loadError ? <Button onClick={() => void fetchMeetingDetail()}>重新加载</Button> : null}
+        </Empty>
       </div>
     );
 
@@ -313,11 +327,17 @@ export function MeetingDetail() {
 
   const summaryPane = summaryLoading ? (
     <Skeleton active paragraph={{ rows: 8 }} />
+  ) : summaryError ? (
+    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={summaryError}>
+      {activeRecordingId ? (
+        <Button onClick={() => void fetchSummary(activeRecordingId)}>重新加载</Button>
+      ) : null}
+    </Empty>
   ) : summary ? (
     <div className="meeting-summary-pane">
       <div className="meeting-section-heading">
         <div>
-          <h2>{summary.title || '会议纪要'}</h2>
+          <h2>会议纪要</h2>
           <span>{formatDateTime(summary.updatedAt)}</span>
         </div>
         {summary.keywords?.length ? (
@@ -357,10 +377,7 @@ export function MeetingDetail() {
     : [];
   const summaryForParticipant = (participant: MeetingParticipant) =>
     currentParticipantSummaries.find(
-      (item) =>
-        item.meetingParticipantId === participant.id ||
-        item.platformUserId === participant.ptUserId ||
-        item.platformUserId === participant.user?.ptUserId
+      (item) => item.platformUserId === participant.platformUser?.id
     );
 
   const participantPane = (
@@ -388,6 +405,14 @@ export function MeetingDetail() {
       {participantSummariesError ? (
         <div className="meeting-participant-summary-error">{participantSummariesError}</div>
       ) : null}
+      {participantsError ? (
+        <div className="meeting-participant-summary-error">
+          {participantsError}{' '}
+          <Button type="link" onClick={() => void fetchParticipants()}>
+            重试
+          </Button>
+        </div>
+      ) : null}
       {participantsLoading || participantSummariesLoading ? (
         <Skeleton active paragraph={{ rows: 5 }} />
       ) : participants.length ? (
@@ -398,7 +423,9 @@ export function MeetingDetail() {
             return (
               <div className="meeting-participant-item" key={participant.id}>
                 <div className="meeting-participant-row">
-                  <Avatar src={participant.user?.avatarUrl}>
+                  <Avatar
+                    src={participant.user?.profile?.avatar || participant.platformUser?.avatarUrl}
+                  >
                     {participantName(participant).slice(0, 1)}
                   </Avatar>
                   <div className="meeting-participant-identity">
