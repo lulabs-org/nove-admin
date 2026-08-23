@@ -10,6 +10,7 @@
 .org-structure-shell {
   display: grid;
   grid-template-columns: var(--org-tree-pane-width, 276px) minmax(0, 1fr);
+  transition: grid-template-columns 180ms ease;
   min-height: calc(100vh - 242px);
   border-top: 1px solid #eff0f1;
 }
@@ -26,12 +27,11 @@
   min-width: 0;
   padding: 16px 16px 0 0;
   border-right: 1px solid #eff0f1;
+  overflow: visible;
 }
 
 .org-structure-tree-pane.is-collapsed {
-  align-items: center;
-  gap: 0;
-  padding: 16px 6px 0 0;
+  padding: 0;
 }
 
 .org-tree-pane-topbar {
@@ -47,12 +47,30 @@
 }
 
 .org-tree-collapse-button {
-  flex: 0 0 auto;
+  position: absolute;
+  top: 16px;
+  right: -12px;
+  z-index: 4;
+  width: 24px;
+  min-width: 24px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid #e5e6eb;
+  border-radius: 6px;
+  background: #fff;
+  color: #646a73;
+  box-shadow: 0 2px 8px rgb(31 35 41 / 8%);
 }
 
-.org-structure-tree-pane.is-collapsed .org-tree-pane-topbar {
-  justify-content: center;
-  width: 100%;
+.org-tree-collapse-button:hover,
+.org-tree-collapse-button:focus-visible {
+  border-color: #c9cdd4;
+  background: #fff !important;
+  color: #3370ff !important;
+}
+
+.org-structure-tree-pane.is-collapsed .org-tree-collapse-button {
+  right: -28px;
 }
 
 .org-tree-list {
@@ -163,6 +181,12 @@
   padding: 18px 0 0 20px;
 }
 
+@media (min-width: 981px) {
+  .org-structure-tree-pane.is-collapsed + .org-structure-content {
+    padding-left: 56px;
+  }
+}
+
 .org-scope-header {
   display: flex;
   align-items: center;
@@ -190,7 +214,7 @@
   font-weight: 600;
 }
 
-.org-member-name-cell span {
+.org-member-name-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -291,8 +315,14 @@
   }
 
   .org-structure-tree-pane.is-collapsed {
-    align-items: flex-start;
-    padding: 12px 0;
+    min-height: 40px;
+    padding: 0;
+  }
+
+  .org-tree-collapse-button,
+  .org-structure-tree-pane.is-collapsed .org-tree-collapse-button {
+    top: 8px;
+    right: 8px;
   }
 
   .org-tree-list {
