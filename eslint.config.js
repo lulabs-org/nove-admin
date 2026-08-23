@@ -17,7 +17,7 @@ import { defineConfig, globalIgnores } from 'eslint/config';
 import prettier from 'eslint-config-prettier';
 
 export default defineConfig([
-  globalIgnores(['dist', 'src/shared/lib/api/orval/**']),
+  globalIgnores(['dist', 'docs/**', 'src/shared/lib/api/orval/**']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
