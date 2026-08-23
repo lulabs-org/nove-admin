@@ -29,10 +29,10 @@ import {
   DragOutlined,
   EditOutlined,
   EllipsisOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
+  LeftOutlined,
   PlusOutlined,
   ReloadOutlined,
+  RightOutlined,
   SearchOutlined,
   UserAddOutlined,
 } from '@ant-design/icons';
@@ -111,7 +111,7 @@ const ROOT_DEPARTMENT_ID = '__root__';
 const TREE_PANE_DEFAULT_WIDTH = 276;
 const TREE_PANE_MIN_WIDTH = 220;
 const TREE_PANE_MAX_WIDTH = 420;
-const TREE_PANE_COLLAPSED_WIDTH = 48;
+const TREE_PANE_COLLAPSED_WIDTH = 0;
 
 const MEMBER_TYPE_OPTIONS: Array<{ label: string; value: MemberType }> = [
   { label: '正式', value: 'INTERNAL' },
@@ -781,7 +781,7 @@ export function OrgMemberManagement() {
             >
               {getAvatarText(name)}
             </Avatar>
-            <span>{name}</span>
+            <span className="org-member-name-text">{name}</span>
           </button>
         );
       },
@@ -1415,29 +1415,27 @@ export function OrgMemberManagement() {
       >
         {activeTab === 'members' && (
           <aside className={`org-structure-tree-pane${treePaneCollapsed ? ' is-collapsed' : ''}`}>
-            <div className="org-tree-pane-topbar">
-              {!treePaneCollapsed && (
-                <Search
-                  allowClear
-                  prefix={<SearchOutlined />}
-                  placeholder="请输入姓名、邮箱..."
-                  value={deptKeyword}
-                  onChange={(event) => setDeptKeyword(event.target.value)}
-                />
-              )}
-              <Tooltip title={treePaneCollapsed ? '展开部门树' : '收起部门树'}>
-                <Button
-                  type="text"
-                  size="small"
-                  className="org-tree-collapse-button"
-                  aria-label={treePaneCollapsed ? '展开部门树' : '收起部门树'}
-                  icon={treePaneCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-                  onClick={() => setTreePaneCollapsed((collapsed) => !collapsed)}
-                />
-              </Tooltip>
-            </div>
+            <Tooltip title={treePaneCollapsed ? '展开部门树' : '收起部门树'} placement="right">
+              <Button
+                type="text"
+                size="small"
+                className="org-tree-collapse-button"
+                aria-label={treePaneCollapsed ? '展开部门树' : '收起部门树'}
+                icon={treePaneCollapsed ? <RightOutlined /> : <LeftOutlined />}
+                onClick={() => setTreePaneCollapsed((collapsed) => !collapsed)}
+              />
+            </Tooltip>
             {!treePaneCollapsed && (
               <>
+                <div className="org-tree-pane-topbar">
+                  <Search
+                    allowClear
+                    prefix={<SearchOutlined />}
+                    placeholder="请输入姓名、邮箱、手机号或用户 ID"
+                    value={deptKeyword}
+                    onChange={(event) => setDeptKeyword(event.target.value)}
+                  />
+                </div>
                 <div className="org-tree-list">
                   <div className={`org-dept-node ${!selectedDeptId ? 'is-active' : ''}`}>
                     <button
