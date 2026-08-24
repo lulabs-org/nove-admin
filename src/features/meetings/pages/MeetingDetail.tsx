@@ -756,7 +756,9 @@ export function MeetingDetail() {
             </div>
             {activeRecording ? (
               <div className="meeting-player-bar">
-                <span>{activeRecording.status || '未知状态'}</span>
+                <span title={activeRecording.errorMessage || undefined}>
+                  {activeRecording.errorMessage ? '处理失败' : '录制资源'}
+                </span>
                 <Button type="link" onClick={() => setActiveTab('transcript')}>
                   查看转写
                 </Button>

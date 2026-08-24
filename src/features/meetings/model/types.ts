@@ -12,13 +12,14 @@ import type {
   MeetingControllerGetMeetingRecordsPlatform,
   MeetingControllerGetMeetingRecordsStatus,
   MeetingControllerGetMeetingRecordsType,
+  MeetingRecordResponseDtoRecordingStatus,
 } from '../../../shared/lib/api/orval/business/schemas';
 
 export interface MeetingMinute {
   id: string;
   externalId?: string | null;
   source?: string;
-  status?: string;
+  errorMessage?: string | null;
   startAt?: string | null;
   endAt?: string | null;
 }
@@ -141,7 +142,7 @@ export interface Meeting {
   durationSeconds?: number | null;
   timezone?: string | null;
   hasRecording: boolean;
-  recordingStatus: MeetingControllerGetMeetingRecordsStatus;
+  recordingStatus: MeetingRecordResponseDtoRecordingStatus;
   processingStatus: MeetingControllerGetMeetingRecordsStatus;
   minutes?: MeetingMinute[];
   metadata?: unknown;
@@ -193,9 +194,6 @@ export interface CreateMeetingDto {
   actualStartAt?: string;
   endedAt?: string;
   durationSeconds?: number;
-  hasRecording?: boolean;
-  recordingStatus?: MeetingControllerGetMeetingRecordsStatus;
-  processingStatus?: MeetingControllerGetMeetingRecordsStatus;
 }
 
 export interface UpdateMeetingDto {
@@ -207,8 +205,6 @@ export interface UpdateMeetingDto {
   endedAt?: string;
   durationSeconds?: number;
   participantCount?: number;
-  recordingStatus?: MeetingControllerGetMeetingRecordsStatus;
-  processingStatus?: MeetingControllerGetMeetingRecordsStatus;
 }
 
 export interface MeetingStats {

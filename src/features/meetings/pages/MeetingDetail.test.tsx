@@ -32,7 +32,7 @@ const meeting: Meeting = {
   hasRecording: true,
   recordingStatus: 'COMPLETED',
   processingStatus: 'COMPLETED',
-  minutes: [{ id: 'recording-1', status: 'COMPLETED' }],
+  minutes: [{ id: 'recording-1', errorMessage: null }],
   createdAt: '2026-08-19T00:00:00.000Z',
   updatedAt: '2026-08-19T00:00:00.000Z',
 };
