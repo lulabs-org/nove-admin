@@ -10,12 +10,19 @@
  */
 import type { RouteConfig } from '../../shared/types/index';
 import { LoginPage } from './pages/LoginPage';
+import { OAuthConsentPage } from './oauth/OAuthConsentPage';
 
 export const authRoutes: RouteConfig[] = [
   {
     path: '/login',
     element: <LoginPage />,
     title: '登录',
+    hidden: true,
+  },
+  {
+    path: '/oauth/consent',
+    element: <OAuthConsentPage />,
+    title: 'CLI 授权',
     hidden: true,
   },
 ];

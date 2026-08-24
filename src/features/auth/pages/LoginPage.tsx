@@ -10,7 +10,7 @@ import Input from 'antd/es/input';
 import message from 'antd/es/message';
 import Tabs from 'antd/es/tabs';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { verificationControllerSend } from '../../../shared/lib/api/orval/business/auth';
 import './LoginPage.css';
@@ -27,6 +27,7 @@ const CAPABILITIES = ['身份与权限', '组织数据', '会议智能', '订单
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [form] = Form.useForm<LoginValues>();
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -53,7 +54,12 @@ export function LoginPage() {
         });
       }
       message.success('登录成功');
-      navigate('/');
+      const requestedReturnTo = searchParams.get('returnTo');
+      const returnTo =
+        requestedReturnTo?.startsWith('/') && !requestedReturnTo.startsWith('//')
+          ? requestedReturnTo
+          : '/';
+      navigate(returnTo, { replace: true });
     } catch {
       message.error('登录失败，请检查输入信息');
     } finally {
