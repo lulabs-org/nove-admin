@@ -2,6 +2,7 @@ import type {
   MeetingControllerGetMeetingRecordsPlatform,
   MeetingControllerGetMeetingRecordsStatus,
   MeetingControllerGetMeetingRecordsType,
+  MeetingRecordResponseDtoRecordingStatus,
 } from '../../../shared/lib/api/orval/business/schemas';
 
 export function formatDateTime(value: unknown) {
@@ -29,9 +30,12 @@ export function formatDuration(seconds?: number | null) {
   return `${remainingSeconds}秒`;
 }
 
-export function getProcessingStatusText(status?: MeetingControllerGetMeetingRecordsStatus) {
+export function getProcessingStatusText(
+  status?: MeetingControllerGetMeetingRecordsStatus | MeetingRecordResponseDtoRecordingStatus
+) {
   const statusMap: Record<string, { text: string; color: string }> = {
     PENDING: { text: '待处理', color: 'blue' },
+    RECORDING: { text: '录制中', color: 'processing' },
     PROCESSING: { text: '处理中', color: 'green' },
     COMPLETED: { text: '已完成', color: 'default' },
     FAILED: { text: '失败', color: 'red' },

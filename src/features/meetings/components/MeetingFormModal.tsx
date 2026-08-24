@@ -6,7 +6,6 @@ import InputNumber from 'antd/es/input-number';
 import Modal from 'antd/es/modal';
 import Row from 'antd/es/row';
 import Select from 'antd/es/select';
-import Switch from 'antd/es/switch';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { useEffect } from 'react';
@@ -21,9 +20,6 @@ interface FormValues {
   hostUserId?: string;
   timeRange?: [Dayjs, Dayjs];
   participantCount?: number;
-  hasRecording?: boolean;
-  recordingStatus?: CreateMeetingDto['recordingStatus'];
-  processingStatus?: CreateMeetingDto['processingStatus'];
 }
 
 interface Props {
@@ -53,14 +49,6 @@ const TYPE_OPTIONS = [
   ['网络研讨会', 'WEBINAR'],
 ].map(([label, value]) => ({ label, value }));
 
-const STATUS_OPTIONS = [
-  ['待处理', 'PENDING'],
-  ['处理中', 'PROCESSING'],
-  ['已完成', 'COMPLETED'],
-  ['失败', 'FAILED'],
-  ['已跳过', 'SKIPPED'],
-].map(([label, value]) => ({ label, value }));
-
 export function MeetingFormModal({ open, meeting, submitting, onCancel, onSubmit }: Props) {
   const [form] = Form.useForm<FormValues>();
 
@@ -80,16 +68,10 @@ export function MeetingFormModal({ open, meeting, submitting, onCancel, onSubmit
                 ? [dayjs(meeting.startAt), dayjs(meeting.endAt)]
                 : undefined,
             participantCount: meeting.participantCount ?? undefined,
-            hasRecording: meeting.hasRecording,
-            recordingStatus: meeting.recordingStatus,
-            processingStatus: meeting.processingStatus,
           }
         : {
             platform: 'TENCENT_MEETING',
             type: 'SCHEDULED',
-            hasRecording: false,
-            recordingStatus: 'PENDING',
-            processingStatus: 'PENDING',
           }
     );
   }, [form, meeting, open]);
@@ -107,8 +89,6 @@ export function MeetingFormModal({ open, meeting, submitting, onCancel, onSubmit
         values.timeRange?.[0] && values.timeRange?.[1]
           ? Math.max(0, values.timeRange[1].diff(values.timeRange[0], 'second'))
           : undefined,
-      recordingStatus: values.recordingStatus,
-      processingStatus: values.processingStatus,
     };
 
     if (meeting) {
@@ -120,7 +100,6 @@ export function MeetingFormModal({ open, meeting, submitting, onCancel, onSubmit
       ...shared,
       platform: values.platform,
       platformMeetingId: values.platformMeetingId?.trim(),
-      hasRecording: values.hasRecording,
     } as CreateMeetingDto);
   };
 
@@ -183,23 +162,7 @@ export function MeetingFormModal({ open, meeting, submitting, onCancel, onSubmit
                 <InputNumber min={0} precision={0} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-          ) : (
-            <Col span={12}>
-              <Form.Item name="hasRecording" label="是否有录制" valuePropName="checked">
-                <Switch />
-              </Form.Item>
-            </Col>
-          )}
-          <Col span={12}>
-            <Form.Item name="recordingStatus" label="录制处理状态">
-              <Select options={STATUS_OPTIONS} />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item name="processingStatus" label="会议处理状态">
-              <Select options={STATUS_OPTIONS} />
-            </Form.Item>
-          </Col>
+          ) : null}
         </Row>
       </Form>
     </Modal>
