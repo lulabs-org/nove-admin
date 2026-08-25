@@ -2,8 +2,7 @@ export interface AdminUserProfile {
   displayName: string | null;
   avatar: string | null;
   bio: string | null;
-  firstName: string | null;
-  lastName: string | null;
+  fullName: string | null;
   dateOfBirth: string | null;
   gender: UserGender | null;
   address: string | null;
@@ -55,8 +54,7 @@ export interface UserWritePayload {
   displayName?: string | null;
   avatar?: string | null;
   bio?: string | null;
-  firstName?: string | null;
-  lastName?: string | null;
+  fullName?: string | null;
   dateOfBirth?: string | null;
   gender?: UserGender | null;
   address?: string | null;
