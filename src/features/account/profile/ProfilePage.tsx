@@ -13,18 +13,18 @@ import message from 'antd/es/message';
 import axios from 'axios';
 import {
   ClockCircleOutlined,
+  EditOutlined,
   IdcardOutlined,
   MailOutlined,
   PhoneOutlined,
   ReloadOutlined,
   SafetyCertificateOutlined,
   SaveOutlined,
-  TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { getMe } from '../../auth/api/api';
 import { authService } from '../../auth/api/service';
 import { useAuthStore } from '../../auth/model/authStore';
@@ -136,6 +136,7 @@ function DetailItem({ icon, label, value }: DetailItemProps) {
 export function ProfilePage() {
   const queryClient = useQueryClient();
   const [form] = Form.useForm<ProfileFormValues>();
+  const [editingProfile, setEditingProfile] = useState(false);
   const user = useAuthStore((state) => state.user);
 
   const profileQuery = useQuery({
@@ -144,10 +145,10 @@ export function ProfilePage() {
   });
 
   useEffect(() => {
-    if (profileQuery.data) {
+    if (editingProfile && profileQuery.data) {
       form.setFieldsValue(toFormValues(profileQuery.data, user));
     }
-  }, [form, profileQuery.data, user]);
+  }, [editingProfile, form, profileQuery.data, user]);
 
   const saveProfileMutation = useMutation({
     mutationFn: (values: ProfileFormValues) => userControllerUpdateProfile(toUpdatePayload(values)),
@@ -164,6 +165,7 @@ export function ProfilePage() {
       }
 
       message.success('个人资料已保存');
+      setEditingProfile(false);
     },
     onError: (error) => {
       message.error(getErrorMessage(error, '保存个人资料失败'));
@@ -173,9 +175,19 @@ export function ProfilePage() {
   const profile = profileQuery.data;
   const displayName = getProfileName(profile, user);
   const avatar = profile?.profile?.avatar || user?.avatar;
-  const roles = user?.roles || [];
-  const permissions = user?.permissions || [];
-  const currentOrgId = user?.currentOrgId;
+  const username = profile?.username || user?.username;
+  const phone = profile?.phone
+    ? `${profile.countryCode ? `${profile.countryCode} ` : ''}${profile.phone}`
+    : '-';
+
+  const startEditing = () => {
+    setEditingProfile(true);
+  };
+
+  const cancelEditing = () => {
+    form.resetFields();
+    setEditingProfile(false);
+  };
 
   if (profileQuery.isLoading && !profile) {
     return (
@@ -197,141 +209,195 @@ export function ProfilePage() {
         />
       ) : null}
 
-      <section className="profile-identity-band">
+      <section className="profile-hero">
         <Avatar className="profile-avatar" size={76} src={avatar} icon={<UserOutlined />} />
-        <div className="profile-identity-main">
+        <div className="profile-hero-main">
           <Title level={4}>{displayName}</Title>
-          <Space size={[8, 8]} wrap>
-            <Tag color={user?.active ? 'green' : 'red'}>
-              {user?.active ? '账号启用' : '账号停用'}
-            </Tag>
-            {roles.length ? <Tag color="blue">角色 {roles.length}</Tag> : <Tag>暂无角色</Tag>}
-            <Tag color="cyan">权限 {permissions.length}</Tag>
-          </Space>
+          <Text className="profile-hero-username" type="secondary">
+            {username ? `@${username}` : '设置你的个人资料与联系方式'}
+          </Text>
+          <Text className="profile-hero-bio" type="secondary">
+            {profile?.profile?.bio || '完善个人资料，让协作成员更容易认识你。'}
+          </Text>
         </div>
-        <Button
-          className="profile-refresh-button"
-          icon={<ReloadOutlined />}
-          loading={profileQuery.isFetching}
-          onClick={() => profileQuery.refetch()}
-        >
-          刷新
-        </Button>
-        <div className="profile-identity-meta">
-          <DetailItem icon={<MailOutlined />} label="邮箱" value={displayText(profile?.email)} />
-          <DetailItem
-            icon={<PhoneOutlined />}
-            label="手机"
-            value={
-              profile?.phone
-                ? `${profile.countryCode ? `${profile.countryCode} ` : ''}${profile.phone}`
-                : '-'
-            }
-          />
-          <DetailItem
-            icon={<ClockCircleOutlined />}
-            label="最后登录"
-            value={formatDateTime(profile?.lastLoginAt || user?.lastLoginAt)}
-          />
-        </div>
+        <Space className="profile-hero-actions" size="small">
+          <Button
+            icon={<ReloadOutlined />}
+            loading={profileQuery.isFetching}
+            onClick={() => profileQuery.refetch()}
+          >
+            刷新
+          </Button>
+          {!editingProfile ? (
+            <Button type="primary" icon={<EditOutlined />} onClick={startEditing}>
+              编辑资料
+            </Button>
+          ) : null}
+        </Space>
       </section>
 
       <div className="profile-content">
-        <section className="profile-form-panel">
+        <section className="profile-panel profile-form-panel">
           <div className="profile-section-heading">
             <IdcardOutlined />
-            <span>基础资料</span>
-          </div>
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={(values) => saveProfileMutation.mutate(values)}
-            requiredMark={false}
-          >
-            <Row gutter={16}>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  name="displayName"
-                  label="显示名称"
-                  rules={[{ required: true, message: '请输入显示名称' }]}
-                >
-                  <Input placeholder="用于页面顶部和成员列表展示" maxLength={100} />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  name="username"
-                  label="用户名"
-                  rules={[
-                    { min: 3, message: '用户名至少3个字符' },
-                    {
-                      pattern: /^[a-zA-Z0-9_]+$/,
-                      message: '用户名只能包含字母、数字和下划线',
-                    },
-                  ]}
-                >
-                  <Input placeholder="例如 yangshiming" maxLength={50} />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  name="email"
-                  label="邮箱"
-                  rules={[{ type: 'email', message: '邮箱格式不正确' }]}
-                >
-                  <Input placeholder="name@example.com" />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Row gutter={8}>
-                  <Col span={8}>
-                    <Form.Item name="countryCode" label="国家代码">
-                      <Input placeholder="+86" maxLength={10} />
-                    </Form.Item>
-                  </Col>
-                  <Col span={16}>
-                    <Form.Item name="phone" label="手机号">
-                      <Input placeholder="13800138000" maxLength={20} />
-                    </Form.Item>
-                  </Col>
-                </Row>
-              </Col>
-              <Col span={24}>
-                <Form.Item name="avatar" label="头像 URL">
-                  <Input placeholder="https://example.com/avatar.png" maxLength={500} />
-                </Form.Item>
-              </Col>
-              <Col span={24}>
-                <Form.Item name="bio" label="个人简介">
-                  <TextArea
-                    placeholder="补充你的职责、协作范围或联系方式说明"
-                    rows={4}
-                    maxLength={500}
-                    showCount
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-            <div className="profile-form-actions">
-              <Button onClick={() => form.setFieldsValue(toFormValues(profile, user))}>重置</Button>
-              <Button
-                type="primary"
-                htmlType="submit"
-                icon={<SaveOutlined />}
-                loading={saveProfileMutation.isPending}
-              >
-                保存资料
-              </Button>
+            <div>
+              <span>{editingProfile ? '编辑个人资料' : '个人资料'}</span>
+              <Text type="secondary">
+                {editingProfile ? '更新你的公开信息、登录账号与联系方式' : '查看你的个人和账号信息'}
+              </Text>
             </div>
-          </Form>
+          </div>
+          {editingProfile ? (
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={(values) => saveProfileMutation.mutate(values)}
+              requiredMark={false}
+            >
+              <div className="profile-form-group-heading">
+                <span>公开信息</span>
+                <Text type="secondary">这些信息会用于系统内的成员识别</Text>
+              </div>
+              <Row gutter={16}>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    name="displayName"
+                    label="用户昵称"
+                    rules={[{ required: true, message: '请输入用户昵称' }]}
+                  >
+                    <Input placeholder="用于页面顶部和成员列表展示的昵称" maxLength={100} />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item name="avatar" label="头像 URL">
+                    <Input placeholder="https://example.com/avatar.png" maxLength={500} />
+                  </Form.Item>
+                </Col>
+                <Col span={24}>
+                  <Form.Item name="bio" label="个人简介">
+                    <TextArea
+                      placeholder="补充你的职责、协作范围或联系方式说明"
+                      rows={3}
+                      maxLength={500}
+                      showCount
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <div className="profile-form-group-heading profile-form-group-heading-divided">
+                <span>账号与联系方式</span>
+                <Text type="secondary">用于登录、通知与账号找回</Text>
+              </div>
+              <Row gutter={16}>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    name="username"
+                    label="用户名"
+                    rules={[
+                      { min: 3, message: '用户名至少3个字符' },
+                      {
+                        pattern: /^[a-zA-Z0-9_]+$/,
+                        message: '用户名只能包含字母、数字和下划线',
+                      },
+                    ]}
+                  >
+                    <Input placeholder="例如 yangshiming" maxLength={50} />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    name="email"
+                    label="邮箱"
+                    rules={[{ type: 'email', message: '邮箱格式不正确' }]}
+                  >
+                    <Input placeholder="name@example.com" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Row gutter={8}>
+                    <Col span={8}>
+                      <Form.Item name="countryCode" label="区号">
+                        <Input placeholder="+86" maxLength={10} />
+                      </Form.Item>
+                    </Col>
+                    <Col span={16}>
+                      <Form.Item name="phone" label="手机号">
+                        <Input placeholder="13800138000" maxLength={20} />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </Col>
+              </Row>
+              <div className="profile-form-actions">
+                <Button onClick={cancelEditing}>取消</Button>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  icon={<SaveOutlined />}
+                  loading={saveProfileMutation.isPending}
+                >
+                  保存资料
+                </Button>
+              </div>
+            </Form>
+          ) : (
+            <div className="profile-view-groups">
+              <section className="profile-view-section">
+                <div className="profile-form-group-heading">
+                  <span>公开信息</span>
+                  <Text type="secondary">用于系统内的成员识别</Text>
+                </div>
+                <div className="profile-view-list">
+                  <DetailItem icon={<UserOutlined />} label="用户昵称" value={displayName} />
+                  <DetailItem
+                    icon={<IdcardOutlined />}
+                    label="个人简介"
+                    value={displayText(profile?.profile?.bio)}
+                  />
+                </div>
+              </section>
+              <section className="profile-view-section">
+                <div className="profile-form-group-heading profile-form-group-heading-divided">
+                  <span>账号与联系方式</span>
+                  <Text type="secondary">登录、通知与账号找回信息</Text>
+                </div>
+                <div className="profile-view-list">
+                  <DetailItem
+                    icon={<UserOutlined />}
+                    label="用户名"
+                    value={username ? `@${username}` : '-'}
+                  />
+                  <DetailItem
+                    icon={<MailOutlined />}
+                    label="邮箱"
+                    value={displayText(profile?.email)}
+                  />
+                  <DetailItem icon={<PhoneOutlined />} label="手机号" value={phone} />
+                </div>
+              </section>
+            </div>
+          )}
         </section>
 
-        <aside className="profile-side-panel">
+        <aside className="profile-panel profile-side-panel">
           <div className="profile-section-heading">
             <SafetyCertificateOutlined />
-            <span>账号状态</span>
+            <div>
+              <span>账号与安全</span>
+              <Text type="secondary">查看账号状态和最近活动</Text>
+            </div>
           </div>
           <div className="profile-status-list">
+            <DetailItem
+              icon={<SafetyCertificateOutlined />}
+              label="账号状态"
+              value={
+                <Tag color={user?.active ? 'green' : 'red'}>
+                  {user?.active ? '已启用' : '已停用'}
+                </Tag>
+              }
+            />
             <DetailItem
               icon={<MailOutlined />}
               label="邮箱验证"
@@ -351,45 +417,15 @@ export function ProfilePage() {
               }
             />
             <DetailItem
-              icon={<UserOutlined />}
-              label="用户 ID"
-              value={displayText(profile?.id || user?.id)}
+              icon={<ClockCircleOutlined />}
+              label="最后登录"
+              value={formatDateTime(profile?.lastLoginAt || user?.lastLoginAt)}
             />
             <DetailItem
               icon={<ClockCircleOutlined />}
-              label="创建时间"
+              label="注册时间"
               value={formatDateTime(profile?.createdAt)}
             />
-          </div>
-
-          <div className="profile-section-heading profile-section-heading-spaced">
-            <TeamOutlined />
-            <span>组织身份</span>
-          </div>
-          <div className="profile-role-list">
-            <div className="profile-role-row">
-              <Text type="secondary">当前组织</Text>
-              <Text className="profile-code-text">{displayText(currentOrgId)}</Text>
-            </div>
-            <div className="profile-role-row">
-              <Text type="secondary">角色</Text>
-              <Space size={[6, 6]} wrap>
-                {roles.length ? roles.map((role) => <Tag key={role}>{role}</Tag>) : <Text>-</Text>}
-              </Space>
-            </div>
-            <div className="profile-permission-preview">
-              <Text type="secondary">权限概览</Text>
-              <div className="profile-permission-tags">
-                {permissions.length ? (
-                  permissions
-                    .slice(0, 10)
-                    .map((permission) => <Tag key={permission}>{permission}</Tag>)
-                ) : (
-                  <Text>-</Text>
-                )}
-                {permissions.length > 10 ? <Tag>+{permissions.length - 10}</Tag> : null}
-              </div>
-            </div>
           </div>
         </aside>
       </div>
