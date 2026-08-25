@@ -79,6 +79,7 @@ interface PermissionFormValues {
   level?: number | null;
   sortOrder?: number | null;
   active?: boolean;
+  oauthDelegatable?: boolean;
 }
 
 interface DataRuleFormValues {
@@ -255,6 +256,7 @@ export function PermissionManagement() {
         level: values.level ?? 1,
         sortOrder: values.sortOrder ?? 0,
         active: values.active ?? true,
+        oauthDelegatable: values.oauthDelegatable ?? false,
       };
 
       if (permissionModalMode === 'edit' && editingPermission) {
@@ -365,6 +367,7 @@ export function PermissionManagement() {
       level: parentId ? 2 : 1,
       sortOrder: 0,
       active: true,
+      oauthDelegatable: false,
     });
     setPermissionModalOpen(true);
   };
@@ -383,6 +386,7 @@ export function PermissionManagement() {
       level: permission.level,
       sortOrder: permission.sortOrder,
       active: permission.active,
+      oauthDelegatable: permission.oauthDelegatable,
     });
     setPermissionModalOpen(true);
   };
@@ -918,6 +922,14 @@ export function PermissionManagement() {
             </Form.Item>
             <Form.Item label="启用状态" name="active" valuePropName="checked">
               <Switch checkedChildren="启用" unCheckedChildren="停用" />
+            </Form.Item>
+            <Form.Item
+              label="OAuth 委托"
+              name="oauthDelegatable"
+              valuePropName="checked"
+              tooltip="启用后，该权限可被配置为 OAuth 客户端 Scope"
+            >
+              <Switch checkedChildren="可委托" unCheckedChildren="不可委托" />
             </Form.Item>
           </Space>
           <Form.Item label="权限说明" name="description">
