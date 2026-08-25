@@ -37,7 +37,10 @@ export function generateRoutes(routeConfigs: RouteConfig[]): RouteObject[] {
 
 export function createAppRouter(routeConfigs: RouteConfig[]) {
   const publicRoutes = routeConfigs.filter((route) => route.path === '/login');
-  const adminRoutes = routeConfigs.filter((route) => route.path !== '/login');
+  const consentRoutes = routeConfigs.filter((route) => route.path === '/oauth/consent');
+  const adminRoutes = routeConfigs.filter(
+    (route) => route.path !== '/login' && route.path !== '/oauth/consent'
+  );
 
   const routes: RouteObject[] = [
     {
@@ -50,6 +53,17 @@ export function createAppRouter(routeConfigs: RouteConfig[]) {
         </PublicRoute>
       ),
       children: generateRoutes(publicRoutes),
+    },
+    {
+      path: '/oauth/consent',
+      element: (
+        <ProtectedRoute>
+          <PublicLayout>
+            <Outlet />
+          </PublicLayout>
+        </ProtectedRoute>
+      ),
+      children: generateRoutes(consentRoutes),
     },
     {
       path: '/',

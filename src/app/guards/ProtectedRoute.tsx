@@ -11,7 +11,7 @@
 import { useAuth } from '../../shared/hooks/useAuth';
 import Result from 'antd/es/result';
 import Button from 'antd/es/button';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -20,6 +20,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, permission }: ProtectedRouteProps) {
   const { isAuthenticated, loading, checkPermission } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -32,7 +33,8 @@ export function ProtectedRoute({ children, permission }: ProtectedRouteProps) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    const returnTo = `${location.pathname}${location.search}`;
+    return <Navigate to={`/login?returnTo=${encodeURIComponent(returnTo)}`} replace />;
   }
 
   if (permission && !checkPermission(permission)) {
