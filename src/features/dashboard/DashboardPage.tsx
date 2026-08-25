@@ -8,7 +8,7 @@
  *
  * Copyright (c) 2026 by LuLab-Team, All Rights Reserved.
  */
-import { Avatar, Divider, Skeleton, Spin } from 'antd';
+import { Skeleton, Spin } from 'antd';
 import {
   CalendarOutlined,
   IdcardOutlined,
@@ -16,7 +16,6 @@ import {
   ScheduleOutlined,
   SettingOutlined,
   TeamOutlined,
-  UserOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../shared/hooks/useAuth';
@@ -24,12 +23,6 @@ import { PERMISSIONS } from '../../shared/utils/permissions';
 import { useOrganizationControllerGetOrganization } from '../../shared/lib/api/orval/business/admin-organizations';
 import { useOrganizationControllerGetOrganizationStats } from '../../shared/lib/api/orval/business/admin-organizations';
 import './DashboardPage.css';
-
-function getAvatarText(name: string) {
-  const trimmed = name.trim();
-  if (!trimmed) return '?';
-  return trimmed.length > 2 ? trimmed.slice(-2) : trimmed;
-}
 
 interface StatCardProps {
   label: string;
@@ -93,8 +86,6 @@ export function DashboardPage() {
   const orgName = org?.name || orgId || '-';
   const orgDisplayId = orgId || '-';
   const firstChar = orgName.trim().charAt(0) || '?';
-  const displayName = user?.name || user?.username || user?.email || '用户';
-
   const quickLinks: QuickLinkProps[] = [];
   if (checkPermission(PERMISSIONS.USER.READ)) {
     quickLinks.push({
@@ -150,24 +141,6 @@ export function DashboardPage() {
           <div>
             <div className="dashboard-org-name">{orgName}</div>
             <div className="dashboard-org-id">组织编号：{orgDisplayId}</div>
-          </div>
-        </div>
-
-        <Divider style={{ margin: '16px 0 12px' }} />
-
-        {/* User info */}
-        <div className="dashboard-user-info">
-          <Avatar
-            size={48}
-            src={user?.avatar || undefined}
-            style={{ backgroundColor: '#3370ff', flexShrink: 0 }}
-            icon={!user?.avatar && !displayName ? <UserOutlined /> : undefined}
-          >
-            {getAvatarText(displayName)}
-          </Avatar>
-          <div className="dashboard-user-detail">
-            <div className="dashboard-user-name">{displayName}</div>
-            <div className="dashboard-user-email">{user?.email || '-'}</div>
           </div>
         </div>
       </div>

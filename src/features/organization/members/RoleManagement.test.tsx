@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import { RoleManagement } from './RoleManagement';
@@ -112,5 +112,81 @@ describe('RoleManagement', () => {
 
     expect(await screen.findByText('杨仕明')).toHaveClass('org-role-member-name-text');
     expect(screen.getByText('仕明')).not.toHaveClass('org-role-member-name-text');
+  });
+
+  it('groups permissions by resource and can show only selected permissions', async () => {
+    apiMocks.listRoles.mockResolvedValue({
+      data: [
+        {
+          id: 'role-2',
+          name: '师傅',
+          code: 'MENTOR',
+          type: 'CUSTOM',
+          level: 10,
+          active: true,
+          permissionIds: ['permission-user-read'],
+          createdAt: '2026-08-25T00:00:00.000Z',
+          updatedAt: '2026-08-25T00:00:00.000Z',
+        },
+      ],
+      total: 1,
+      page: 1,
+      pageSize: 100,
+      totalPages: 1,
+    });
+    apiMocks.permissionTree.mockResolvedValue([
+      {
+        id: 'permission-user-read',
+        name: '查看用户',
+        code: 'user:read',
+        resource: 'user',
+        action: 'read',
+        type: 'MENU',
+        active: true,
+        children: [],
+      },
+      {
+        id: 'permission-user-create',
+        name: '创建用户',
+        code: 'user:create',
+        resource: 'user',
+        action: 'create',
+        type: 'BUTTON',
+        active: true,
+        children: [],
+      },
+      {
+        id: 'permission-meeting-read',
+        name: '查看会议',
+        code: 'meeting:read',
+        resource: 'meeting',
+        action: 'read',
+        type: 'MENU',
+        active: true,
+        children: [],
+      },
+    ]);
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RoleManagement />
+      </QueryClientProvider>
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: /配置权限/ }));
+    expect(await screen.findByRole('complementary', { name: '权限分类' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /用户管理/ }));
+    expect(screen.getByText('查看用户')).toBeInTheDocument();
+    expect(screen.getByText('创建用户')).toBeInTheDocument();
+    expect(screen.queryByText('查看会议')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '仅看已选' }));
+    expect(screen.getByText('查看用户')).toBeInTheDocument();
+    expect(screen.queryByText('创建用户')).not.toBeInTheDocument();
   });
 });

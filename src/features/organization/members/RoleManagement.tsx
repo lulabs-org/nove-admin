@@ -23,6 +23,7 @@ import {
   EditOutlined,
   EllipsisOutlined,
   ExportOutlined,
+  FolderOutlined,
   ImportOutlined,
   PlusOutlined,
   SafetyCertificateOutlined,
@@ -69,6 +70,12 @@ interface FlatPermission extends PermissionItem {
   depth: number;
 }
 
+interface PermissionResourceGroup {
+  resource: string;
+  label: string;
+  permissions: FlatPermission[];
+}
+
 const ROLE_TYPE_META: Record<string, { label: string; color: string }> = {
   SYSTEM: { label: '系统角色', color: 'blue' },
   CUSTOM: { label: '自定义', color: 'default' },
@@ -80,6 +87,32 @@ const PERMISSION_TYPE_META: Record<string, { label: string; color: string }> = {
   API: { label: '接口', color: 'blue' },
   DATA: { label: '数据', color: 'cyan' },
   FIELD: { label: '字段', color: 'gold' },
+};
+
+const PERMISSION_RESOURCE_LABELS: Record<string, string> = {
+  'api-key': 'API Keys',
+  channel: '渠道管理',
+  dashboard: '企业概览',
+  'data-permission': '数据权限',
+  dept: '部门管理',
+  finance: '财务管理',
+  'mcp-tool': 'MCP 工具',
+  meeting: '会议管理',
+  minute: '会议纪要',
+  'minute-summary': '纪要总结',
+  'oauth-client': 'OAuth 客户端',
+  order: '订单管理',
+  'order-refund': '订单售后',
+  org: '组织管理',
+  'org-member': '组织成员',
+  permission: '权限资源',
+  'platform-user': '平台用户',
+  product: '产品管理',
+  role: '角色管理',
+  'speaker-summary': '参会者总结',
+  system: '系统配置',
+  'tracking-report': '追踪报告',
+  user: '用户管理',
 };
 
 const AVATAR_COLORS = ['#3370ff', '#00a870', '#ff8800', '#7b61ff', '#e65050', '#14a9a0'];
@@ -130,25 +163,6 @@ function collectPermissionIds(permission: PermissionItem): string[] {
   ];
 }
 
-function filterPermissionTree(tree: PermissionItem[], keyword: string): PermissionItem[] {
-  const value = keyword.trim().toLowerCase();
-  if (!value) return tree;
-
-  return tree.reduce<PermissionItem[]>((matchedPermissions, permission) => {
-    const children = filterPermissionTree(permission.children || [], keyword);
-    const matched =
-      permission.name.toLowerCase().includes(value) ||
-      permission.code.toLowerCase().includes(value) ||
-      permission.resource.toLowerCase().includes(value);
-
-    if (matched || children.length) {
-      matchedPermissions.push({ ...permission, children });
-    }
-
-    return matchedPermissions;
-  }, []);
-}
-
 function downloadCsv(filename: string, rows: string[][]) {
   const csv = rows
     .map((row) =>
@@ -189,6 +203,8 @@ export function RoleManagement() {
   const [addMemberOpen, setAddMemberOpen] = useState(false);
   const [permissionModalOpen, setPermissionModalOpen] = useState(false);
   const [permissionKeyword, setPermissionKeyword] = useState('');
+  const [permissionResource, setPermissionResource] = useState('all');
+  const [showSelectedPermissions, setShowSelectedPermissions] = useState(false);
   const [permissionCheckedKeys, setPermissionCheckedKeys] = useState<string[]>([]);
 
   const [roleForm] = Form.useForm<RoleFormValues>();
@@ -251,14 +267,42 @@ export function RoleManagement() {
 
   const permissionTree = useMemo(() => permissionTreeQuery.data || [], [permissionTreeQuery.data]);
   const flatPermissions = useMemo(() => flattenPermissionTree(permissionTree), [permissionTree]);
-  const filteredPermissionTree = useMemo(
-    () => filterPermissionTree(permissionTree, permissionKeyword),
-    [permissionKeyword, permissionTree]
-  );
   const checkedPermissionSet = useMemo(
     () => new Set(permissionCheckedKeys),
     [permissionCheckedKeys]
   );
+  const permissionResourceGroups = useMemo(() => {
+    const groups = new Map<string, FlatPermission[]>();
+    flatPermissions.forEach((permission) => {
+      const resource = permission.resource || 'other';
+      groups.set(resource, [...(groups.get(resource) || []), permission]);
+    });
+    return Array.from(groups.entries())
+      .map<PermissionResourceGroup>(([resource, permissions]) => ({
+        resource,
+        label: PERMISSION_RESOURCE_LABELS[resource] || resource,
+        permissions,
+      }))
+      .sort((first, second) => first.label.localeCompare(second.label, 'zh-CN'));
+  }, [flatPermissions]);
+  const visiblePermissions = useMemo(() => {
+    const keyword = permissionKeyword.trim().toLowerCase();
+    return flatPermissions.filter((permission) => {
+      const resource = permission.resource || 'other';
+      if (permissionResource !== 'all' && resource !== permissionResource) return false;
+      if (showSelectedPermissions && !checkedPermissionSet.has(permission.id)) return false;
+      if (!keyword) return true;
+      return [permission.name, permission.code, resource].some((value) =>
+        (value || '').toLowerCase().includes(keyword)
+      );
+    });
+  }, [
+    checkedPermissionSet,
+    flatPermissions,
+    permissionKeyword,
+    permissionResource,
+    showSelectedPermissions,
+  ]);
 
   const roleMembers = membersQuery.data?.data || [];
   const eligibleMembers = eligibleMembersQuery.data?.data || [];
@@ -386,16 +430,18 @@ export function RoleManagement() {
     if (!selectedRole) return;
     setPermissionCheckedKeys(selectedRole.permissionIds || []);
     setPermissionKeyword('');
+    setPermissionResource('all');
+    setShowSelectedPermissions(false);
     setPermissionModalOpen(true);
   };
 
   const handlePermissionCheck = (permission: PermissionItem, checked: boolean) => {
-    const ids = collectPermissionIds(permission);
+    const permissionIds = collectPermissionIds(permission);
     setPermissionCheckedKeys((prev) => {
       const next = new Set(prev);
-      ids.forEach((id) => {
-        if (checked) next.add(id);
-        else next.delete(id);
+      permissionIds.forEach((permissionId) => {
+        if (checked) next.add(permissionId);
+        else next.delete(permissionId);
       });
       return Array.from(next);
     });
@@ -602,16 +648,17 @@ export function RoleManagement() {
     });
   };
 
-  const renderPermissionNodes = (nodes: PermissionItem[], depth = 0) => {
-    if (!nodes.length) {
-      return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无权限" />;
+  const renderPermissions = (permissions: FlatPermission[]) => {
+    if (!permissions.length) {
+      return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="当前范围暂无权限" />;
     }
 
-    return nodes.map((permission) => {
-      const ids = collectPermissionIds(permission);
-      const checkedCount = ids.filter((id) => checkedPermissionSet.has(id)).length;
+    return permissions.map((permission) => {
+      const descendantIds = collectPermissionIds(permission);
+      const selectedDescendantCount = descendantIds.filter((id) =>
+        checkedPermissionSet.has(id)
+      ).length;
       const checked = checkedPermissionSet.has(permission.id);
-      const indeterminate = !checked && checkedCount > 0;
       const typeMeta = PERMISSION_TYPE_META[permission.type] || {
         label: permission.type,
         color: 'default',
@@ -619,19 +666,21 @@ export function RoleManagement() {
 
       return (
         <div key={permission.id} className="org-role-permission-node">
-          <label className="org-role-permission-node-main" style={{ paddingLeft: depth * 20 }}>
+          <label className="org-role-permission-node-main">
             <Checkbox
               checked={checked}
-              indeterminate={indeterminate}
+              indeterminate={!checked && selectedDescendantCount > 0}
               onChange={(event) => handlePermissionCheck(permission, event.target.checked)}
             />
-            <span className="org-role-permission-name">{permission.name}</span>
-            <span className="org-role-permission-code">{permission.code}</span>
+            <span
+              className="org-role-permission-copy"
+              style={{ paddingLeft: permission.depth * 12 }}
+            >
+              <span className="org-role-permission-name">{permission.name}</span>
+              <span className="org-role-permission-code">{permission.code}</span>
+            </span>
             <Tag color={typeMeta.color}>{typeMeta.label}</Tag>
           </label>
-          {permission.children?.length
-            ? renderPermissionNodes(permission.children, depth + 1)
-            : null}
         </div>
       );
     });
@@ -873,10 +922,12 @@ export function RoleManagement() {
         onCancel={() => {
           setPermissionModalOpen(false);
           setPermissionKeyword('');
+          setPermissionResource('all');
+          setShowSelectedPermissions(false);
         }}
         okText="保存"
         cancelText="取消"
-        width={760}
+        width={960}
         confirmLoading={updateRolePermissionsMutation.isPending}
         destroyOnHidden
       >
@@ -891,25 +942,91 @@ export function RoleManagement() {
             />
             <Space size="small">
               <Button
-                onClick={() => setPermissionCheckedKeys(flatPermissions.map((item) => item.id))}
-                disabled={!flatPermissions.length}
+                onClick={() => {
+                  setPermissionCheckedKeys((current) =>
+                    Array.from(new Set([...current, ...visiblePermissions.map((item) => item.id)]))
+                  );
+                }}
+                disabled={!visiblePermissions.length}
               >
-                全选
+                选择当前结果
               </Button>
-              <Button onClick={() => setPermissionCheckedKeys([])}>清空</Button>
+              <Button
+                onClick={() => {
+                  const visibleIds = new Set(visiblePermissions.map((item) => item.id));
+                  setPermissionCheckedKeys((current) =>
+                    current.filter((id) => !visibleIds.has(id))
+                  );
+                }}
+                disabled={!visiblePermissions.some((item) => checkedPermissionSet.has(item.id))}
+              >
+                清除当前结果
+              </Button>
             </Space>
           </div>
           <div className="org-role-permission-summary">
             <Text type="secondary">
               已选择 {permissionCheckedKeys.length} / {flatPermissions.length} 项权限
             </Text>
+            <Button
+              type={showSelectedPermissions ? 'primary' : 'text'}
+              size="small"
+              onClick={() => setShowSelectedPermissions((current) => !current)}
+            >
+              {showSelectedPermissions ? '查看全部' : '仅看已选'}
+            </Button>
           </div>
-          <div className="org-role-permission-tree">
-            {permissionTreeQuery.isLoading ? (
-              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="权限加载中" />
-            ) : (
-              renderPermissionNodes(filteredPermissionTree)
-            )}
+          <div className="org-role-permission-browser">
+            <aside className="org-role-permission-groups" aria-label="权限分类">
+              <button
+                type="button"
+                className={`org-role-permission-group${permissionResource === 'all' ? ' is-active' : ''}`}
+                onClick={() => setPermissionResource('all')}
+              >
+                <span>
+                  <FolderOutlined /> 全部权限
+                </span>
+                <span>{flatPermissions.length}</span>
+              </button>
+              {permissionResourceGroups.map((group) => {
+                const selectedCount = group.permissions.filter((permission) =>
+                  checkedPermissionSet.has(permission.id)
+                ).length;
+                return (
+                  <button
+                    type="button"
+                    key={group.resource}
+                    className={`org-role-permission-group${permissionResource === group.resource ? ' is-active' : ''}`}
+                    onClick={() => setPermissionResource(group.resource)}
+                  >
+                    <span>{group.label}</span>
+                    <span>
+                      {selectedCount ? `${selectedCount}/` : ''}
+                      {group.permissions.length}
+                    </span>
+                  </button>
+                );
+              })}
+            </aside>
+            <div className="org-role-permission-list">
+              <div className="org-role-permission-list-header">
+                <Text strong>
+                  {permissionResource === 'all'
+                    ? '全部权限'
+                    : permissionResourceGroups.find(
+                        (group) => group.resource === permissionResource
+                      )?.label || permissionResource}
+                </Text>
+                <Text type="secondary">{visiblePermissions.length} 项</Text>
+              </div>
+              <div className="org-role-permission-tree">
+                {permissionTreeQuery.isLoading ? (
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="权限加载中" />
+                ) : (
+                  renderPermissions(visiblePermissions)
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </Modal>

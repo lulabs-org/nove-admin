@@ -1,0 +1,99 @@
+.system-config-page {
+  width: min(100%, 920px);
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.system-config-tabs > .ant-tabs-nav {
+  margin-bottom: 16px;
+}
+
+.system-config-card {
+  overflow: hidden;
+  border-color: #e5e6eb;
+  border-radius: 10px;
+}
+
+.system-config-card .ant-card-head {
+  min-height: 72px;
+  padding: 0 24px;
+}
+
+.system-config-card .ant-card-body {
+  padding: 24px;
+}
+
+.system-config-card-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 0;
+}
+
+.system-config-card-heading > span:first-child {
+  color: #1f2329;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.system-config-card-heading > span:last-child {
+  color: #8f959e;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.system-config-secret-tip {
+  margin-bottom: 24px;
+  border: 0;
+  background: #f5f8ff;
+}
+
+.system-config-form .ant-form-item {
+  margin-bottom: 20px;
+}
+
+.system-config-switch-row {
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 12px 16px;
+  border: 1px solid #e5e6eb;
+  border-radius: 8px;
+  background: #fafbfc;
+}
+
+.system-config-switch-title {
+  color: #1f2329;
+  font-weight: 500;
+}
+
+.system-config-switch-description {
+  margin-top: 3px;
+  color: #8f959e;
+  font-size: 12px;
+}
+
+.system-config-divider {
+  margin: 24px 0 20px;
+}
+
+.system-config-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+@media (max-width: 720px) {
+  .system-config-page {
+    padding: 16px 0;
+  }
+
+  .system-config-card .ant-card-head,
+  .system-config-card .ant-card-body {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+}

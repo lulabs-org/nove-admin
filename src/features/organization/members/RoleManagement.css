@@ -197,12 +197,83 @@
   min-height: 22px;
 }
 
-.org-role-permission-tree {
-  max-height: 440px;
-  overflow: auto;
-  border: 1px solid #eff0f1;
-  border-radius: 6px;
+.org-role-permission-browser {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  min-height: 420px;
+  overflow: hidden;
+  border: 1px solid #e5e6eb;
+  border-radius: 8px;
   background: #fff;
+}
+
+.org-role-permission-groups {
+  max-height: 460px;
+  overflow: auto;
+  padding: 8px;
+  border-right: 1px solid #eff0f1;
+  background: #f7f8fa;
+}
+
+.org-role-permission-group {
+  display: flex;
+  width: 100%;
+  min-height: 36px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #4e5969;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.org-role-permission-group:hover {
+  background: #eef1f5;
+}
+
+.org-role-permission-group.is-active {
+  background: #e8f1ff;
+  color: #1664ff;
+  font-weight: 600;
+}
+
+.org-role-permission-group > span:first-child {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.org-role-permission-group > span:last-child {
+  flex: none;
+  color: #8f959e;
+  font-variant-numeric: tabular-nums;
+}
+
+.org-role-permission-list {
+  min-width: 0;
+}
+
+.org-role-permission-list-header {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid #eff0f1;
+}
+
+.org-role-permission-tree {
+  max-height: 416px;
+  overflow: auto;
 }
 
 .org-role-permission-node {
@@ -211,17 +282,24 @@
 
 .org-role-permission-node-main {
   display: grid;
-  grid-template-columns: auto minmax(96px, 0.8fr) minmax(120px, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
-  min-height: 40px;
-  padding: 0 12px;
+  min-height: 52px;
+  padding: 6px 16px;
   border-bottom: 1px solid #f2f3f5;
   cursor: pointer;
 }
 
 .org-role-permission-node-main:hover {
   background: #f7f8fa;
+}
+
+.org-role-permission-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .org-role-permission-name {
@@ -270,11 +348,22 @@
     grid-template-columns: 1fr;
   }
 
-  .org-role-permission-node-main {
-    grid-template-columns: auto minmax(90px, 1fr) auto;
+  .org-role-permission-browser {
+    grid-template-columns: 1fr;
   }
 
-  .org-role-permission-code {
-    display: none;
+  .org-role-permission-groups {
+    display: flex;
+    max-height: none;
+    overflow-x: auto;
+    padding: 8px;
+    border-right: 0;
+    border-bottom: 1px solid #eff0f1;
+  }
+
+  .org-role-permission-group {
+    width: auto;
+    flex: none;
+    gap: 12px;
   }
 }
