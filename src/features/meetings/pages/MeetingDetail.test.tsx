@@ -165,7 +165,8 @@ describe('MeetingDetail', () => {
           id: 'summary-1',
           minuteId: 'recording-1',
           platformUserId: 'platform-user-1',
-          partSummary: '完成了产品复盘汇报。',
+          partSummary:
+            '**角色与参与度**\n\n- 完成了产品复盘汇报。\n- [查看资料](https://example.com)\n\n<script>window.__unsafe = true</script>',
           keywords: ['产品复盘'],
           createdAt: '2026-08-19T03:00:00.000Z',
           updatedAt: '2026-08-19T03:00:00.000Z',
@@ -191,6 +192,12 @@ describe('MeetingDetail', () => {
     expect(await screen.findByText('张三')).toBeInTheDocument();
     expect(screen.getByText('zhangsan@example.com')).toBeInTheDocument();
     fireEvent.click(await screen.findByRole('button', { name: '查看总结' }));
-    expect(await screen.findByText('完成了产品复盘汇报。')).toBeInTheDocument();
+    expect(await screen.findByText('角色与参与度')).toHaveProperty('tagName', 'STRONG');
+    expect(screen.getByText('完成了产品复盘汇报。')).toHaveProperty('tagName', 'LI');
+    expect(screen.getByRole('link', { name: '查看资料' })).toHaveAttribute(
+      'href',
+      'https://example.com'
+    );
+    expect(document.querySelector('.meeting-participant-summary-content script')).toBeNull();
   });
 });

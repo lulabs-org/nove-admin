@@ -141,7 +141,12 @@
   font-weight: 600;
 }
 
-.org-role-member-name span {
+.org-role-member-name .ant-avatar {
+  flex: none;
+}
+
+.org-role-member-name-text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

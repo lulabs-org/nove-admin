@@ -507,7 +507,7 @@ export function RoleManagement() {
             >
               {getAvatarText(name)}
             </Avatar>
-            <span>{name}</span>
+            <span className="org-role-member-name-text">{name}</span>
           </span>
         );
       },
