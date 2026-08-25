@@ -196,11 +196,78 @@
   background: #f7f9fd;
 }
 
-.meeting-participant-summary p {
+.meeting-participant-summary-content {
   margin: 8px 0 6px;
   color: #2d3748;
   line-height: 1.7;
-  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.meeting-participant-summary-content > :first-child {
+  margin-top: 0;
+}
+
+.meeting-participant-summary-content > :last-child {
+  margin-bottom: 0;
+}
+
+.meeting-participant-summary-content h1,
+.meeting-participant-summary-content h2,
+.meeting-participant-summary-content h3,
+.meeting-participant-summary-content h4 {
+  margin: 14px 0 6px;
+  color: #202939;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.meeting-participant-summary-content p,
+.meeting-participant-summary-content ul,
+.meeting-participant-summary-content ol,
+.meeting-participant-summary-content blockquote,
+.meeting-participant-summary-content pre {
+  margin: 0 0 8px;
+}
+
+.meeting-participant-summary-content ul,
+.meeting-participant-summary-content ol {
+  padding-left: 22px;
+}
+
+.meeting-participant-summary-content li + li {
+  margin-top: 4px;
+}
+
+.meeting-participant-summary-content blockquote {
+  padding: 6px 10px;
+  border-left: 3px solid #91caff;
+  background: #f0f5ff;
+}
+
+.meeting-participant-summary-content code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: #edf2f7;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.meeting-participant-summary-content pre {
+  overflow-x: auto;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #202939;
+  color: #f7fafc;
+}
+
+.meeting-participant-summary-content pre code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.meeting-participant-summary-content a {
+  color: #1677ff;
 }
 
 .meeting-participant-summary small,

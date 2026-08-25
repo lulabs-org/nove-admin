@@ -39,6 +39,7 @@ import {
   validateImportFile,
   validateUserPayload,
 } from './lib/userForm';
+import { getUserIdentityDisplay } from './lib/userDisplay';
 import { COUNTRY_OPTIONS } from './lib/countryOptions';
 import type { AdminUser, UserImportResponse, UserListParams, UserWritePayload } from './types';
 import './UserManagement.css';
@@ -171,15 +172,18 @@ export function UserManagement() {
       title: '用户',
       key: 'user',
       width: 190,
-      render: (_value, record) => (
-        <Space>
-          <Avatar src={record.profile?.avatar} icon={<UserOutlined />} />
-          <div className="user-primary-cell">
-            <Text strong>{record.profile?.displayName || record.username || '未命名用户'}</Text>
-            <Text type="secondary">{record.username ? `@${record.username}` : record.id}</Text>
-          </div>
-        </Space>
-      ),
+      render: (_value, record) => {
+        const identity = getUserIdentityDisplay(record);
+        return (
+          <Space>
+            <Avatar src={record.profile?.avatar} icon={<UserOutlined />} />
+            <div className="user-primary-cell">
+              <Text strong>{identity.primary}</Text>
+              {identity.secondary ? <Text type="secondary">{identity.secondary}</Text> : null}
+            </div>
+          </Space>
+        );
+      },
     },
     {
       title: '邮箱',

@@ -18,6 +18,8 @@ import Skeleton from 'antd/es/skeleton';
 import Space from 'antd/es/space';
 import Tabs from 'antd/es/tabs';
 import Tag from 'antd/es/tag';
+import DOMPurify from 'dompurify';
+import { marked } from 'marked';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Perm } from '../../../app/guards/Perm';
@@ -55,6 +57,10 @@ function participantContact(participant: MeetingParticipant) {
   const user = participant.user;
   if (user) return user.email || [user.countryCode, user.phone].filter(Boolean).join(' ') || '-';
   return participant.platformUser?.platform || '未关联用户';
+}
+
+function renderMarkdown(content: string) {
+  return DOMPurify.sanitize(marked.parse(content, { gfm: true }) as string);
 }
 
 function renderStructuredValue(value: unknown): React.ReactNode {
@@ -460,7 +466,12 @@ export function MeetingDetail() {
                         ))}
                       </Space>
                     ) : null}
-                    <p>{participantSummary.partSummary}</p>
+                    <div
+                      className="meeting-participant-summary-content"
+                      dangerouslySetInnerHTML={{
+                        __html: renderMarkdown(participantSummary.partSummary),
+                      }}
+                    />
                     <small>更新于 {formatDateTime(participantSummary.updatedAt)}</small>
                   </div>
                 ) : null}
