@@ -31,8 +31,7 @@ export interface LoginRequest {
 export interface UserProfile {
   name: string;
   bio: string;
-  firstName: string;
-  lastName: string;
+  fullName: string;
   gender: string;
 }
 

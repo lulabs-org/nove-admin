@@ -367,11 +367,8 @@ export function UserManagement() {
 
             <Divider titlePlacement="start">个人资料</Divider>
             <div className="user-profile-grid">
-              <Form.Item label="姓" name="lastName">
-                <Input maxLength={100} />
-              </Form.Item>
-              <Form.Item label="名" name="firstName">
-                <Input maxLength={100} />
+              <Form.Item label="完整姓名" name="fullName" className="user-profile-wide">
+                <Input maxLength={200} placeholder="用户填写的完整姓名，未经实名认证" />
               </Form.Item>
               <Form.Item label="出生日期" name="dateOfBirth">
                 <Input type="date" />
@@ -453,7 +450,7 @@ export function UserManagement() {
             </Button>
           </div>
           <Text type="secondary">
-            表头可用：username/用户名、email/邮箱、countryCode/国家代码、phone/手机号、displayName/显示名称、active/是否启用；也支持头像、简介、姓名、出生日期、性别、地址、城市、国家、邮编和个人网站等资料字段。
+            表头可用：username/用户名、email/邮箱、countryCode/国家代码、phone/手机号、displayName/显示名称、fullName/完整姓名、active/是否启用；也支持头像、简介、出生日期、性别、地址、城市、国家、邮编和个人网站等资料字段。
           </Text>
         </div>
         <Upload.Dragger
