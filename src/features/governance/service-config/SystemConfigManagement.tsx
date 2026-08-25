@@ -1,4 +1,5 @@
 import { ReloadOutlined, SaveOutlined } from '@ant-design/icons';
+import Alert from 'antd/es/alert';
 import Button from 'antd/es/button';
 import Card from 'antd/es/card';
 import Col from 'antd/es/col';
@@ -17,6 +18,7 @@ import { PERMISSIONS } from '../../../shared/utils/permissions';
 import { systemConfigApi } from './api/systemConfigApi';
 import { buildMailConfigPayload, buildWechatShopConfigPayload } from './lib/configPayload';
 import type { MailConfig, WechatShopConfig } from './types';
+import './SystemConfigManagement.css';
 
 export function SystemConfigManagement() {
   const [mailForm] = Form.useForm<MailConfig>();
@@ -114,8 +116,9 @@ export function SystemConfigManagement() {
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 960 }}>
+    <div className="system-config-page">
       <Tabs
+        className="system-config-tabs"
         items={[
           {
             key: 'mail',
@@ -123,25 +126,36 @@ export function SystemConfigManagement() {
             forceRender: true,
             children: (
               <Card
+                className="system-config-card"
                 loading={loading.mail}
-                title="SMTP 邮件配置"
+                title={
+                  <div className="system-config-card-heading">
+                    <span>SMTP 邮件配置</span>
+                    <span>用于系统通知、验证码和账号找回邮件</span>
+                  </div>
+                }
                 extra={
                   <Button icon={<ReloadOutlined />} onClick={() => void loadMailConfig()}>
                     刷新
                   </Button>
                 }
               >
-                <p style={{ color: '#666', marginTop: 0 }}>
-                  密码以 ******** 掩码显示；留空或保留掩码并保存，都会保留当前已配置的密码。
-                </p>
+                <Alert
+                  className="system-config-secret-tip"
+                  type="info"
+                  showIcon
+                  message="密码更新说明"
+                  description="已配置的密码会以 ******** 显示。无需修改时保持原样；输入新密码后将替换当前密码。"
+                />
                 <Form
+                  className="system-config-form"
                   form={mailForm}
                   layout="vertical"
                   onFinish={saveMailConfig}
                   initialValues={{ port: 587, secure: false }}
                 >
-                  <Row gutter={16}>
-                    <Col span={16}>
+                  <Row gutter={[16, 0]}>
+                    <Col xs={24} md={16}>
                       <Form.Item
                         label="SMTP 主机"
                         name="host"
@@ -150,7 +164,7 @@ export function SystemConfigManagement() {
                         <Input placeholder="smtp.example.com" />
                       </Form.Item>
                     </Col>
-                    <Col span={8}>
+                    <Col xs={24} md={8}>
                       <Form.Item
                         label="端口"
                         name="port"
@@ -160,8 +174,8 @@ export function SystemConfigManagement() {
                       </Form.Item>
                     </Col>
                   </Row>
-                  <Row gutter={16}>
-                    <Col span={12}>
+                  <Row gutter={[16, 0]}>
+                    <Col xs={24} md={12}>
                       <Form.Item
                         label="用户名"
                         name="user"
@@ -170,7 +184,7 @@ export function SystemConfigManagement() {
                         <Input autoComplete="username" />
                       </Form.Item>
                     </Col>
-                    <Col span={12}>
+                    <Col xs={24} md={12}>
                       <Form.Item
                         label="发件人地址"
                         name="from"
@@ -189,34 +203,44 @@ export function SystemConfigManagement() {
                       visibilityToggle={false}
                     />
                   </Form.Item>
-                  <Form.Item label="使用 SSL/TLS" name="secure" valuePropName="checked">
-                    <Switch checkedChildren="启用" unCheckedChildren="关闭" />
-                  </Form.Item>
-                  <Divider />
-                  <Perm permission={PERMISSIONS.SYSTEM.CONFIG_WRITE}>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      icon={<SaveOutlined />}
-                      loading={saving.mail}
-                    >
-                      保存邮件配置
-                    </Button>
-                  </Perm>
-                  <Perm permission={PERMISSIONS.SYSTEM.CONFIG_WRITE}>
-                    <Popconfirm
-                      title="删除邮件配置？"
-                      description="删除后邮件服务将无法使用，直到重新配置。"
-                      okText="删除"
-                      cancelText="取消"
-                      okButtonProps={{ danger: true, loading: deleting.mail }}
-                      onConfirm={deleteMailConfig}
-                    >
-                      <Button danger loading={deleting.mail} style={{ marginLeft: 8 }}>
-                        删除配置
+                  <div className="system-config-switch-row">
+                    <div>
+                      <div className="system-config-switch-title">SSL/TLS 加密</div>
+                      <div className="system-config-switch-description">
+                        建议根据邮件服务商的端口要求启用
+                      </div>
+                    </div>
+                    <Form.Item name="secure" valuePropName="checked" noStyle>
+                      <Switch checkedChildren="启用" unCheckedChildren="关闭" />
+                    </Form.Item>
+                  </div>
+                  <Divider className="system-config-divider" />
+                  <div className="system-config-actions">
+                    <Perm permission={PERMISSIONS.SYSTEM.CONFIG_WRITE}>
+                      <Popconfirm
+                        title="删除邮件配置？"
+                        description="删除后邮件服务将无法使用，直到重新配置。"
+                        okText="删除"
+                        cancelText="取消"
+                        okButtonProps={{ danger: true, loading: deleting.mail }}
+                        onConfirm={deleteMailConfig}
+                      >
+                        <Button danger loading={deleting.mail}>
+                          删除配置
+                        </Button>
+                      </Popconfirm>
+                    </Perm>
+                    <Perm permission={PERMISSIONS.SYSTEM.CONFIG_WRITE}>
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        icon={<SaveOutlined />}
+                        loading={saving.mail}
+                      >
+                        保存配置
                       </Button>
-                    </Popconfirm>
-                  </Perm>
+                    </Perm>
+                  </div>
                 </Form>
               </Card>
             ),
@@ -227,18 +251,33 @@ export function SystemConfigManagement() {
             forceRender: true,
             children: (
               <Card
+                className="system-config-card"
                 loading={loading.wechatShop}
-                title="微信小店配置"
+                title={
+                  <div className="system-config-card-heading">
+                    <span>微信小店配置</span>
+                    <span>用于微信小店回调验证和订单同步</span>
+                  </div>
+                }
                 extra={
                   <Button icon={<ReloadOutlined />} onClick={() => void loadWechatShopConfig()}>
                     刷新
                   </Button>
                 }
               >
-                <p style={{ color: '#666', marginTop: 0 }}>
-                  所有密钥均以 ******** 掩码显示；留空或保留掩码并保存，都会保留当前值。
-                </p>
-                <Form form={wechatShopForm} layout="vertical" onFinish={saveWechatShopConfig}>
+                <Alert
+                  className="system-config-secret-tip"
+                  type="info"
+                  showIcon
+                  message="密钥更新说明"
+                  description="已配置的密钥会以 ******** 显示。无需修改时保持原样；输入新值后将替换当前密钥。"
+                />
+                <Form
+                  className="system-config-form"
+                  form={wechatShopForm}
+                  layout="vertical"
+                  onFinish={saveWechatShopConfig}
+                >
                   <Form.Item
                     label="App ID"
                     name="appId"
@@ -274,31 +313,33 @@ export function SystemConfigManagement() {
                   >
                     <Input placeholder="https://api.weixin.qq.com" />
                   </Form.Item>
-                  <Divider />
-                  <Perm permission={PERMISSIONS.SYSTEM.CONFIG_WRITE}>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      icon={<SaveOutlined />}
-                      loading={saving.wechatShop}
-                    >
-                      保存微信小店配置
-                    </Button>
-                  </Perm>
-                  <Perm permission={PERMISSIONS.SYSTEM.CONFIG_WRITE}>
-                    <Popconfirm
-                      title="删除微信小店配置？"
-                      description="删除后微信小店回调与订单同步将不可用，直到重新配置。"
-                      okText="删除"
-                      cancelText="取消"
-                      okButtonProps={{ danger: true, loading: deleting.wechatShop }}
-                      onConfirm={deleteWechatShopConfig}
-                    >
-                      <Button danger loading={deleting.wechatShop} style={{ marginLeft: 8 }}>
-                        删除配置
+                  <Divider className="system-config-divider" />
+                  <div className="system-config-actions">
+                    <Perm permission={PERMISSIONS.SYSTEM.CONFIG_WRITE}>
+                      <Popconfirm
+                        title="删除微信小店配置？"
+                        description="删除后微信小店回调与订单同步将不可用，直到重新配置。"
+                        okText="删除"
+                        cancelText="取消"
+                        okButtonProps={{ danger: true, loading: deleting.wechatShop }}
+                        onConfirm={deleteWechatShopConfig}
+                      >
+                        <Button danger loading={deleting.wechatShop}>
+                          删除配置
+                        </Button>
+                      </Popconfirm>
+                    </Perm>
+                    <Perm permission={PERMISSIONS.SYSTEM.CONFIG_WRITE}>
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        icon={<SaveOutlined />}
+                        loading={saving.wechatShop}
+                      >
+                        保存配置
                       </Button>
-                    </Popconfirm>
-                  </Perm>
+                    </Perm>
+                  </div>
                 </Form>
               </Card>
             ),

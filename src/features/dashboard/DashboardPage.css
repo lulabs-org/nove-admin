@@ -56,26 +56,6 @@
   line-height: 1.4;
 }
 
-/* User info */
-.dashboard-user-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.dashboard-user-name {
-  font-size: 16px;
-  font-weight: 500;
-  color: #262626;
-  line-height: 1.4;
-}
-
-.dashboard-user-email {
-  font-size: 13px;
-  color: #8c8c8c;
-  line-height: 1.4;
-}
-
 /* Section title */
 .dashboard-section-title {
   font-size: 16px;
