@@ -39,6 +39,13 @@ export const PERMISSIONS = {
     REVOKE: 'api-key:revoke',
     ROTATE: 'api-key:rotate',
   },
+  OAUTH_CLIENT: {
+    READ: 'oauth-client:read',
+    CREATE: 'oauth-client:create',
+    UPDATE: 'oauth-client:update',
+    DISABLE: 'oauth-client:disable',
+    ROTATE_SECRET: 'oauth-client:rotate-secret',
+  },
   PRODUCT: {
     READ: 'product:read',
     CREATE: 'product:create',
