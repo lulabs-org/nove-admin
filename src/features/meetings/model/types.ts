@@ -13,6 +13,7 @@ import type {
   MeetingControllerGetMeetingRecordsStatus,
   MeetingControllerGetMeetingRecordsType,
   MeetingRecordResponseDtoRecordingStatus,
+  TranscriptParagraphDto,
 } from '../../../shared/lib/api/orval/business/schemas';
 
 export interface MeetingMinute {
@@ -114,12 +115,7 @@ export interface MeetingHost {
   userId: string | null;
 }
 
-export interface TranscriptSegment {
-  speakerName?: string;
-  startTime?: string;
-  endTime?: string;
-  text?: string;
-}
+export type TranscriptSegment = TranscriptParagraphDto;
 
 export interface Meeting {
   id: string;

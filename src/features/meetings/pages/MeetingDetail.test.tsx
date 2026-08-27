@@ -102,6 +102,43 @@ describe('MeetingDetail', () => {
     });
   });
 
+  it('prefers the linked local user name when rendering transcript segments', async () => {
+    meetingApiMock.getTranscript.mockResolvedValue([
+      {
+        id: 'segment-1',
+        speakerName: '转写快照名',
+        startTime: '00:01:44',
+        endTime: '00:01:49',
+        text: '老师，我下载 hermes 遇到了点困难。',
+        platformUser: {
+          id: 'platform-user-1',
+          displayName: '平台用户姓名',
+        },
+        user: {
+          id: 'user-1',
+          displayName: '本地用户显示名',
+          fullName: '本地用户全名',
+        },
+      },
+    ]);
+
+    render(
+      <MemoryRouter initialEntries={['/meetings/meeting-1']}>
+        <Routes>
+          <Route path="/meetings/:id" element={<MeetingDetail />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await screen.findByRole('heading', { name: '渐进加载会议' });
+    fireEvent.click(screen.getByRole('button', { name: '查看转写' }));
+
+    expect(await screen.findByText('本地用户全名')).toBeInTheDocument();
+    expect(screen.queryByText('本地用户显示名')).not.toBeInTheDocument();
+    expect(screen.queryByText('平台用户姓名')).not.toBeInTheDocument();
+    expect(screen.queryByText('转写快照名')).not.toBeInTheDocument();
+  });
+
   it('loads participant summaries only when the participant tab is opened', async () => {
     meetingApiMock.getParticipants.mockResolvedValue({
       data: [],
