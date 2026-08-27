@@ -49,10 +49,10 @@ export const meetingApi = {
 
   getTranscript: async (minuteId: string): Promise<TranscriptSegment[]> => {
     try {
-      const response = (await minuteControllerGetTranscript(minuteId, {
-        format: 'json',
-      })) as { data?: TranscriptSegment[] };
-      return response.data || [];
+      const response = await minuteControllerGetTranscript(minuteId, {
+        includeLocalUser: true,
+      });
+      return response.data;
     } catch (error: unknown) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         return [];

@@ -14,6 +14,27 @@ vi.mock('../../../shared/lib/api/orval/business/minute', () => ({
 describe('meetingApi recording resources', () => {
   beforeEach(() => vi.clearAllMocks());
 
+  it('loads structured transcript segments with local user details', async () => {
+    const segment = {
+      id: 'segment-1',
+      speakerName: '平台姓名',
+      startTime: '00:00:01',
+      endTime: '00:00:02',
+      text: '发言内容',
+      platformUser: { id: 'platform-user-1', displayName: '平台姓名' },
+      user: { id: 'user-1', displayName: '本地姓名', fullName: '本地姓名' },
+    };
+    apiMocks.getTranscript.mockResolvedValue({
+      transcriptId: 'transcript-1',
+      data: [segment],
+    });
+
+    await expect(meetingApi.getTranscript('minute-1')).resolves.toEqual([segment]);
+    expect(apiMocks.getTranscript).toHaveBeenCalledWith('minute-1', {
+      includeLocalUser: true,
+    });
+  });
+
   it('loads a single minute summary from the current backend route', async () => {
     const summary = {
       id: 'summary-1',

@@ -519,21 +519,25 @@ export function MeetingDetail() {
       </div>
       {selectedTranscriptSegments.length ? (
         <div className="meeting-transcript-list">
-          {selectedTranscriptSegments.slice(0, visibleTranscriptCount).map((segment, index) => (
-            <div
-              className="meeting-transcript-segment"
-              key={`${activeRecordingId}-${segment.startTime}-${index}`}
-            >
-              <Avatar size={30}>{(segment.speakerName || '?').slice(0, 1)}</Avatar>
-              <div>
-                <div className="meeting-transcript-meta">
-                  <strong>{segment.speakerName || '未知发言人'}</strong>
-                  <span>{segment.startTime || ''}</span>
+          {selectedTranscriptSegments.slice(0, visibleTranscriptCount).map((segment) => {
+            const speakerDisplayName =
+              segment.user?.fullName ||
+              segment.platformUser?.displayName ||
+              segment.speakerName ||
+              '未知发言人';
+            return (
+              <div className="meeting-transcript-segment" key={segment.id}>
+                <Avatar size={30}>{speakerDisplayName.slice(0, 1)}</Avatar>
+                <div>
+                  <div className="meeting-transcript-meta">
+                    <strong>{speakerDisplayName}</strong>
+                    <span>{segment.startTime}</span>
+                  </div>
+                  <div className="meeting-transcript-text">{segment.text}</div>
                 </div>
-                <div className="meeting-transcript-text">{segment.text}</div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {visibleTranscriptCount < selectedTranscriptSegments.length ? (
             <Button
               block
