@@ -125,6 +125,32 @@
   margin-top: 4px;
 }
 
+.profile-avatar-editor {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 56px;
+}
+
+.profile-avatar-editor > .ant-avatar {
+  flex: 0 0 auto;
+  background: #f0f5ff;
+  color: #3370ff;
+}
+
+.profile-avatar-editor-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.profile-avatar-editor-main > .ant-typography {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .profile-detail-item {
   display: grid;
   grid-template-columns: 20px minmax(64px, auto) minmax(0, 1fr);
