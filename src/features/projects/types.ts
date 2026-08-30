@@ -15,6 +15,14 @@ export interface ProjectOwner {
   displayName: string;
 }
 
+export interface ProjectOwnerListParams {
+  keyword: string;
+}
+
+export interface ProjectOwnerListResponse {
+  items: ProjectOwner[];
+}
+
 export interface ProjectProduct {
   id: string;
   productCode: string;
@@ -67,14 +75,7 @@ export interface ProjectListParams {
   isFeatured?: boolean;
   ownerId?: string;
   productId?: string;
-  sortField?:
-    | 'createdAt'
-    | 'updatedAt'
-    | 'title'
-    | 'sortOrder'
-    | 'startDate'
-    | 'publishedAt'
-    | 'enrolledCount';
+  sortField?: 'createdAt' | 'updatedAt' | 'title' | 'sortOrder' | 'startDate' | 'publishedAt';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -83,7 +84,6 @@ export type ProjectListData = TableQueryResult<Project> & { totalPages?: number 
 export interface CreateProject {
   title: string;
   subtitle?: string | null;
-  code?: string | null;
   slug?: string | null;
   category?: string | null;
   image?: string | null;
@@ -91,7 +91,6 @@ export interface CreateProject {
   level?: ProjectLevel;
   duration?: string | null;
   maxStudents?: number | null;
-  enrolledCount?: number;
   prerequisites?: string[] | null;
   outcomes?: string[] | null;
   tags?: string[];

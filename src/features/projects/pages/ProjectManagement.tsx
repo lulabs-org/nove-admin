@@ -29,7 +29,7 @@ import Tag from 'antd/es/tag';
 import Tooltip from 'antd/es/tooltip';
 import type { TableProps } from 'antd/es/table';
 import dayjs from 'dayjs';
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { Perm } from '../../../app/guards/Perm';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import {
@@ -39,7 +39,6 @@ import {
   type TableQueryParams,
 } from '../../../shared/hooks/useTableQuery';
 import { PERMISSIONS } from '../../../shared/utils/permissions';
-import { orgMemberApi } from '../../organization/members/api/orgMemberApi';
 import { productApi } from '../../transactions/products/api/productApi';
 import { projectApi } from '../api/projectApi';
 import {
@@ -55,6 +54,7 @@ import type {
   ProjectStatus,
   UpdateProject,
 } from '../types';
+import './ProjectManagement.css';
 
 const { Search, TextArea } = Input;
 
@@ -128,6 +128,8 @@ export function ProjectManagement() {
   });
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [ownerKeyword, setOwnerKeyword] = useState('');
+  const deferredOwnerKeyword = useDeferredValue(ownerKeyword.trim());
   const [form] = Form.useForm<ProjectFormValues>();
 
   const {
@@ -152,9 +154,9 @@ export function ProjectManagement() {
   });
 
   const ownerQuery = useQuery({
-    queryKey: ['project-owner-options', currentOrgId],
-    enabled: Boolean(currentOrgId),
-    queryFn: () => orgMemberApi.list(currentOrgId!, { page: 1, pageSize: 100 }),
+    queryKey: ['project-owner-options', deferredOwnerKeyword],
+    enabled: Boolean(currentOrgId) && deferredOwnerKeyword.length >= 2,
+    queryFn: () => projectApi.ownerOptions({ keyword: deferredOwnerKeyword }),
   });
 
   const productQuery = useQuery({
@@ -166,6 +168,7 @@ export function ProjectManagement() {
   const closeModal = () => {
     setModalOpen(false);
     setEditingProject(null);
+    setOwnerKeyword('');
     form.resetFields();
   };
 
@@ -206,10 +209,10 @@ export function ProjectManagement() {
 
   const openCreate = () => {
     setEditingProject(null);
+    setOwnerKeyword('');
     form.setFieldsValue({
       title: '',
       level: 'BEGINNER',
-      enrolledCount: 0,
       prerequisites: [],
       outcomes: [],
       tags: [],
@@ -223,10 +226,10 @@ export function ProjectManagement() {
 
   const openEdit = (project: Project) => {
     setEditingProject(project);
+    setOwnerKeyword('');
     form.setFieldsValue({
       title: project.title,
       subtitle: project.subtitle ?? undefined,
-      code: project.code ?? undefined,
       slug: project.slug ?? undefined,
       category: project.category ?? undefined,
       image: project.image ?? undefined,
@@ -234,7 +237,6 @@ export function ProjectManagement() {
       level: project.level,
       duration: project.duration ?? undefined,
       maxStudents: project.maxStudents ?? undefined,
-      enrolledCount: project.enrolledCount,
       prerequisites: (project.prerequisites ?? []).map((value) => ({ value })),
       outcomes: (project.outcomes ?? []).map((value) => ({ value })),
       tags: project.tags,
@@ -293,45 +295,51 @@ export function ProjectManagement() {
       title: '项目',
       key: 'title',
       fixed: 'left',
-      width: 310,
+      width: 320,
       sorter: true,
       render: (_value, record) => (
-        <Space align="start">
+        <div className="project-primary-cell">
           <Avatar
+            className="project-primary-cell-avatar"
             shape="square"
             size={50}
             src={record.image}
             icon={!record.image ? <ProjectOutlined /> : undefined}
           />
-          <Space orientation="vertical" size={1}>
-            <Space size={4}>
-              <span style={{ fontWeight: 600 }}>{record.title}</span>
+          <div className="project-primary-cell-content">
+            <div className="project-primary-cell-title-row">
+              <Tooltip title={record.title}>
+                <span className="project-primary-cell-title">{record.title}</span>
+              </Tooltip>
               {record.isFeatured ? <Tag color="gold">精选</Tag> : null}
-            </Space>
-            <span style={{ color: '#64748b', fontSize: 12 }}>
+            </div>
+            <span className="project-primary-cell-meta">
               {record.code || record.slug || record.id}
             </span>
             {record.subtitle ? (
               <Tooltip title={record.subtitle}>
-                <span
-                  style={{
-                    color: '#94a3b8',
-                    fontSize: 12,
-                    maxWidth: 220,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {record.subtitle}
-                </span>
+                <span className="project-primary-cell-subtitle">{record.subtitle}</span>
               </Tooltip>
             ) : null}
-          </Space>
-        </Space>
+          </div>
+        </div>
       ),
     },
-    { title: '分类', dataIndex: 'category', key: 'category', width: 110, render: (v) => v || '-' },
+    {
+      title: '分类',
+      dataIndex: 'category',
+      key: 'category',
+      width: 120,
+      ellipsis: { showTitle: false },
+      render: (value: string | null) =>
+        value ? (
+          <Tooltip title={value}>
+            <span className="project-nowrap-cell">{value}</span>
+          </Tooltip>
+        ) : (
+          '-'
+        ),
+    },
     {
       title: '难度',
       dataIndex: 'level',
@@ -345,20 +353,35 @@ export function ProjectManagement() {
       dataIndex: 'enrolledCount',
       key: 'enrolledCount',
       width: 100,
-      sorter: true,
       render: (_value: number, record) => `${record.enrolledCount}/${record.maxStudents ?? '不限'}`,
     },
     {
       title: '负责人',
       key: 'owner',
       width: 130,
-      render: (_value, record) => record.owner?.displayName ?? '-',
+      ellipsis: { showTitle: false },
+      render: (_value, record) =>
+        record.owner?.displayName ? (
+          <Tooltip title={record.owner.displayName}>
+            <span className="project-nowrap-cell">{record.owner.displayName}</span>
+          </Tooltip>
+        ) : (
+          '-'
+        ),
     },
     {
       title: '关联产品',
       key: 'product',
       width: 160,
-      render: (_value, record) => record.product?.name ?? '-',
+      ellipsis: { showTitle: false },
+      render: (_value, record) =>
+        record.product?.name ? (
+          <Tooltip title={record.product.name}>
+            <span className="project-nowrap-cell">{record.product.name}</span>
+          </Tooltip>
+        ) : (
+          '-'
+        ),
     },
     {
       title: '状态',
@@ -437,21 +460,13 @@ export function ProjectManagement() {
     },
   ];
 
-  const ownerOptions = useMemo(
-    () =>
-      (ownerQuery.data?.data ?? [])
-        .filter((member) => member.status === 'ACTIVE')
-        .map((member) => ({
-          value: member.userId,
-          label:
-            member.orgDisplayName ||
-            member.user?.profile?.displayName ||
-            member.user?.username ||
-            member.user?.email ||
-            member.userId,
-        })),
-    [ownerQuery.data?.data]
-  );
+  const ownerOptions = useMemo(() => {
+    const owners = [...(ownerQuery.data?.items ?? [])];
+    if (editingProject?.owner && !owners.some((owner) => owner.id === editingProject.owner?.id)) {
+      owners.unshift(editingProject.owner);
+    }
+    return owners.map((owner) => ({ value: owner.id, label: owner.displayName }));
+  }, [editingProject, ownerQuery.data?.items]);
   const productOptions = useMemo(
     () =>
       (productQuery.data?.data ?? []).map((product) => ({
@@ -460,6 +475,12 @@ export function ProjectManagement() {
       })),
     [productQuery.data?.data]
   );
+  const ownerNotFoundContent =
+    ownerKeyword.trim().length < 2
+      ? '请输入至少 2 个字符搜索'
+      : ownerQuery.isFetching
+        ? '搜索中…'
+        : '未找到有效用户';
 
   if (!currentOrgId) {
     return (
@@ -477,90 +498,94 @@ export function ProjectManagement() {
   const submitting = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div style={{ padding: 24 }}>
-      <div style={{ marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <Perm permission={PERMISSIONS.PROJECT.CREATE}>
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-            新增项目
+    <div className="project-management-page">
+      <div className="project-management-toolbar">
+        <div className="project-management-filters">
+          <Search
+            className="project-management-search"
+            allowClear
+            placeholder="搜索标题、编号、slug 或描述"
+            enterButton={<SearchOutlined />}
+            onSearch={(value) => handleFilter('keyword', value)}
+            onChange={(event) => !event.target.value && handleFilter('keyword', undefined)}
+          />
+          <Select
+            allowClear
+            placeholder="项目状态"
+            options={STATUS_OPTIONS.map(({ label, value }) => ({ label, value }))}
+            onChange={(value) => handleFilter('status', value)}
+          />
+          <Input
+            allowClear
+            placeholder="项目分类"
+            onPressEnter={(event) => handleFilter('category', event.currentTarget.value)}
+            onChange={(event) => !event.target.value && handleFilter('category', undefined)}
+          />
+          <Select
+            allowClear
+            placeholder="难度级别"
+            options={LEVEL_OPTIONS}
+            onChange={(value) => handleFilter('level', value)}
+          />
+          <Select
+            allowClear
+            placeholder="是否精选"
+            options={[
+              { label: '精选', value: true },
+              { label: '非精选', value: false },
+            ]}
+            onChange={(value) => handleFilter('isFeatured', value)}
+          />
+          <Select
+            allowClear
+            showSearch
+            filterOption={false}
+            placeholder="负责人"
+            loading={ownerQuery.isFetching}
+            options={ownerOptions}
+            onSearch={setOwnerKeyword}
+            notFoundContent={ownerNotFoundContent}
+            onChange={(value) => handleFilter('ownerId', value)}
+          />
+          <Select
+            allowClear
+            showSearch
+            optionFilterProp="label"
+            placeholder="关联产品"
+            options={productOptions}
+            onChange={(value) => handleFilter('productId', value)}
+          />
+        </div>
+        <div className="project-management-actions">
+          <Button icon={<ReloadOutlined />} loading={isFetching} onClick={() => refetch()}>
+            刷新
           </Button>
-        </Perm>
-        <Search
-          allowClear
-          placeholder="搜索标题、编号、slug 或描述"
-          enterButton={<SearchOutlined />}
-          style={{ width: 320 }}
-          onSearch={(value) => handleFilter('keyword', value)}
-          onChange={(event) => !event.target.value && handleFilter('keyword', undefined)}
-        />
-        <Select
-          allowClear
-          placeholder="项目状态"
-          style={{ width: 130 }}
-          options={STATUS_OPTIONS.map(({ label, value }) => ({ label, value }))}
-          onChange={(value) => handleFilter('status', value)}
-        />
-        <Input
-          allowClear
-          placeholder="项目分类"
-          style={{ width: 120 }}
-          onPressEnter={(event) => handleFilter('category', event.currentTarget.value)}
-          onChange={(event) => !event.target.value && handleFilter('category', undefined)}
-        />
-        <Select
-          allowClear
-          placeholder="难度级别"
-          style={{ width: 120 }}
-          options={LEVEL_OPTIONS}
-          onChange={(value) => handleFilter('level', value)}
-        />
-        <Select
-          allowClear
-          placeholder="是否精选"
-          style={{ width: 120 }}
-          options={[
-            { label: '精选', value: true },
-            { label: '非精选', value: false },
-          ]}
-          onChange={(value) => handleFilter('isFeatured', value)}
-        />
-        <Select
-          allowClear
-          showSearch
-          optionFilterProp="label"
-          placeholder="负责人"
-          style={{ width: 150 }}
-          options={ownerOptions}
-          onChange={(value) => handleFilter('ownerId', value)}
-        />
-        <Select
-          allowClear
-          showSearch
-          optionFilterProp="label"
-          placeholder="关联产品"
-          style={{ width: 180 }}
-          options={productOptions}
-          onChange={(value) => handleFilter('productId', value)}
-        />
-        <Button icon={<ReloadOutlined />} loading={isFetching} onClick={() => refetch()}>
-          刷新
-        </Button>
+          <Perm permission={PERMISSIONS.PROJECT.CREATE}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+              新增项目
+            </Button>
+          </Perm>
+        </div>
       </div>
 
-      <Table
-        columns={columns}
-        dataSource={projectList?.data ?? []}
-        rowKey="id"
-        loading={isLoading}
-        scroll={{ x: 1450 }}
-        pagination={{
-          current: filters.page as number,
-          pageSize: filters.pageSize as number,
-          total: projectList?.total ?? 0,
-          showSizeChanger: true,
-          showTotal: (total) => `共 ${total} 个项目`,
-        }}
-        onChange={handleTableChange}
-      />
+      <div className="project-management-table-card">
+        <Table
+          columns={columns}
+          dataSource={projectList?.data ?? []}
+          rowKey="id"
+          loading={isLoading}
+          tableLayout="fixed"
+          scroll={{ x: 1470, y: 'calc(100vh - 360px)' }}
+          pagination={{
+            current: filters.page as number,
+            pageSize: filters.pageSize as number,
+            total: projectList?.total ?? 0,
+            showSizeChanger: true,
+            showTotal: (total) => `共 ${total} 个项目`,
+          }}
+          onChange={handleTableChange}
+        />
+      </div>
 
       <Modal
         title={editingProject ? '编辑项目' : '新增项目'}
@@ -592,8 +617,15 @@ export function ProjectManagement() {
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="code" label="项目编号" rules={[{ max: 50 }]}>
-                <Input placeholder="PRJ-2026-001" />
+              <Form.Item
+                label="项目编号"
+                extra={
+                  editingProject && !editingProject.code
+                    ? '历史项目将在本次保存时自动补齐'
+                    : '创建时由系统自动生成'
+                }
+              >
+                <Input value={editingProject?.code ?? ''} placeholder="保存后自动生成" disabled />
               </Form.Item>
             </Col>
             <Col span={8}>
@@ -640,28 +672,28 @@ export function ProjectManagement() {
               </Form.Item>
             </Col>
             <Col span={6}>
-              <Form.Item name="maxStudents" label="人数上限">
+              <Form.Item
+                name="maxStudents"
+                label="人数上限"
+                rules={[
+                  {
+                    validator: (_, value?: number) =>
+                      value == null || value >= (editingProject?.enrolledCount ?? 0)
+                        ? Promise.resolve()
+                        : Promise.reject(new Error('人数上限不能低于当前正式学员人数')),
+                  },
+                ]}
+              >
                 <InputNumber min={0} precision={0} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
             <Col span={6}>
-              <Form.Item
-                name="enrolledCount"
-                label="当前人数"
-                dependencies={['maxStudents']}
-                rules={[
-                  { required: true },
-                  ({ getFieldValue }) => ({
-                    validator: (_, value?: number) =>
-                      value == null ||
-                      getFieldValue('maxStudents') == null ||
-                      value <= getFieldValue('maxStudents')
-                        ? Promise.resolve()
-                        : Promise.reject(new Error('当前人数不能超过人数上限')),
-                  }),
-                ]}
-              >
-                <InputNumber min={0} precision={0} style={{ width: '100%' }} />
+              <Form.Item label="当前正式学员" extra="由项目成员自动统计，不可手动修改">
+                <InputNumber
+                  value={editingProject?.enrolledCount ?? 0}
+                  disabled
+                  style={{ width: '100%' }}
+                />
               </Form.Item>
             </Col>
             <Col span={24}>
@@ -684,9 +716,12 @@ export function ProjectManagement() {
                 <Select
                   allowClear
                   showSearch
-                  optionFilterProp="label"
+                  filterOption={false}
+                  placeholder="搜索全部有效本地用户"
                   loading={ownerQuery.isLoading}
                   options={ownerOptions}
+                  onSearch={setOwnerKeyword}
+                  notFoundContent={ownerNotFoundContent}
                 />
               </Form.Item>
             </Col>
