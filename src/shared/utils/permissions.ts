@@ -53,6 +53,13 @@ export const PERMISSIONS = {
     DELETE: 'product:delete',
     TOGGLE_STATUS: 'product:toggle-status',
   },
+  PROJECT: {
+    READ: 'project:read',
+    CREATE: 'project:create',
+    UPDATE: 'project:update',
+    DELETE: 'project:delete',
+    TOGGLE_STATUS: 'project:toggle-status',
+  },
   CHANNEL: {
     READ: 'channel:read',
     CREATE: 'channel:create',

@@ -42,4 +42,12 @@ describe('application routes', () => {
       { permission: PERMISSIONS.ORDER_REFUND.READ },
     ]);
   });
+
+  it('exposes project management as an independent top-level route', () => {
+    expect(routes.find((route) => route.path === '/projects')).toMatchObject({
+      title: '项目管理',
+      menu: true,
+      permission: PERMISSIONS.PROJECT.READ,
+    });
+  });
 });
