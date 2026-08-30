@@ -92,7 +92,7 @@ export function Topbar({ collapsed, sidebarWidth }: TopbarProps) {
       <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', padding: '0 24px' }}>
         <Dropdown menu={{ items: menuItems }} placement="bottomRight">
           <Space style={{ cursor: 'pointer' }}>
-            <Avatar src={user?.avatar} icon={!user?.avatar && <UserOutlined />} />
+            <Avatar src={user?.avatar} icon={<UserOutlined />} />
             <span>{user?.name || user?.email || 'Admin'}</span>
           </Space>
         </Dropdown>
