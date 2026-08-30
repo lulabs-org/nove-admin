@@ -21,12 +21,14 @@ import { meetingRoutes } from '../../features/meetings';
 import { reportRoutes } from '../../features/reports';
 import { taskRoutes } from '../../features/tasks';
 import { errorRoutes } from '../../features/errors';
+import { projectRoutes } from '../../features/projects';
 
 export const routes: RouteConfig[] = [
   ...authRoutes,
   ...dashboardRoutes,
   organizationRoutes,
   transactionRoutes,
+  ...projectRoutes,
   ...meetingRoutes,
   ...reportRoutes,
   ...taskRoutes,
