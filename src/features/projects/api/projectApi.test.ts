@@ -43,4 +43,22 @@ describe('projectApi', () => {
       method: 'DELETE',
     });
   });
+
+  it('searches global active users through the project owner endpoint', async () => {
+    apiMocks.mutator.mockResolvedValue({
+      items: [{ id: 'user-1', displayName: 'External Owner' }],
+      page: 1,
+      pageSize: 20,
+      total: 1,
+      totalPages: 1,
+    });
+
+    await projectApi.ownerOptions({ keyword: 'External' });
+
+    expect(apiMocks.mutator).toHaveBeenCalledWith({
+      url: '/admin/projects/owner-options',
+      method: 'GET',
+      params: { keyword: 'External' },
+    });
+  });
 });

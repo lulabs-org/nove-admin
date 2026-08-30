@@ -4,6 +4,8 @@ import type {
   Project,
   ProjectListData,
   ProjectListParams,
+  ProjectOwnerListParams,
+  ProjectOwnerListResponse,
   ProjectStatus,
   UpdateProject,
 } from '../types';
@@ -38,6 +40,14 @@ export const projectApi = {
 
   getById(id: string): Promise<Project> {
     return mutator<Project>({ url: `/admin/projects/${id}`, method: 'GET' });
+  },
+
+  ownerOptions(params: ProjectOwnerListParams): Promise<ProjectOwnerListResponse> {
+    return mutator<ProjectOwnerListResponse>({
+      url: '/admin/projects/owner-options',
+      method: 'GET',
+      params: cleanParams(params),
+    });
   },
 
   create(data: CreateProject): Promise<Project> {

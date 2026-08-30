@@ -9,7 +9,6 @@ describe('project payload', () => {
       subtitle: ' ',
       slug: ' Project_One ',
       level: 'BEGINNER',
-      enrolledCount: 3,
       maxStudents: 10,
       prerequisites: [{ value: ' TypeScript ' }, { value: 'TypeScript' }],
       outcomes: [{ value: ' Working app ' }],

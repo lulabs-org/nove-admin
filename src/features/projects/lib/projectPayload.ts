@@ -4,7 +4,6 @@ import type { CreateProject, ProjectLevel, ProjectStatus } from '../types';
 export interface ProjectFormValues {
   title: string;
   subtitle?: string;
-  code?: string;
   slug?: string;
   category?: string;
   image?: string;
@@ -12,7 +11,6 @@ export interface ProjectFormValues {
   level: ProjectLevel;
   duration?: string;
   maxStudents?: number;
-  enrolledCount: number;
   prerequisites?: Array<{ value?: string }>;
   outcomes?: Array<{ value?: string }>;
   tags?: string[];
@@ -46,7 +44,6 @@ export function buildProjectPayload(values: ProjectFormValues): CreateProject {
   return {
     title: values.title.trim(),
     subtitle: nullableText(values.subtitle),
-    code: nullableText(values.code),
     slug:
       nullableText(values.slug)
         ?.toLowerCase()
@@ -57,7 +54,6 @@ export function buildProjectPayload(values: ProjectFormValues): CreateProject {
     level: values.level,
     duration: nullableText(values.duration),
     maxStudents: values.maxStudents ?? null,
-    enrolledCount: values.enrolledCount,
     prerequisites: stringList(values.prerequisites),
     outcomes: stringList(values.outcomes),
     tags: [...new Set((values.tags ?? []).map((tag) => tag.trim()).filter(Boolean))],
