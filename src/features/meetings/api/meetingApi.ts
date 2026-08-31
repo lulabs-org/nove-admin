@@ -1,5 +1,3 @@
-import axios from 'axios';
-
 import {
   meetingControllerGetMeetingRecords,
   meetingControllerGetMeetingRecordById,
@@ -7,7 +5,6 @@ import {
   meetingControllerGetMeetingStats,
   // meetingControllerReprocessMeetingRecord, // 后端接口暂时禁用，见 PR #321
 } from '../../../shared/lib/api/orval/business/meet';
-import { minuteControllerGetTranscript } from '../../../shared/lib/api/orval/business/minute';
 import { mutator } from '../../../shared/lib/api/mutator';
 import type {
   Meeting,
@@ -16,10 +13,6 @@ import type {
   CreateMeetingDto,
   UpdateMeetingDto,
   MeetingStats,
-  TranscriptSegment,
-  MeetingParticipantListResponse,
-  MeetingSummary,
-  SpeakerSummaryListResponse,
 } from '../model/types';
 
 export const meetingApi = {
@@ -45,53 +38,6 @@ export const meetingApi = {
 
   getStats: (): Promise<MeetingStats> => {
     return meetingControllerGetMeetingStats() as unknown as Promise<MeetingStats>;
-  },
-
-  getTranscript: async (minuteId: string): Promise<TranscriptSegment[]> => {
-    try {
-      const response = await minuteControllerGetTranscript(minuteId, {
-        includeLocalUser: true,
-      });
-      return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        return [];
-      }
-      throw error;
-    }
-  },
-
-  getParticipants: (
-    meetingId: string,
-    params: { page?: number; limit?: number; search?: string } = {}
-  ): Promise<MeetingParticipantListResponse> => {
-    return mutator<MeetingParticipantListResponse>({
-      url: `/meetings/${meetingId}/participants`,
-      method: 'GET',
-      params,
-    });
-  },
-
-  getSummary: async (minuteId: string): Promise<MeetingSummary | null> => {
-    try {
-      return await mutator<MeetingSummary>({
-        url: `/minutes/${minuteId}/summary`,
-        method: 'GET',
-      });
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        return null;
-      }
-      throw error;
-    }
-  },
-
-  getSpeakerSummaries: (minuteId: string): Promise<SpeakerSummaryListResponse> => {
-    return mutator<SpeakerSummaryListResponse>({
-      url: `/minutes/${minuteId}/speaker-summaries`,
-      method: 'GET',
-      params: { page: 1, limit: 100 },
-    });
   },
 
   // 后端接口暂时禁用，见 PR #321

@@ -1,0 +1,45 @@
+.minute-list-page {
+  padding: 24px;
+}
+
+.minute-list-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.minute-list-toolbar .ant-input-search {
+  width: 260px;
+}
+
+.minute-list-toolbar .ant-select {
+  width: 150px;
+}
+
+.minute-list-filter-hint {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #f0f5ff;
+  color: #526079;
+}
+
+.minute-meeting-cell {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.minute-meeting-cell .ant-btn {
+  height: auto;
+  padding: 0;
+  overflow: hidden;
+  justify-content: flex-start;
+  text-overflow: ellipsis;
+}
+
+.minute-meeting-cell span {
+  color: #929bad;
+  font-size: 12px;
+}

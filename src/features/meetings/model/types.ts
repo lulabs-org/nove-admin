@@ -13,109 +13,13 @@ import type {
   MeetingControllerGetMeetingRecordsStatus,
   MeetingControllerGetMeetingRecordsType,
   MeetingRecordResponseDtoRecordingStatus,
-  TranscriptParagraphDto,
 } from '../../../shared/lib/api/orval/business/schemas';
-
-export interface MeetingMinute {
-  id: string;
-  externalId?: string | null;
-  source?: string;
-  errorMessage?: string | null;
-  startAt?: string | null;
-  endAt?: string | null;
-}
-
-export interface MeetingParticipantPlatformUser {
-  id: string;
-  platform: string;
-  displayName: string | null;
-  avatarUrl: string | null;
-}
-
-export interface MeetingParticipantUserProfile {
-  displayName: string | null;
-  avatar: string | null;
-}
-
-export interface MeetingParticipantUser {
-  id: string;
-  username: string | null;
-  email: string | null;
-  countryCode: string | null;
-  phone: string | null;
-  profile: MeetingParticipantUserProfile | null;
-}
-
-export interface MeetingParticipant {
-  id: string;
-  meetingId: string;
-  firstJoinTime: string | null;
-  lastLeaveTime: string | null;
-  totalDurationSeconds: number | null;
-  platformUser: MeetingParticipantPlatformUser | null;
-  user: MeetingParticipantUser | null;
-}
-
-export interface MeetingParticipantListResponse {
-  data: MeetingParticipant[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface SpeakerSummary {
-  id: string;
-  minuteId: string;
-  platformUserId: string;
-  partSummary: string;
-  keywords: string[];
-  generatedBy?: string;
-  aiModel?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SpeakerSummaryListResponse {
-  data: SpeakerSummary[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface MeetingSummary {
-  id: string;
-  content: string;
-  aiMinutes?: unknown;
-  keyPoints?: unknown;
-  actionItems?: unknown;
-  decisions?: unknown;
-  goldenQuotes?: unknown;
-  keywords?: string[];
-  metadata?: unknown;
-  minuteId?: string;
-  aiModel?: string;
-  generatedBy?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface MeetingSummaryListResponse {
-  data: MeetingSummary[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
 
 export interface MeetingHost {
   platformUserId: string;
   displayName: string | null;
   userId: string | null;
 }
-
-export type TranscriptSegment = TranscriptParagraphDto;
 
 export interface Meeting {
   id: string;
@@ -140,7 +44,6 @@ export interface Meeting {
   hasRecording: boolean;
   recordingStatus: MeetingRecordResponseDtoRecordingStatus;
   processingStatus: MeetingControllerGetMeetingRecordsStatus;
-  minutes?: MeetingMinute[];
   metadata?: unknown;
   recordingUrl?: string;
   transcriptUrl?: string;

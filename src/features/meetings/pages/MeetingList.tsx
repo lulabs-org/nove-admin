@@ -102,8 +102,8 @@ export function MeetingList() {
     setFormOpen(true);
   };
 
-  const handleView = (record: MeetingListItem) => {
-    navigate(`/meetings/${record.id}`);
+  const handleViewMinutes = (record: MeetingListItem) => {
+    navigate(`/minutes?meetingId=${encodeURIComponent(record.id)}`);
   };
 
   const handleEdit = async (record: MeetingListItem) => {
@@ -176,7 +176,11 @@ export function MeetingList() {
       width: 240,
       fixed: 'left' as const,
       render: (title: string, record: MeetingListItem) => (
-        <Button type="link" className="meeting-title-link" onClick={() => handleView(record)}>
+        <Button
+          type="link"
+          className="meeting-title-link"
+          onClick={() => handleViewMinutes(record)}
+        >
           {title}
         </Button>
       ),
@@ -227,11 +231,7 @@ export function MeetingList() {
       title: '参与人数',
       dataIndex: 'participantCount',
       key: 'participantCount',
-      render: (count: number | null | undefined, record: MeetingListItem) => (
-        <Button type="link" size="small" onClick={() => handleView(record)}>
-          {count ?? 0} 人
-        </Button>
-      ),
+      render: (count: number | null | undefined) => `${count ?? 0} 人`,
       width: 110,
     },
     {
@@ -239,7 +239,7 @@ export function MeetingList() {
       dataIndex: 'hasRecording',
       key: 'hasRecording',
       render: (hasRecording: boolean) => (
-        <Tag color={hasRecording ? 'success' : 'default'}>{hasRecording ? '有录制' : '无录制'}</Tag>
+        <Tag color={hasRecording ? 'success' : 'default'}>{hasRecording ? '有妙记' : '无妙记'}</Tag>
       ),
       width: 110,
     },
@@ -250,8 +250,8 @@ export function MeetingList() {
       width: 180,
       render: (_: unknown, record: MeetingListItem) => (
         <Space size="small">
-          <Button type="link" size="small" onClick={() => handleView(record)}>
-            查看
+          <Button type="link" size="small" onClick={() => handleViewMinutes(record)}>
+            查看妙记
           </Button>
           <Perm permission={PERMISSIONS.MEETING.UPDATE}>
             <Button
