@@ -717,7 +717,7 @@ export function ProjectManagement() {
                   allowClear
                   showSearch
                   filterOption={false}
-                  placeholder="搜索全部有效本地用户"
+                  placeholder="搜索全部有效系统账号"
                   loading={ownerQuery.isLoading}
                   options={ownerOptions}
                   onSearch={setOwnerKeyword}

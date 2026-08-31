@@ -169,7 +169,7 @@ export function PlatformUserManagement() {
       platformUserApi
         .searchLocalUsers(keyword)
         .then((data) => setLocalUsers(data))
-        .catch(() => message.error('搜索本地用户失败'))
+        .catch(() => message.error('搜索系统账号失败'))
         .finally(() => setSearchingUsers(false));
     }, 500);
     setSearchTimeout(timeout);
@@ -273,7 +273,7 @@ export function PlatformUserManagement() {
         record.phone ? `${record.countryCode ?? ''} ${record.phone}` : '—',
     },
     {
-      title: '本地用户',
+      title: '系统账号',
       key: 'localUserId',
       width: 140,
       render: (_: unknown, record: PlatformUser) =>
@@ -345,7 +345,7 @@ export function PlatformUserManagement() {
           {record.active ? (
             <Tooltip title="停用">
               <Popconfirm
-                title="确定停用此平台用户？"
+                title="确定停用此平台身份？"
                 onConfirm={() => deactivateMutation.mutate(record.id)}
                 okType="danger"
               >
@@ -360,7 +360,7 @@ export function PlatformUserManagement() {
           ) : (
             <Tooltip title="激活">
               <Popconfirm
-                title="确定激活此平台用户？"
+                title="确定激活此平台身份？"
                 onConfirm={() => activateMutation.mutate(record.id)}
               >
                 <Button
@@ -374,7 +374,7 @@ export function PlatformUserManagement() {
           )}
           <Tooltip title="删除">
             <Popconfirm
-              title="确定删除此平台用户？此操作不可撤销。"
+              title="确定删除此平台身份？此操作不可撤销。"
               onConfirm={() => deleteMutation.mutate(record.id)}
               okType="danger"
             >
@@ -456,7 +456,7 @@ export function PlatformUserManagement() {
       {/* Detail / Edit Drawer */}
       <Drawer
         className="platform-user-detail-drawer"
-        title={detailMode === 'edit' ? '编辑平台用户' : '平台用户详情'}
+        title={detailMode === 'edit' ? '编辑平台身份' : '平台身份详情'}
         placement="right"
         width={480}
         open={!!detailId}
@@ -510,13 +510,13 @@ export function PlatformUserManagement() {
                 </Form.Item>
               </div>
             </Form.Item>
-            <Form.Item label="关联本地用户" name="localUserId">
+            <Form.Item label="关联系统账号" name="localUserId">
               <Select
                 showSearch
                 allowClear
                 virtual={false}
                 optionLabelProp="label"
-                placeholder="搜索并选择本地用户"
+                placeholder="搜索并选择系统账号"
                 filterOption={false}
                 onSearch={fetchLocalUsers}
                 notFoundContent={searchingUsers ? '搜索中...' : '无匹配结果'}
@@ -599,7 +599,7 @@ function DetailPanel({ detail, loading }: { detail: PlatformUserDetail | null; l
       <div className="platform-user-detail-fields">
         <FieldRow label="记录 ID" value={detail.id} copyable />
         <FieldRow label="平台联合 ID" value={detail.ptUnionId} copyable />
-        <FieldRow label="平台用户 ID" value={detail.ptUserId} />
+        <FieldRow label="平台身份 ID" value={detail.ptUserId} />
         <FieldRow
           label="手机号"
           value={detail.phone ? `${detail.countryCode ?? ''} ${detail.phone}` : undefined}
@@ -621,7 +621,7 @@ function DetailPanel({ detail, loading }: { detail: PlatformUserDetail | null; l
       {detail.user && (
         <>
           <div className="platform-user-section-title" style={{ marginTop: 24 }}>
-            关联本地用户
+            关联系统账号
           </div>
           <div className="platform-user-linked-card">
             <Avatar size={40} src={detail.user.profile?.avatar} icon={<UserOutlined />} />
@@ -646,10 +646,10 @@ function DetailPanel({ detail, loading }: { detail: PlatformUserDetail | null; l
       {!detail.user && (
         <>
           <div className="platform-user-section-title" style={{ marginTop: 24 }}>
-            关联本地用户
+            关联系统账号
           </div>
           <Tag color="default" icon={<UserOutlined />}>
-            未关联本地用户
+            未关联系统账号
           </Tag>
         </>
       )}

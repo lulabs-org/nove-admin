@@ -18,6 +18,7 @@ import {
   buildLoginRequest,
   parseLoginIdentifier,
 } from '../model/loginIdentifier';
+import { getLoginErrorMessage } from '../model/loginError';
 import './LoginPage.css';
 
 type LoginType = 'password' | 'code';
@@ -54,8 +55,11 @@ export function LoginPage() {
           ? requestedReturnTo
           : '/';
       navigate(returnTo, { replace: true });
-    } catch {
-      message.error('登录失败，请检查输入信息');
+    } catch (error) {
+      const errorMessage = getLoginErrorMessage(error);
+      if (errorMessage) {
+        message.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

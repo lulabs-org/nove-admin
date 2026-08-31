@@ -38,8 +38,8 @@ export type TrackingSourceType = (typeof TrackingSourceType)[keyof typeof Tracki
 export type GenerationMethod = 'AI' | 'MANUAL';
 
 export const TRACKING_TARGET_TYPE_LABELS: Record<TrackingTargetType, string> = {
-  USER: '本地用户',
-  PLATFORM_USER: '平台用户',
+  USER: '系统账号',
+  PLATFORM_USER: '平台身份',
   PROJECT: '项目',
   ORGANIZATION: '组织',
 };

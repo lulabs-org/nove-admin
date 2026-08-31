@@ -43,11 +43,30 @@ describe('application routes', () => {
     ]);
   });
 
+  it('uses account and identity language for organization users', () => {
+    const organizationRoutes = routes.find((route) => route.path === '/organization')?.children;
+
+    expect(organizationRoutes?.find((route) => route.path === '/user-management')?.title).toBe(
+      '系统账号'
+    );
+    expect(organizationRoutes?.find((route) => route.path === '/platform-users')?.title).toBe(
+      '平台身份'
+    );
+  });
+
   it('exposes project management as an independent top-level route', () => {
     expect(routes.find((route) => route.path === '/projects')).toMatchObject({
       title: '项目管理',
       menu: true,
       permission: PERMISSIONS.PROJECT.READ,
+    });
+  });
+
+  it('labels scheduled work as task scheduling', () => {
+    expect(routes.find((route) => route.path === '/tasks')).toMatchObject({
+      title: '任务调度',
+      menu: true,
+      permission: PERMISSIONS.TASK.READ,
     });
   });
 });

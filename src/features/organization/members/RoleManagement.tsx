@@ -106,7 +106,7 @@ const PERMISSION_RESOURCE_LABELS: Record<string, string> = {
   org: '组织管理',
   'org-member': '组织成员',
   permission: '权限资源',
-  'platform-user': '平台用户',
+  'platform-user': '平台身份',
   product: '产品管理',
   role: '角色管理',
   'speaker-summary': '参会者总结',
