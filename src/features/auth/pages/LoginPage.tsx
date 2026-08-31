@@ -12,7 +12,7 @@ import Tabs from 'antd/es/tabs';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../shared/hooks/useAuth';
-import { verificationControllerSend } from '../../../shared/lib/api/orval/business/auth';
+import { otpControllerSend } from '../../../shared/lib/api/orval/business/auth';
 import {
   buildLoginCodeRequest,
   buildLoginRequest,
@@ -71,7 +71,7 @@ export function LoginPage() {
     if (!identifier) return;
     setSendingCode(true);
     try {
-      await verificationControllerSend(buildLoginCodeRequest(identifier));
+      await otpControllerSend(buildLoginCodeRequest(identifier));
       message.success('验证码已发送');
       setCountdown(60);
       const timer = window.setInterval(() => {
