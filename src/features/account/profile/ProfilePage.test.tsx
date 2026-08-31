@@ -125,9 +125,12 @@ describe('ProfilePage', () => {
     expect(await screen.findByLabelText('用户昵称')).toHaveValue('杨仕明');
     expect(screen.queryByLabelText('头像 URL')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /上传新头像/ })).toBeInTheDocument();
-    expect(screen.getByLabelText('区号')).toHaveValue('+86');
-    expect(screen.queryByLabelText('国家代码')).not.toBeInTheDocument();
-    expect(screen.getByDisplayValue('yangshiming@proflu.cn')).toBeInTheDocument();
+    expect(screen.queryByLabelText('区号')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('邮箱')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '前往安全设置修改' })).toHaveAttribute(
+      'href',
+      '/settings/security'
+    );
 
     fireEvent.click(screen.getByRole('button', { name: /取\s*消/ }));
     expect(screen.queryByLabelText('用户昵称')).not.toBeInTheDocument();
@@ -203,5 +206,8 @@ describe('ProfilePage', () => {
 
     await waitFor(() => expect(mocks.updateProfile).toHaveBeenCalled());
     expect(mocks.updateProfile.mock.calls[0][0]).not.toHaveProperty('avatar');
+    expect(mocks.updateProfile.mock.calls[0][0]).not.toHaveProperty('email');
+    expect(mocks.updateProfile.mock.calls[0][0]).not.toHaveProperty('phone');
+    expect(mocks.updateProfile.mock.calls[0][0]).not.toHaveProperty('countryCode');
   });
 });
