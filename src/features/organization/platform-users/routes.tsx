@@ -6,7 +6,7 @@ export const platformUserRoutes: RouteConfig[] = [
   {
     path: '/platform-users',
     element: <PlatformUserManagement />,
-    title: '平台用户',
+    title: '平台身份',
     menu: true,
     permission: PERMISSIONS.USER.READ,
   },
