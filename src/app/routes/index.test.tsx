@@ -69,4 +69,25 @@ describe('application routes', () => {
       permission: PERMISSIONS.TASK.READ,
     });
   });
+
+  it('exposes minute management as an independent top-level route', () => {
+    expect(routes.find((route) => route.path === '/minutes')).toMatchObject({
+      title: '妙记管理',
+      menu: true,
+      permission: PERMISSIONS.MINUTE.READ,
+    });
+    expect(routes.find((route) => route.path === '/minutes/:id')).toMatchObject({
+      title: '妙记详情',
+      menu: false,
+      permission: PERMISSIONS.MINUTE.READ,
+    });
+  });
+
+  it('keeps the legacy meeting detail route as a hidden redirect entry', () => {
+    expect(routes.find((route) => route.path === '/meetings/:id')).toMatchObject({
+      title: '会议妙记重定向',
+      menu: false,
+      permission: PERMISSIONS.MEETING.READ,
+    });
+  });
 });

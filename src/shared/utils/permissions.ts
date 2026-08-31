@@ -102,6 +102,24 @@ export const PERMISSIONS = {
     DELETE: 'meeting:delete',
     REPROCESS: 'meeting:reprocess',
   },
+  MINUTE: {
+    READ: 'minute:read',
+    CREATE: 'minute:create',
+    UPDATE: 'minute:update',
+    DELETE: 'minute:delete',
+  },
+  MINUTE_SUMMARY: {
+    READ: 'minute-summary:read',
+    CREATE: 'minute-summary:create',
+    UPDATE: 'minute-summary:update',
+    DELETE: 'minute-summary:delete',
+  },
+  SPEAKER_SUMMARY: {
+    READ: 'speaker-summary:read',
+    CREATE: 'speaker-summary:create',
+    UPDATE: 'speaker-summary:update',
+    DELETE: 'speaker-summary:delete',
+  },
   TASK: {
     READ: 'task:read',
     CREATE: 'task:create',

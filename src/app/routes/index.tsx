@@ -18,6 +18,7 @@ import { governanceRoutes } from '../../features/governance';
 import { settingsRoutes } from '../../features/settings';
 import { accountRoutes } from '../../features/account';
 import { meetingRoutes } from '../../features/meetings';
+import { minuteRoutes } from '../../features/minutes';
 import { reportRoutes } from '../../features/reports';
 import { taskRoutes } from '../../features/tasks';
 import { errorRoutes } from '../../features/errors';
@@ -30,6 +31,7 @@ export const routes: RouteConfig[] = [
   transactionRoutes,
   ...projectRoutes,
   ...meetingRoutes,
+  ...minuteRoutes,
   ...reportRoutes,
   ...taskRoutes,
   governanceRoutes,

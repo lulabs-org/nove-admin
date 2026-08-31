@@ -25,3 +25,11 @@ describe('OAuth client permissions', () => {
     });
   });
 });
+
+describe('Minute permissions', () => {
+  it('uses the backend minute resource namespaces', () => {
+    expect(PERMISSIONS.MINUTE.READ).toBe('minute:read');
+    expect(PERMISSIONS.MINUTE_SUMMARY.READ).toBe('minute-summary:read');
+    expect(PERMISSIONS.SPEAKER_SUMMARY.READ).toBe('speaker-summary:read');
+  });
+});
