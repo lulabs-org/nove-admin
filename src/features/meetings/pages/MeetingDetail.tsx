@@ -4,6 +4,7 @@ import {
   CopyOutlined,
   EditOutlined,
   PlayCircleOutlined,
+  CloudDownloadOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
 import Avatar from 'antd/es/avatar';
@@ -11,6 +12,7 @@ import Button from 'antd/es/button';
 import Card from 'antd/es/card';
 import Empty from 'antd/es/empty';
 import Input from 'antd/es/input';
+import List from 'antd/es/list';
 import message from 'antd/es/message';
 import Popconfirm from 'antd/es/popconfirm';
 import Select from 'antd/es/select';
@@ -42,6 +44,8 @@ import {
   getProcessingStatusText,
 } from '../utils/formatters';
 import './MeetingDetail.css';
+import type { MinuteDriveFile } from '../../drive/model/types';
+import { driveApi } from '../../drive/api/driveApi';
 
 function participantName(participant: MeetingParticipant) {
   return (
@@ -61,6 +65,15 @@ function participantContact(participant: MeetingParticipant) {
 
 function renderMarkdown(content: string) {
   return DOMPurify.sanitize(marked.parse(content, { gfm: true }) as string);
+}
+
+function formatFileSize(value: string | null) {
+  if (!value) return '-';
+  const bytes = Number(value);
+  if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(1)} GiB`;
+  if (bytes >= 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(1)} MiB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KiB`;
+  return `${bytes} B`;
 }
 
 function renderStructuredValue(value: unknown): React.ReactNode {
@@ -118,6 +131,9 @@ export function MeetingDetail() {
   const [visibleTranscriptCount, setVisibleTranscriptCount] = useState(200);
   const [editOpen, setEditOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [minuteFiles, setMinuteFiles] = useState<Record<string, MinuteDriveFile[]>>({});
+  const [filesLoading, setFilesLoading] = useState(false);
+  const [filesError, setFilesError] = useState<string | null>(null);
 
   const fetchParticipants = useCallback(
     async (search?: string) => {
@@ -245,6 +261,23 @@ export function MeetingDetail() {
       .catch(() => setParticipantSummariesError('当前录制的成员总结暂时无法读取'))
       .finally(() => setParticipantSummariesLoading(false));
   }, [activeRecordingId, activeTab, id, participantSummaries, participantSummariesLoading]);
+
+  useEffect(() => {
+    if (
+      activeTab !== 'files' ||
+      !activeRecordingId ||
+      activeRecordingId in minuteFiles ||
+      filesLoading
+    )
+      return;
+    setFilesLoading(true);
+    setFilesError(null);
+    meetingApi
+      .getMinuteFiles(activeRecordingId)
+      .then((items) => setMinuteFiles((current) => ({ ...current, [activeRecordingId]: items })))
+      .catch(() => setFilesError('会议文件暂时无法读取'))
+      .finally(() => setFilesLoading(false));
+  }, [activeRecordingId, activeTab, filesLoading, minuteFiles]);
 
   const activeRecording = meeting?.minutes?.find((item) => item.id === activeRecordingId);
   const activeTranscriptCount = activeRecordingId
@@ -668,6 +701,40 @@ export function MeetingDetail() {
     </div>
   );
 
+  const filePane = filesLoading ? (
+    <Skeleton active paragraph={{ rows: 5 }} />
+  ) : filesError ? (
+    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={filesError} />
+  ) : (
+    <List
+      className="meeting-file-list"
+      dataSource={activeRecordingId ? (minuteFiles[activeRecordingId] ?? []) : []}
+      locale={{ emptyText: '当前录制暂无云盘文件' }}
+      renderItem={(file) => (
+        <List.Item
+          actions={[
+            <Button
+              key="download"
+              icon={<CloudDownloadOutlined />}
+              disabled={file.status !== 'ACTIVE'}
+              onClick={async () => {
+                const result = await driveApi.createDownloadUrl(file.fileId);
+                window.location.assign(result.url);
+              }}
+            >
+              下载
+            </Button>,
+          ]}
+        >
+          <List.Item.Meta
+            title={file.name}
+            description={`${file.fileType} · ${file.contentType ?? '未知格式'} · ${formatFileSize(file.sizeBytes)} · ${file.status ?? 'UNKNOWN'}`}
+          />
+        </List.Item>
+      )}
+    />
+  );
+
   return (
     <div className="meeting-detail-page">
       <header className="meeting-detail-header">
@@ -729,6 +796,7 @@ export function MeetingDetail() {
                 label: `逐字稿 ${allTranscriptSegments.length || ''}`,
                 children: transcriptPane,
               },
+              { key: 'files', label: '文件', children: filePane },
               { key: 'info', label: '会议信息', children: infoPane },
             ]}
           />

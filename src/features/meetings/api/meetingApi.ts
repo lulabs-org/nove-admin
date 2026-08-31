@@ -21,6 +21,7 @@ import type {
   MeetingSummary,
   SpeakerSummaryListResponse,
 } from '../model/types';
+import type { MinuteDriveFile } from '../../drive/model/types';
 
 export const meetingApi = {
   list: (params: MeetingListParams): Promise<MeetingListResponse> => {
@@ -93,6 +94,12 @@ export const meetingApi = {
       params: { page: 1, limit: 100 },
     });
   },
+
+  getMinuteFiles: (minuteId: string): Promise<MinuteDriveFile[]> =>
+    mutator<MinuteDriveFile[]>({
+      url: `/minutes/${minuteId}/files`,
+      method: 'GET',
+    }),
 
   // 后端接口暂时禁用，见 PR #321
   // reprocess: (id: string): Promise<Meeting> => {

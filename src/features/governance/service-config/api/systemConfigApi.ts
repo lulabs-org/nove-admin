@@ -1,5 +1,11 @@
 import { http } from '../../../../shared/lib/api/http';
-import type { MailConfig, SaveConfigResult, SystemConfigModule, WechatShopConfig } from '../types';
+import type {
+  DriveConfig,
+  MailConfig,
+  SaveConfigResult,
+  SystemConfigModule,
+  WechatShopConfig,
+} from '../types';
 
 async function getConfig<T>(module: SystemConfigModule): Promise<T | null> {
   const response = await http.get<T | null>(`/admin/system-config/${module}`);
@@ -21,5 +27,7 @@ export const systemConfigApi = {
   updateMailConfig: (data: MailConfig) => updateConfig('mail', data),
   getWechatShopConfig: () => getConfig<WechatShopConfig>('wechat-shop'),
   updateWechatShopConfig: (data: WechatShopConfig) => updateConfig('wechat-shop', data),
+  getDriveConfig: () => getConfig<DriveConfig>('drive'),
+  updateDriveConfig: (data: DriveConfig) => updateConfig('drive', data),
   deleteConfig,
 };

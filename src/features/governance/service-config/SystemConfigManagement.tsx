@@ -10,6 +10,7 @@ import InputNumber from 'antd/es/input-number';
 import Popconfirm from 'antd/es/popconfirm';
 import Row from 'antd/es/row';
 import Switch from 'antd/es/switch';
+import Select from 'antd/es/select';
 import Tabs from 'antd/es/tabs';
 import message from 'antd/es/message';
 import { useCallback, useEffect, useState } from 'react';
@@ -17,15 +18,16 @@ import { Perm } from '../../../app/guards/Perm';
 import { PERMISSIONS } from '../../../shared/utils/permissions';
 import { systemConfigApi } from './api/systemConfigApi';
 import { buildMailConfigPayload, buildWechatShopConfigPayload } from './lib/configPayload';
-import type { MailConfig, WechatShopConfig } from './types';
+import type { DriveConfig, MailConfig, WechatShopConfig } from './types';
 import './SystemConfigManagement.css';
 
 export function SystemConfigManagement() {
   const [mailForm] = Form.useForm<MailConfig>();
   const [wechatShopForm] = Form.useForm<WechatShopConfig>();
-  const [loading, setLoading] = useState({ mail: false, wechatShop: false });
-  const [saving, setSaving] = useState({ mail: false, wechatShop: false });
-  const [deleting, setDeleting] = useState({ mail: false, wechatShop: false });
+  const [driveForm] = Form.useForm<DriveConfig>();
+  const [loading, setLoading] = useState({ mail: false, wechatShop: false, drive: false });
+  const [saving, setSaving] = useState({ mail: false, wechatShop: false, drive: false });
+  const [deleting, setDeleting] = useState({ mail: false, wechatShop: false, drive: false });
 
   const loadMailConfig = useCallback(async () => {
     setLoading((current) => ({ ...current, mail: true }));
@@ -59,9 +61,22 @@ export function SystemConfigManagement() {
     }
   }, [wechatShopForm]);
 
+  const loadDriveConfig = useCallback(async () => {
+    setLoading((current) => ({ ...current, drive: true }));
+    try {
+      const config = await systemConfigApi.getDriveConfig();
+      if (config) driveForm.setFieldsValue(config);
+      else driveForm.resetFields();
+    } catch {
+      message.error('加载云盘配置失败');
+    } finally {
+      setLoading((current) => ({ ...current, drive: false }));
+    }
+  }, [driveForm]);
+
   useEffect(() => {
-    void Promise.all([loadMailConfig(), loadWechatShopConfig()]);
-  }, [loadMailConfig, loadWechatShopConfig]);
+    void Promise.all([loadMailConfig(), loadWechatShopConfig(), loadDriveConfig()]);
+  }, [loadDriveConfig, loadMailConfig, loadWechatShopConfig]);
 
   const saveMailConfig = async (values: MailConfig) => {
     setSaving((current) => ({ ...current, mail: true }));
@@ -86,6 +101,32 @@ export function SystemConfigManagement() {
       message.error('保存微信小店配置失败');
     } finally {
       setSaving((current) => ({ ...current, wechatShop: false }));
+    }
+  };
+
+  const saveDriveConfig = async (values: DriveConfig) => {
+    setSaving((current) => ({ ...current, drive: true }));
+    try {
+      await systemConfigApi.updateDriveConfig(values);
+      message.success('云盘配置已保存');
+      await loadDriveConfig();
+    } catch {
+      message.error('保存云盘配置失败');
+    } finally {
+      setSaving((current) => ({ ...current, drive: false }));
+    }
+  };
+
+  const deleteDriveConfig = async () => {
+    setDeleting((current) => ({ ...current, drive: true }));
+    try {
+      await systemConfigApi.deleteConfig('drive');
+      driveForm.resetFields();
+      message.success('云盘配置已删除');
+    } catch {
+      message.error('删除云盘配置失败');
+    } finally {
+      setDeleting((current) => ({ ...current, drive: false }));
     }
   };
 
@@ -335,6 +376,174 @@ export function SystemConfigManagement() {
                         htmlType="submit"
                         icon={<SaveOutlined />}
                         loading={saving.wechatShop}
+                      >
+                        保存配置
+                      </Button>
+                    </Perm>
+                  </div>
+                </Form>
+              </Card>
+            ),
+          },
+          {
+            key: 'drive',
+            label: '云盘与会议文件',
+            forceRender: true,
+            children: (
+              <Card
+                className="system-config-card"
+                loading={loading.drive}
+                title={
+                  <div className="system-config-card-heading">
+                    <span>云盘安全配置</span>
+                    <span>控制会议默认组织、文件白名单、大小和病毒扫描服务</span>
+                  </div>
+                }
+                extra={
+                  <Button icon={<ReloadOutlined />} onClick={() => void loadDriveConfig()}>
+                    刷新
+                  </Button>
+                }
+              >
+                <Alert
+                  type="warning"
+                  showIcon
+                  message="危险类型（宏文件、压缩包、脚本、可执行文件）由服务端永久禁止；此处只能在安全白名单内进一步收窄。"
+                />
+                <Form
+                  className="system-config-form"
+                  form={driveForm}
+                  layout="vertical"
+                  onFinish={saveDriveConfig}
+                  initialValues={{
+                    downloadUrlExpiresSeconds: 600,
+                    recycleRetentionDays: 30,
+                    imageMaxMiB: 20,
+                    documentMaxMiB: 100,
+                    audioMaxMiB: 2048,
+                    videoMaxMiB: 20480,
+                    malwareScanProvider: 'ALIYUN_SAS',
+                    aliyunSasRegionId: 'cn-beijing',
+                    scanTimeoutMs: 300000,
+                    scanPollIntervalMs: 3000,
+                    clamAvPort: 3310,
+                    clamAvTimeoutMs: 600000,
+                  }}
+                >
+                  <Form.Item
+                    label="会议同步默认组织 ID"
+                    name="defaultOrgId"
+                    rules={[{ required: true, message: '请输入组织 ID' }]}
+                  >
+                    <Input />
+                  </Form.Item>
+                  <Form.Item
+                    label="允许扩展名"
+                    name="allowedExtensions"
+                    tooltip="留空表示启用服务端全部安全白名单"
+                  >
+                    <Select
+                      mode="tags"
+                      tokenSeparators={[',', ' ']}
+                      placeholder="例如 .pdf .docx .mp4"
+                    />
+                  </Form.Item>
+                  <Row gutter={16}>
+                    <Col xs={12} md={6}>
+                      <Form.Item label="图片上限 MiB" name="imageMaxMiB">
+                        <InputNumber min={1} max={20} />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={12} md={6}>
+                      <Form.Item label="文档上限 MiB" name="documentMaxMiB">
+                        <InputNumber min={1} max={100} />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={12} md={6}>
+                      <Form.Item label="音频上限 MiB" name="audioMaxMiB">
+                        <InputNumber min={1} max={2048} />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={12} md={6}>
+                      <Form.Item label="视频上限 MiB" name="videoMaxMiB">
+                        <InputNumber min={1} max={20480} />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Alert
+                    type="info"
+                    showIcon
+                    message="办公文档、图片、HTML/SVG 必须扫描；音视频按文件头和来源校验。阿里云 SDK 单文件上限为 100 MiB。"
+                  />
+                  <Row gutter={16}>
+                    <Col xs={24} md={8}>
+                      <Form.Item label="病毒扫描 Provider" name="malwareScanProvider">
+                        <Select
+                          options={[
+                            { label: '阿里云安全中心（生产推荐）', value: 'ALIYUN_SAS' },
+                            { label: 'ClamAV（本地/专用节点）', value: 'CLAMAV' },
+                          ]}
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={24} md={8}>
+                      <Form.Item label="阿里云 SAS 地域" name="aliyunSasRegionId">
+                        <Input placeholder="cn-beijing" />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={12} md={4}>
+                      <Form.Item label="云扫描超时 ms" name="scanTimeoutMs">
+                        <InputNumber min={30000} max={1800000} />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={12} md={4}>
+                      <Form.Item label="轮询间隔 ms" name="scanPollIntervalMs">
+                        <InputNumber min={1000} max={30000} />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Row gutter={16}>
+                    <Col xs={24} md={12}>
+                      <Form.Item label="ClamAV 主机（Provider 为 ClamAV 时）" name="clamAvHost">
+                        <Input placeholder="clamav.internal" />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={12} md={6}>
+                      <Form.Item label="ClamAV 端口" name="clamAvPort">
+                        <InputNumber min={1} max={65535} />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={12} md={6}>
+                      <Form.Item label="ClamAV 超时 ms" name="clamAvTimeoutMs">
+                        <InputNumber min={1000} max={3600000} />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Row gutter={16}>
+                    <Col xs={12}>
+                      <Form.Item label="下载 URL 有效期（秒）" name="downloadUrlExpiresSeconds">
+                        <InputNumber min={60} max={3600} />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={12}>
+                      <Form.Item label="回收站保留天数" name="recycleRetentionDays">
+                        <InputNumber min={1} max={365} />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Divider />
+                  <div className="system-config-actions">
+                    <Perm permission={PERMISSIONS.SYSTEM.CONFIG_WRITE}>
+                      <Popconfirm title="删除云盘配置？" onConfirm={deleteDriveConfig}>
+                        <Button danger loading={deleting.drive}>
+                          删除配置
+                        </Button>
+                      </Popconfirm>
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        icon={<SaveOutlined />}
+                        loading={saving.drive}
                       >
                         保存配置
                       </Button>
