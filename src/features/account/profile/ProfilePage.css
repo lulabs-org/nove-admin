@@ -125,6 +125,11 @@
   margin-top: 4px;
 }
 
+.profile-security-link {
+  height: auto;
+  padding: 0;
+}
+
 .profile-avatar-editor {
   display: flex;
   align-items: center;

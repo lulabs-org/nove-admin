@@ -12,6 +12,7 @@
 import axios, { type AxiosError, type AxiosRequestConfig } from 'axios';
 import { message } from 'antd';
 import { authService } from '../../../features/auth/api/service';
+import { getDeviceId, getDeviceInfo } from '../../../features/auth/model/device';
 
 type RetryableRequestConfig = AxiosRequestConfig & {
   _retry?: boolean;
@@ -43,7 +44,11 @@ function refreshAccessToken() {
   refreshPromise ??= axios
     .post<RefreshTokenResponse>(
       `${import.meta.env.VITE_API_BASE_URL}/api/auth/refresh-token`,
-      { clientType: 'web' },
+      {
+        clientType: 'web',
+        deviceId: getDeviceId(),
+        deviceInfo: getDeviceInfo(),
+      },
       { withCredentials: true }
     )
     .then((response) => {

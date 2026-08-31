@@ -51,9 +51,6 @@ const { TextArea } = Input;
 
 interface ProfileFormValues {
   username?: string;
-  email?: string;
-  countryCode?: string;
-  phone?: string;
   displayName?: string;
   bio?: string;
 }
@@ -89,9 +86,6 @@ function getProfileName(profile?: UserProfileResponseDto, user?: User | null) {
 function toFormValues(profile?: UserProfileResponseDto, user?: User | null): ProfileFormValues {
   return {
     username: profile?.username || user?.username || undefined,
-    email: profile?.email || user?.email || undefined,
-    countryCode: profile?.countryCode || user?.countryCode || undefined,
-    phone: profile?.phone || user?.phone || undefined,
     displayName: getProfileName(profile, user),
     bio: profile?.profile?.bio || undefined,
   };
@@ -109,9 +103,6 @@ function trimEditable(value?: string) {
 function toUpdatePayload(values: ProfileFormValues): UpdateProfileDto {
   return {
     username: trimOptional(values.username),
-    email: trimOptional(values.email),
-    countryCode: trimOptional(values.countryCode),
-    phone: trimOptional(values.phone),
     displayName: trimOptional(values.displayName),
     bio: trimEditable(values.bio),
   };
@@ -400,7 +391,7 @@ export function ProfilePage() {
 
               <div className="profile-form-group-heading profile-form-group-heading-divided">
                 <span>账号与联系方式</span>
-                <Text type="secondary">用于登录、通知与账号找回</Text>
+                <Text type="secondary">联系方式请在安全设置中验证和换绑</Text>
               </div>
               <Row gutter={16}>
                 <Col xs={24} md={12}>
@@ -419,27 +410,19 @@ export function ProfilePage() {
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Form.Item
-                    name="email"
-                    label="邮箱"
-                    rules={[{ type: 'email', message: '邮箱格式不正确' }]}
-                  >
-                    <Input placeholder="name@example.com" />
+                  <Form.Item label="安全联系方式">
+                    <Space direction="vertical" size={2}>
+                      <Text>{displayText(profile?.email)}</Text>
+                      <Text type="secondary">{phone}</Text>
+                      <Button
+                        type="link"
+                        className="profile-security-link"
+                        href="/settings/security"
+                      >
+                        前往安全设置修改
+                      </Button>
+                    </Space>
                   </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Row gutter={8}>
-                    <Col span={8}>
-                      <Form.Item name="countryCode" label="区号">
-                        <Input placeholder="+86" maxLength={10} />
-                      </Form.Item>
-                    </Col>
-                    <Col span={16}>
-                      <Form.Item name="phone" label="手机号">
-                        <Input placeholder="13800138000" maxLength={20} />
-                      </Form.Item>
-                    </Col>
-                  </Row>
                 </Col>
               </Row>
               <div className="profile-form-actions">

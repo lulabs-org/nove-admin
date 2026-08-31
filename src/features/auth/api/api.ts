@@ -14,6 +14,7 @@ import {
   authControllerGetMe,
 } from '../../../shared/lib/api/orval/business/auth';
 import type { LoginRequest, LoginResponse, User } from '../model/types';
+import { getDeviceId, getDeviceInfo } from '../model/device';
 
 type AuthApiUser = Omit<User, 'permissions'> & {
   perm?: string[];
@@ -28,7 +29,11 @@ export function normalizeAuthUser(user: AuthApiUser): User {
 }
 
 export const login = async (data: LoginRequest): Promise<LoginResponse> => {
-  const response = await authControllerLogin(data);
+  const response = await authControllerLogin({
+    ...data,
+    deviceId: getDeviceId(),
+    deviceInfo: getDeviceInfo(),
+  });
   return {
     accessToken: response.accessToken,
     expiresIn: response.expiresIn,
