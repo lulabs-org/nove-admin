@@ -61,4 +61,12 @@ describe('application routes', () => {
       permission: PERMISSIONS.PROJECT.READ,
     });
   });
+
+  it('labels scheduled work as task scheduling', () => {
+    expect(routes.find((route) => route.path === '/tasks')).toMatchObject({
+      title: '任务调度',
+      menu: true,
+      permission: PERMISSIONS.TASK.READ,
+    });
+  });
 });
