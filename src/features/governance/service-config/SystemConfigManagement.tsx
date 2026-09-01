@@ -1,4 +1,13 @@
-import { ReloadOutlined, SaveOutlined } from '@ant-design/icons';
+import {
+  ApiOutlined,
+  MailOutlined,
+  QuestionCircleOutlined,
+  ReloadOutlined,
+  RobotOutlined,
+  SaveOutlined,
+  ShopOutlined,
+  VideoCameraOutlined,
+} from '@ant-design/icons';
 import Alert from 'antd/es/alert';
 import Button from 'antd/es/button';
 import Card from 'antd/es/card';
@@ -7,345 +16,704 @@ import Divider from 'antd/es/divider';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
 import InputNumber from 'antd/es/input-number';
+import Menu from 'antd/es/menu';
 import Popconfirm from 'antd/es/popconfirm';
+import Popover from 'antd/es/popover';
 import Row from 'antd/es/row';
+import Select from 'antd/es/select';
+import Space from 'antd/es/space';
 import Switch from 'antd/es/switch';
-import Tabs from 'antd/es/tabs';
+import Tag from 'antd/es/tag';
 import message from 'antd/es/message';
-import { useCallback, useEffect, useState } from 'react';
-import { Perm } from '../../../app/guards/Perm';
+import type { ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../../../shared/hooks/useAuth';
 import { PERMISSIONS } from '../../../shared/utils/permissions';
 import { systemConfigApi } from './api/systemConfigApi';
-import { buildMailConfigPayload, buildWechatShopConfigPayload } from './lib/configPayload';
-import type { MailConfig, WechatShopConfig } from './types';
+import {
+  buildAiConfigPayload,
+  buildLarkConfigPayload,
+  buildMailConfigPayload,
+  buildTencentMeetingConfigPayload,
+  buildWechatShopConfigPayload,
+} from './lib/configPayload';
+import type {
+  AiConfig,
+  ConfigDetail,
+  ConfigSource,
+  ConfigSummary,
+  LarkConfig,
+  MailConfig,
+  ModuleConfigMap,
+  SystemConfigModule,
+  TencentMeetingConfig,
+  TestConfigResult,
+  WechatShopConfig,
+} from './types';
 import './SystemConfigManagement.css';
 
+const MODULE_META: Record<
+  SystemConfigModule,
+  { label: string; title: string; description: string; icon: ReactNode }
+> = {
+  mail: {
+    label: '邮件服务',
+    title: '邮件服务配置',
+    description: '用于系统通知、验证码、账号找回和邮件品牌展示',
+    icon: <MailOutlined />,
+  },
+  ai: {
+    label: 'AI 模型',
+    title: 'AI 模型服务配置',
+    description: '用于妙记总结、参会者总结和其他智能生成任务',
+    icon: <RobotOutlined />,
+  },
+  'tencent-meeting': {
+    label: '腾讯会议',
+    title: '腾讯会议配置',
+    description: '用于会议记录同步、智能纪要和 Webhook 验证',
+    icon: <VideoCameraOutlined />,
+  },
+  lark: {
+    label: '飞书',
+    title: '飞书开放平台配置',
+    description: '用于飞书事件接收及多维表格数据同步',
+    icon: <ApiOutlined />,
+  },
+  'wechat-shop': {
+    label: '微信小店',
+    title: '微信小店配置',
+    description: '用于微信小店回调验证和订单同步',
+    icon: <ShopOutlined />,
+  },
+};
+
+const SOURCE_TEXT: Record<ConfigSource, string> = {
+  database: '数据库',
+  default: '默认值',
+};
+
+function SecretInput({ placeholder }: { placeholder: string }) {
+  return (
+    <Input.Password
+      autoComplete="new-password"
+      placeholder={placeholder}
+      visibilityToggle={false}
+    />
+  );
+}
+
+interface ConfigPanelProps {
+  module: SystemConfigModule;
+  summary?: ConfigSummary;
+  loading: boolean;
+  saving: boolean;
+  testing: boolean;
+  deleting: boolean;
+  canWrite: boolean;
+  testResult?: TestConfigResult;
+  onRefresh: () => void;
+  onSave: () => void;
+  onTest: () => void;
+  onDelete: () => void;
+  children: ReactNode;
+}
+
+function ConfigPanel({
+  module,
+  summary,
+  loading,
+  saving,
+  testing,
+  deleting,
+  canWrite,
+  testResult,
+  onRefresh,
+  onSave,
+  onTest,
+  onDelete,
+  children,
+}: ConfigPanelProps) {
+  const meta = MODULE_META[module];
+  const canDelete = summary?.source === 'database';
+
+  return (
+    <Card
+      className="system-config-card"
+      loading={loading}
+      title={
+        <div className="system-config-card-heading">
+          <span className="system-config-card-title-line">
+            <span>{meta.title}</span>
+            <Popover
+              placement="bottomLeft"
+              title="配置说明"
+              content={
+                <div className="system-config-secret-help">
+                  <div className="system-config-help-section">
+                    <div className="system-config-help-section-title">密钥更新</div>
+                    <div>
+                      已配置的敏感字段会以 <code>********</code>{' '}
+                      显示。保持原样或留空会继续使用当前密钥；输入新值后才会替换。
+                    </div>
+                  </div>
+                  {summary?.source === 'database' &&
+                    (summary.environmentImportedFields?.length ?? 0) > 0 && (
+                      <div className="system-config-help-section">
+                        <div className="system-config-help-section-title">初始配置来源</div>
+                        <div>
+                          此配置首次由环境变量导入数据库，当前及后续运行均以数据库配置为准。
+                        </div>
+                      </div>
+                    )}
+                  {module === 'lark' && (
+                    <div className="system-config-help-section">
+                      <div className="system-config-help-section-title">飞书长连接</div>
+                      <div>
+                        HTTP API、多维表格和 Webhook 配置会立即生效；App ID 或 App Secret
+                        变更后，事件长连接需要重启 API。
+                      </div>
+                    </div>
+                  )}
+                </div>
+              }
+            >
+              <Button
+                type="text"
+                size="small"
+                className="system-config-help-button"
+                aria-label="查看配置说明"
+                icon={<QuestionCircleOutlined />}
+              />
+            </Popover>
+          </span>
+          <span>{meta.description}</span>
+        </div>
+      }
+      extra={
+        <Space>
+          {summary && (
+            <>
+              <Tag color={summary.configured ? 'success' : 'default'}>
+                {summary.configured ? '已配置' : '未配置'}
+              </Tag>
+              <Tag>{SOURCE_TEXT[summary.source]}</Tag>
+            </>
+          )}
+          <Button icon={<ReloadOutlined />} onClick={onRefresh}>
+            刷新
+          </Button>
+        </Space>
+      }
+    >
+      {testResult && (
+        <Alert
+          className="system-config-test-result"
+          type={testResult.success ? 'success' : 'error'}
+          showIcon
+          title={testResult.message}
+        />
+      )}
+      {children}
+      <Divider className="system-config-divider" />
+      <div className="system-config-actions">
+        <Popconfirm
+          title={`删除${meta.label}数据库配置？`}
+          description="删除后服务将变为未配置，重启时也不会从环境变量恢复。"
+          okText="删除"
+          cancelText="取消"
+          disabled={!canWrite || !canDelete}
+          okButtonProps={{ danger: true, loading: deleting }}
+          onConfirm={onDelete}
+        >
+          <Button danger disabled={!canWrite || !canDelete} loading={deleting}>
+            删除数据库配置
+          </Button>
+        </Popconfirm>
+        <Space>
+          <Button disabled={!canWrite} loading={testing} onClick={onTest}>
+            测试连接
+          </Button>
+          <Button
+            type="primary"
+            icon={<SaveOutlined />}
+            disabled={!canWrite}
+            loading={saving}
+            onClick={onSave}
+          >
+            保存配置
+          </Button>
+        </Space>
+      </div>
+    </Card>
+  );
+}
+
 export function SystemConfigManagement() {
+  const { checkPermission } = useAuth();
+  const canWrite = checkPermission(PERMISSIONS.SYSTEM.CONFIG_WRITE);
+  const [activeModule, setActiveModule] = useState<SystemConfigModule>('mail');
+  const [summaries, setSummaries] = useState<ConfigSummary[]>([]);
+  const [details, setDetails] = useState<
+    Partial<{ [M in SystemConfigModule]: ConfigDetail<ModuleConfigMap[M]> }>
+  >({});
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [testResults, setTestResults] = useState<
+    Partial<Record<SystemConfigModule, TestConfigResult>>
+  >({});
+
   const [mailForm] = Form.useForm<MailConfig>();
-  const [wechatShopForm] = Form.useForm<WechatShopConfig>();
-  const [loading, setLoading] = useState({ mail: false, wechatShop: false });
-  const [saving, setSaving] = useState({ mail: false, wechatShop: false });
-  const [deleting, setDeleting] = useState({ mail: false, wechatShop: false });
+  const [aiForm] = Form.useForm<AiConfig>();
+  const [tencentForm] = Form.useForm<TencentMeetingConfig>();
+  const [larkForm] = Form.useForm<LarkConfig>();
+  const [wechatForm] = Form.useForm<WechatShopConfig>();
 
-  const loadMailConfig = useCallback(async () => {
-    setLoading((current) => ({ ...current, mail: true }));
-    try {
-      const config = await systemConfigApi.getMailConfig();
-      if (config) {
-        mailForm.setFieldsValue(config);
-      } else {
-        mailForm.resetFields();
-      }
-    } catch {
-      message.error('加载邮件配置失败');
-    } finally {
-      setLoading((current) => ({ ...current, mail: false }));
-    }
-  }, [mailForm]);
+  const summaryMap = useMemo(
+    () => new Map(summaries.map((summary) => [summary.module, summary])),
+    [summaries]
+  );
 
-  const loadWechatShopConfig = useCallback(async () => {
-    setLoading((current) => ({ ...current, wechatShop: true }));
+  const setFormValue = useCallback(
+    (module: SystemConfigModule, value: ModuleConfigMap[SystemConfigModule]) => {
+      if (module === 'mail') mailForm.setFieldsValue(value as MailConfig);
+      if (module === 'ai') aiForm.setFieldsValue(value as AiConfig);
+      if (module === 'tencent-meeting') tencentForm.setFieldsValue(value as TencentMeetingConfig);
+      if (module === 'lark') larkForm.setFieldsValue(value as LarkConfig);
+      if (module === 'wechat-shop') wechatForm.setFieldsValue(value as WechatShopConfig);
+    },
+    [aiForm, larkForm, mailForm, tencentForm, wechatForm]
+  );
+
+  const loadSummaries = useCallback(async () => {
     try {
-      const config = await systemConfigApi.getWechatShopConfig();
-      if (config) {
-        wechatShopForm.setFieldsValue(config);
-      } else {
-        wechatShopForm.resetFields();
-      }
+      setSummaries(await systemConfigApi.listConfigs());
     } catch {
-      message.error('加载微信小店配置失败');
-    } finally {
-      setLoading((current) => ({ ...current, wechatShop: false }));
+      message.error('加载服务配置状态失败');
     }
-  }, [wechatShopForm]);
+  }, []);
+
+  const loadConfig = useCallback(
+    async (module: SystemConfigModule) => {
+      setLoading(true);
+      try {
+        const detail = await systemConfigApi.getConfig(module);
+        setDetails((current) => ({ ...current, [module]: detail }));
+        setFormValue(module, detail.value);
+      } catch {
+        message.error(`加载${MODULE_META[module].label}配置失败`);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setFormValue]
+  );
 
   useEffect(() => {
-    void Promise.all([loadMailConfig(), loadWechatShopConfig()]);
-  }, [loadMailConfig, loadWechatShopConfig]);
+    void loadSummaries();
+  }, [loadSummaries]);
 
-  const saveMailConfig = async (values: MailConfig) => {
-    setSaving((current) => ({ ...current, mail: true }));
-    try {
-      await systemConfigApi.updateMailConfig(buildMailConfigPayload(values));
-      message.success('邮件配置已保存');
-      await loadMailConfig();
-    } catch {
-      message.error('保存邮件配置失败');
-    } finally {
-      setSaving((current) => ({ ...current, mail: false }));
+  useEffect(() => {
+    void loadConfig(activeModule);
+  }, [activeModule, loadConfig]);
+
+  const getValues = async (module: SystemConfigModule) => {
+    switch (module) {
+      case 'mail':
+        return buildMailConfigPayload(await mailForm.validateFields());
+      case 'ai':
+        return buildAiConfigPayload(await aiForm.validateFields());
+      case 'tencent-meeting':
+        return buildTencentMeetingConfigPayload(await tencentForm.validateFields());
+      case 'lark':
+        return buildLarkConfigPayload(await larkForm.validateFields());
+      case 'wechat-shop':
+        return buildWechatShopConfigPayload(await wechatForm.validateFields());
     }
   };
 
-  const saveWechatShopConfig = async (values: WechatShopConfig) => {
-    setSaving((current) => ({ ...current, wechatShop: true }));
+  const saveConfig = async () => {
+    setSaving(true);
     try {
-      await systemConfigApi.updateWechatShopConfig(buildWechatShopConfigPayload(values));
-      message.success('微信小店配置已保存');
-      await loadWechatShopConfig();
-    } catch {
-      message.error('保存微信小店配置失败');
+      const values = await getValues(activeModule);
+      const result = await systemConfigApi.updateConfig(activeModule, values);
+      if (result.restartRequired) message.warning(result.message);
+      else message.success(result.message);
+      await Promise.all([loadConfig(activeModule), loadSummaries()]);
+    } catch (error) {
+      if (error instanceof Error) message.error('保存配置失败');
     } finally {
-      setSaving((current) => ({ ...current, wechatShop: false }));
+      setSaving(false);
     }
   };
 
-  const deleteMailConfig = async () => {
-    setDeleting((current) => ({ ...current, mail: true }));
+  const testConfig = async () => {
+    setTesting(true);
     try {
-      await systemConfigApi.deleteConfig('mail');
-      mailForm.resetFields();
-      message.success('邮件配置已删除');
-    } catch {
-      message.error('删除邮件配置失败');
+      const values = await getValues(activeModule);
+      const result = await systemConfigApi.testConfig(activeModule, values);
+      setTestResults((current) => ({ ...current, [activeModule]: result }));
+    } catch (error) {
+      if (error instanceof Error) message.error('测试配置失败');
     } finally {
-      setDeleting((current) => ({ ...current, mail: false }));
+      setTesting(false);
     }
   };
 
-  const deleteWechatShopConfig = async () => {
-    setDeleting((current) => ({ ...current, wechatShop: true }));
+  const deleteConfig = async () => {
+    setDeleting(true);
     try {
-      await systemConfigApi.deleteConfig('wechat-shop');
-      wechatShopForm.resetFields();
-      message.success('微信小店配置已删除');
+      const result = await systemConfigApi.deleteConfig(activeModule);
+      if (result.restartRequired) message.warning(result.message);
+      else message.success(result.message);
+      setTestResults((current) => ({ ...current, [activeModule]: undefined }));
+      await Promise.all([loadConfig(activeModule), loadSummaries()]);
     } catch {
-      message.error('删除微信小店配置失败');
+      message.error('删除配置失败');
     } finally {
-      setDeleting((current) => ({ ...current, wechatShop: false }));
+      setDeleting(false);
     }
   };
+
+  const menuItems = [
+    {
+      type: 'group' as const,
+      label: '通知服务',
+      children: [menuItem('mail', summaryMap.get('mail'))],
+    },
+    {
+      type: 'group' as const,
+      label: 'AI 能力',
+      children: [menuItem('ai', summaryMap.get('ai'))],
+    },
+    {
+      type: 'group' as const,
+      label: '会议集成',
+      children: [
+        menuItem('tencent-meeting', summaryMap.get('tencent-meeting')),
+        menuItem('lark', summaryMap.get('lark')),
+      ],
+    },
+    {
+      type: 'group' as const,
+      label: '交易集成',
+      children: [menuItem('wechat-shop', summaryMap.get('wechat-shop'))],
+    },
+  ];
 
   return (
     <div className="system-config-page">
-      <Tabs
-        className="system-config-tabs"
-        items={[
-          {
-            key: 'mail',
-            label: '邮件服务',
-            forceRender: true,
-            children: (
-              <Card
-                className="system-config-card"
-                loading={loading.mail}
-                title={
-                  <div className="system-config-card-heading">
-                    <span>SMTP 邮件配置</span>
-                    <span>用于系统通知、验证码和账号找回邮件</span>
-                  </div>
-                }
-                extra={
-                  <Button icon={<ReloadOutlined />} onClick={() => void loadMailConfig()}>
-                    刷新
-                  </Button>
-                }
-              >
-                <Alert
-                  className="system-config-secret-tip"
-                  type="info"
-                  showIcon
-                  message="密码更新说明"
-                  description="已配置的密码会以 ******** 显示。无需修改时保持原样；输入新密码后将替换当前密码。"
-                />
-                <Form
-                  className="system-config-form"
-                  form={mailForm}
-                  layout="vertical"
-                  onFinish={saveMailConfig}
-                  initialValues={{ port: 587, secure: false }}
-                >
-                  <Row gutter={[16, 0]}>
-                    <Col xs={24} md={16}>
-                      <Form.Item
-                        label="SMTP 主机"
-                        name="host"
-                        rules={[{ required: true, message: '请输入 SMTP 主机' }]}
-                      >
-                        <Input placeholder="smtp.example.com" />
-                      </Form.Item>
-                    </Col>
-                    <Col xs={24} md={8}>
-                      <Form.Item
-                        label="端口"
-                        name="port"
-                        rules={[{ required: true, message: '请输入端口' }]}
-                      >
-                        <InputNumber min={1} max={65535} style={{ width: '100%' }} />
-                      </Form.Item>
-                    </Col>
-                  </Row>
-                  <Row gutter={[16, 0]}>
-                    <Col xs={24} md={12}>
-                      <Form.Item
-                        label="用户名"
-                        name="user"
-                        rules={[{ required: true, message: '请输入用户名' }]}
-                      >
-                        <Input autoComplete="username" />
-                      </Form.Item>
-                    </Col>
-                    <Col xs={24} md={12}>
-                      <Form.Item
-                        label="发件人地址"
-                        name="from"
-                        rules={[
-                          { required: true, type: 'email', message: '请输入有效的发件人地址' },
-                        ]}
-                      >
-                        <Input placeholder="noreply@example.com" />
-                      </Form.Item>
-                    </Col>
-                  </Row>
-                  <Form.Item label="密码" name="pass">
-                    <Input.Password
-                      autoComplete="new-password"
-                      placeholder="输入新密码以替换"
-                      visibilityToggle={false}
-                    />
-                  </Form.Item>
-                  <div className="system-config-switch-row">
-                    <div>
-                      <div className="system-config-switch-title">SSL/TLS 加密</div>
-                      <div className="system-config-switch-description">
-                        建议根据邮件服务商的端口要求启用
-                      </div>
-                    </div>
-                    <Form.Item name="secure" valuePropName="checked" noStyle>
-                      <Switch checkedChildren="启用" unCheckedChildren="关闭" />
-                    </Form.Item>
-                  </div>
-                  <Divider className="system-config-divider" />
-                  <div className="system-config-actions">
-                    <Perm permission={PERMISSIONS.SYSTEM.CONFIG_WRITE}>
-                      <Popconfirm
-                        title="删除邮件配置？"
-                        description="删除后邮件服务将无法使用，直到重新配置。"
-                        okText="删除"
-                        cancelText="取消"
-                        okButtonProps={{ danger: true, loading: deleting.mail }}
-                        onConfirm={deleteMailConfig}
-                      >
-                        <Button danger loading={deleting.mail}>
-                          删除配置
-                        </Button>
-                      </Popconfirm>
-                    </Perm>
-                    <Perm permission={PERMISSIONS.SYSTEM.CONFIG_WRITE}>
-                      <Button
-                        type="primary"
-                        htmlType="submit"
-                        icon={<SaveOutlined />}
-                        loading={saving.mail}
-                      >
-                        保存配置
-                      </Button>
-                    </Perm>
-                  </div>
-                </Form>
-              </Card>
-            ),
-          },
-          {
-            key: 'wechat-shop',
-            label: '微信小店',
-            forceRender: true,
-            children: (
-              <Card
-                className="system-config-card"
-                loading={loading.wechatShop}
-                title={
-                  <div className="system-config-card-heading">
-                    <span>微信小店配置</span>
-                    <span>用于微信小店回调验证和订单同步</span>
-                  </div>
-                }
-                extra={
-                  <Button icon={<ReloadOutlined />} onClick={() => void loadWechatShopConfig()}>
-                    刷新
-                  </Button>
-                }
-              >
-                <Alert
-                  className="system-config-secret-tip"
-                  type="info"
-                  showIcon
-                  message="密钥更新说明"
-                  description="已配置的密钥会以 ******** 显示。无需修改时保持原样；输入新值后将替换当前密钥。"
-                />
-                <Form
-                  className="system-config-form"
-                  form={wechatShopForm}
-                  layout="vertical"
-                  onFinish={saveWechatShopConfig}
-                >
-                  <Form.Item
-                    label="App ID"
-                    name="appId"
-                    rules={[{ required: true, message: '请输入 App ID' }]}
-                  >
-                    <Input placeholder="wx1234567890abcdef" />
-                  </Form.Item>
-                  <Form.Item label="App Secret" name="appSecret">
-                    <Input.Password
-                      autoComplete="new-password"
-                      placeholder="输入新 App Secret 以替换"
-                      visibilityToggle={false}
-                    />
-                  </Form.Item>
-                  <Form.Item label="Webhook Token" name="webhookToken">
-                    <Input.Password
-                      autoComplete="new-password"
-                      placeholder="输入新 Webhook Token 以替换"
-                      visibilityToggle={false}
-                    />
-                  </Form.Item>
-                  <Form.Item label="Encoding AES Key" name="encodingAesKey">
-                    <Input.Password
-                      autoComplete="new-password"
-                      placeholder="输入新 Encoding AES Key 以替换"
-                      visibilityToggle={false}
-                    />
-                  </Form.Item>
-                  <Form.Item
-                    label="API Base URL"
-                    name="apiBaseUrl"
-                    rules={[{ type: 'url', message: '请输入有效的 URL' }]}
-                  >
-                    <Input placeholder="https://api.weixin.qq.com" />
-                  </Form.Item>
-                  <Divider className="system-config-divider" />
-                  <div className="system-config-actions">
-                    <Perm permission={PERMISSIONS.SYSTEM.CONFIG_WRITE}>
-                      <Popconfirm
-                        title="删除微信小店配置？"
-                        description="删除后微信小店回调与订单同步将不可用，直到重新配置。"
-                        okText="删除"
-                        cancelText="取消"
-                        okButtonProps={{ danger: true, loading: deleting.wechatShop }}
-                        onConfirm={deleteWechatShopConfig}
-                      >
-                        <Button danger loading={deleting.wechatShop}>
-                          删除配置
-                        </Button>
-                      </Popconfirm>
-                    </Perm>
-                    <Perm permission={PERMISSIONS.SYSTEM.CONFIG_WRITE}>
-                      <Button
-                        type="primary"
-                        htmlType="submit"
-                        icon={<SaveOutlined />}
-                        loading={saving.wechatShop}
-                      >
-                        保存配置
-                      </Button>
-                    </Perm>
-                  </div>
-                </Form>
-              </Card>
-            ),
-          },
-        ]}
-      />
+      <aside className="system-config-sidebar">
+        <Menu
+          mode="inline"
+          selectedKeys={[activeModule]}
+          items={menuItems}
+          onSelect={({ key }) => setActiveModule(key as SystemConfigModule)}
+        />
+      </aside>
+      <main className="system-config-content">
+        <ConfigPanel
+          module={activeModule}
+          summary={summaryMap.get(activeModule) ?? details[activeModule]}
+          loading={loading}
+          saving={saving}
+          testing={testing}
+          deleting={deleting}
+          canWrite={canWrite}
+          testResult={testResults[activeModule]}
+          onRefresh={() => void Promise.all([loadConfig(activeModule), loadSummaries()])}
+          onSave={() => void saveConfig()}
+          onTest={() => void testConfig()}
+          onDelete={() => void deleteConfig()}
+        >
+          {activeModule === 'mail' && <MailFields form={mailForm} disabled={!canWrite} />}
+          {activeModule === 'ai' && <AiFields form={aiForm} disabled={!canWrite} />}
+          {activeModule === 'tencent-meeting' && (
+            <TencentMeetingFields form={tencentForm} disabled={!canWrite} />
+          )}
+          {activeModule === 'lark' && <LarkFields form={larkForm} disabled={!canWrite} />}
+          {activeModule === 'wechat-shop' && (
+            <WechatShopFields form={wechatForm} disabled={!canWrite} />
+          )}
+        </ConfigPanel>
+      </main>
     </div>
+  );
+}
+
+function menuItem(module: SystemConfigModule, summary?: ConfigSummary) {
+  return {
+    key: module,
+    icon: MODULE_META[module].icon,
+    label: (
+      <span className="system-config-menu-label">
+        <span>{MODULE_META[module].label}</span>
+        <span className={summary?.configured ? 'is-configured' : ''} />
+      </span>
+    ),
+  };
+}
+
+function MailFields({
+  form,
+  disabled,
+}: {
+  form: ReturnType<typeof Form.useForm<MailConfig>>[0];
+  disabled: boolean;
+}) {
+  return (
+    <Form className="system-config-form" form={form} layout="vertical" disabled={disabled}>
+      <Divider titlePlacement="start">SMTP 设置</Divider>
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item label="SMTP 主机" name="host" rules={[{ required: true }]}>
+            <Input placeholder="smtp.example.com" />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={6}>
+          <Form.Item label="端口" name="port" rules={[{ required: true }]}>
+            <InputNumber min={1} max={65535} style={{ width: '100%' }} />
+          </Form.Item>
+        </Col>
+      </Row>
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item label="用户名" name="user" rules={[{ required: true }]}>
+            <Input autoComplete="username" />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item label="发件人地址" name="from" rules={[{ required: true, type: 'email' }]}>
+            <Input placeholder="noreply@example.com" />
+          </Form.Item>
+        </Col>
+      </Row>
+      <Form.Item label="密码" name="pass" rules={[{ required: true }]}>
+        <SecretInput placeholder="输入新密码以替换" />
+      </Form.Item>
+      <div className="system-config-switch-row">
+        <div>
+          <div className="system-config-switch-title">SSL/TLS 加密</div>
+          <div className="system-config-switch-description">根据邮件服务商端口要求启用</div>
+        </div>
+        <Form.Item name="secure" valuePropName="checked" noStyle>
+          <Switch checkedChildren="启用" unCheckedChildren="关闭" />
+        </Form.Item>
+      </div>
+      <Divider titlePlacement="start">邮件品牌</Divider>
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item label="品牌名称" name="brandName">
+            <Input placeholder="Nove System" />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item
+            label="主题色"
+            name="brandPrimaryColor"
+            rules={[{ pattern: /^#[0-9a-fA-F]{6}$/ }]}
+          >
+            <Input placeholder="#2563eb" />
+          </Form.Item>
+        </Col>
+      </Row>
+      <Form.Item label="Logo URL" name="brandLogoUrl" rules={[{ type: 'url' }]}>
+        <Input placeholder="https://example.com/logo.png" />
+      </Form.Item>
+      <Form.Item label="公开访问地址" name="brandPublicBaseUrl" rules={[{ type: 'url' }]}>
+        <Input placeholder="https://app.example.com" />
+      </Form.Item>
+      <Form.Item label="页脚文字" name="brandFooterText">
+        <Input.TextArea rows={3} />
+      </Form.Item>
+    </Form>
+  );
+}
+
+function AiFields({
+  form,
+  disabled,
+}: {
+  form: ReturnType<typeof Form.useForm<AiConfig>>[0];
+  disabled: boolean;
+}) {
+  return (
+    <Form className="system-config-form" form={form} layout="vertical" disabled={disabled}>
+      <Row gutter={16}>
+        <Col xs={24} md={8}>
+          <Form.Item label="服务商" name="provider" rules={[{ required: true }]}>
+            <Select
+              options={[
+                { value: 'ark', label: '火山方舟' },
+                { value: 'openai', label: 'OpenAI' },
+                { value: 'custom', label: '自定义兼容服务' },
+              ]}
+            />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={16}>
+          <Form.Item label="模型" name="model" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+        </Col>
+      </Row>
+      <Form.Item label="API Base URL" name="baseUrl" rules={[{ required: true, type: 'url' }]}>
+        <Input />
+      </Form.Item>
+      <Form.Item label="API Key" name="apiKey" rules={[{ required: true }]}>
+        <SecretInput placeholder="输入新 API Key 以替换" />
+      </Form.Item>
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item label="最大 Tokens" name="maxTokens" rules={[{ required: true }]}>
+            <InputNumber min={1} style={{ width: '100%' }} />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item label="Temperature" name="temperature" rules={[{ required: true }]}>
+            <InputNumber min={0} max={2} step={0.1} style={{ width: '100%' }} />
+          </Form.Item>
+        </Col>
+      </Row>
+    </Form>
+  );
+}
+
+function TencentMeetingFields({
+  form,
+  disabled,
+}: {
+  form: ReturnType<typeof Form.useForm<TencentMeetingConfig>>[0];
+  disabled: boolean;
+}) {
+  return (
+    <Form className="system-config-form" form={form} layout="vertical" disabled={disabled}>
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item label="App ID" name="appId" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item label="SDK ID" name="sdkId" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+        </Col>
+      </Row>
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item label="Secret ID" name="secretId" rules={[{ required: true }]}>
+            <SecretInput placeholder="输入新 Secret ID 以替换" />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item label="默认用户 ID" name="userId" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+        </Col>
+      </Row>
+      <Form.Item label="Secret Key" name="secretKey" rules={[{ required: true }]}>
+        <SecretInput placeholder="输入新 Secret Key 以替换" />
+      </Form.Item>
+      <Divider titlePlacement="start">Webhook</Divider>
+      <Form.Item label="Webhook Token" name="webhookToken">
+        <SecretInput placeholder="输入新 Token 以替换" />
+      </Form.Item>
+      <Form.Item label="Encoding AES Key" name="encodingAesKey">
+        <SecretInput placeholder="输入新 AES Key 以替换" />
+      </Form.Item>
+    </Form>
+  );
+}
+
+function LarkFields({
+  form,
+  disabled,
+}: {
+  form: ReturnType<typeof Form.useForm<LarkConfig>>[0];
+  disabled: boolean;
+}) {
+  return (
+    <Form className="system-config-form" form={form} layout="vertical" disabled={disabled}>
+      <Divider titlePlacement="start">应用与事件</Divider>
+      <Form.Item label="App ID" name="appId" rules={[{ required: true }]}>
+        <Input />
+      </Form.Item>
+      <Form.Item label="App Secret" name="appSecret" rules={[{ required: true }]}>
+        <SecretInput placeholder="输入新 App Secret 以替换" />
+      </Form.Item>
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item label="事件 Encrypt Key" name="eventEncryptKey">
+            <SecretInput placeholder="输入新 Encrypt Key 以替换" />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item label="事件 Verification Token" name="eventVerificationToken">
+            <SecretInput placeholder="输入新 Verification Token 以替换" />
+          </Form.Item>
+        </Col>
+      </Row>
+      <Divider titlePlacement="start">多维表格</Divider>
+      <Form.Item label="Bitable App Token" name="bitableAppToken" rules={[{ required: true }]}>
+        <SecretInput placeholder="输入新 App Token 以替换" />
+      </Form.Item>
+      <Row gutter={16}>
+        <Col xs={24} md={12}>
+          <Form.Item label="会议记录表 ID" name="meetingTableId" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item label="参会成员表 ID" name="meetingUserTableId" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item label="录制文件表 ID" name="recordingFileTableId" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={12}>
+          <Form.Item
+            label="个人总结表 ID"
+            name="personalSummaryTableId"
+            rules={[{ required: true }]}
+          >
+            <Input />
+          </Form.Item>
+        </Col>
+      </Row>
+    </Form>
+  );
+}
+
+function WechatShopFields({
+  form,
+  disabled,
+}: {
+  form: ReturnType<typeof Form.useForm<WechatShopConfig>>[0];
+  disabled: boolean;
+}) {
+  return (
+    <Form className="system-config-form" form={form} layout="vertical" disabled={disabled}>
+      <Form.Item label="App ID" name="appId" rules={[{ required: true }]}>
+        <Input />
+      </Form.Item>
+      <Form.Item label="App Secret" name="appSecret" rules={[{ required: true }]}>
+        <SecretInput placeholder="输入新 App Secret 以替换" />
+      </Form.Item>
+      <Form.Item label="Webhook Token" name="webhookToken">
+        <SecretInput placeholder="输入新 Webhook Token 以替换" />
+      </Form.Item>
+      <Form.Item label="Encoding AES Key" name="encodingAesKey">
+        <SecretInput placeholder="输入新 Encoding AES Key 以替换" />
+      </Form.Item>
+      <Form.Item label="API Base URL" name="apiBaseUrl" rules={[{ required: true, type: 'url' }]}>
+        <Input />
+      </Form.Item>
+    </Form>
   );
 }

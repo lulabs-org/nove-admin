@@ -507,7 +507,7 @@ export function OrderManagement() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
+    <div>
       <div
         style={{
           marginBottom: 16,

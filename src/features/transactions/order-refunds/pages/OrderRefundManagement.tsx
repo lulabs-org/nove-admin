@@ -358,7 +358,7 @@ export function OrderRefundManagement() {
   };
 
   return (
-    <div style={{ padding: 24 }}>
+    <div>
       <div style={{ marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         <Search
           allowClear

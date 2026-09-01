@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { buildMailConfigPayload, buildWechatShopConfigPayload } from './configPayload';
+import {
+  buildAiConfigPayload,
+  buildLarkConfigPayload,
+  buildMailConfigPayload,
+  buildTencentMeetingConfigPayload,
+  buildWechatShopConfigPayload,
+} from './configPayload';
 
 describe('system config payloads', () => {
   it('does not overwrite the saved SMTP password when the password field is blank', () => {
@@ -37,5 +43,25 @@ describe('system config payloads', () => {
         from: 'noreply@example.com',
       })
     ).toHaveProperty('pass', '********');
+  });
+
+  it('omits blank secrets for every new service module', () => {
+    expect(buildAiConfigPayload({ apiKey: ' ' })).not.toHaveProperty('apiKey');
+    expect(
+      buildTencentMeetingConfigPayload({
+        secretId: ' ',
+        secretKey: '',
+        webhookToken: 'token',
+        encodingAesKey: '',
+      })
+    ).toEqual({ webhookToken: 'token' });
+    expect(
+      buildLarkConfigPayload({
+        appSecret: '',
+        eventEncryptKey: 'encrypt-key',
+        eventVerificationToken: '',
+        bitableAppToken: '********',
+      })
+    ).toEqual({ eventEncryptKey: 'encrypt-key', bitableAppToken: '********' });
   });
 });
