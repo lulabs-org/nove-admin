@@ -30,6 +30,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { PERMISSIONS } from '../../../shared/utils/permissions';
 import { systemConfigApi } from './api/systemConfigApi';
+import { ReadonlyConfigView } from './components/ReadonlyConfigView';
 import {
   buildAiConfigPayload,
   buildLarkConfigPayload,
@@ -209,7 +210,7 @@ function ConfigPanel({
         </Space>
       }
     >
-      {testResult && (
+      {canWrite && testResult && (
         <Alert
           className="system-config-test-result"
           type={testResult.success ? 'success' : 'error'}
@@ -218,36 +219,34 @@ function ConfigPanel({
         />
       )}
       {children}
-      <Divider className="system-config-divider" />
-      <div className="system-config-actions">
-        <Popconfirm
-          title={`删除${meta.label}数据库配置？`}
-          description="删除后服务将变为未配置，重启时也不会从环境变量恢复。"
-          okText="删除"
-          cancelText="取消"
-          disabled={!canWrite || !canDelete}
-          okButtonProps={{ danger: true, loading: deleting }}
-          onConfirm={onDelete}
-        >
-          <Button danger disabled={!canWrite || !canDelete} loading={deleting}>
-            删除数据库配置
-          </Button>
-        </Popconfirm>
-        <Space>
-          <Button disabled={!canWrite} loading={testing} onClick={onTest}>
-            测试连接
-          </Button>
-          <Button
-            type="primary"
-            icon={<SaveOutlined />}
-            disabled={!canWrite}
-            loading={saving}
-            onClick={onSave}
-          >
-            保存配置
-          </Button>
-        </Space>
-      </div>
+      {canWrite && (
+        <>
+          <Divider className="system-config-divider" />
+          <div className="system-config-actions">
+            <Popconfirm
+              title={`删除${meta.label}数据库配置？`}
+              description="删除后服务将变为未配置，重启时也不会从环境变量恢复。"
+              okText="删除"
+              cancelText="取消"
+              disabled={!canDelete}
+              okButtonProps={{ danger: true, loading: deleting }}
+              onConfirm={onDelete}
+            >
+              <Button danger disabled={!canDelete} loading={deleting}>
+                删除数据库配置
+              </Button>
+            </Popconfirm>
+            <Space>
+              <Button loading={testing} onClick={onTest}>
+                测试连接
+              </Button>
+              <Button type="primary" icon={<SaveOutlined />} loading={saving} onClick={onSave}>
+                保存配置
+              </Button>
+            </Space>
+          </div>
+        </>
+      )}
     </Card>
   );
 }
@@ -304,14 +303,14 @@ export function SystemConfigManagement() {
       try {
         const detail = await systemConfigApi.getConfig(module);
         setDetails((current) => ({ ...current, [module]: detail }));
-        setFormValue(module, detail.value);
+        if (canWrite) setFormValue(module, detail.value);
       } catch {
         message.error(`加载${MODULE_META[module].label}配置失败`);
       } finally {
         setLoading(false);
       }
     },
-    [setFormValue]
+    [canWrite, setFormValue]
   );
 
   useEffect(() => {
@@ -431,14 +430,16 @@ export function SystemConfigManagement() {
           onTest={() => void testConfig()}
           onDelete={() => void deleteConfig()}
         >
-          {activeModule === 'mail' && <MailFields form={mailForm} disabled={!canWrite} />}
-          {activeModule === 'ai' && <AiFields form={aiForm} disabled={!canWrite} />}
-          {activeModule === 'tencent-meeting' && (
-            <TencentMeetingFields form={tencentForm} disabled={!canWrite} />
-          )}
-          {activeModule === 'lark' && <LarkFields form={larkForm} disabled={!canWrite} />}
-          {activeModule === 'wechat-shop' && (
-            <WechatShopFields form={wechatForm} disabled={!canWrite} />
+          {canWrite ? (
+            <>
+              {activeModule === 'mail' && <MailFields form={mailForm} />}
+              {activeModule === 'ai' && <AiFields form={aiForm} />}
+              {activeModule === 'tencent-meeting' && <TencentMeetingFields form={tencentForm} />}
+              {activeModule === 'lark' && <LarkFields form={larkForm} />}
+              {activeModule === 'wechat-shop' && <WechatShopFields form={wechatForm} />}
+            </>
+          ) : (
+            <ReadonlyConfigView module={activeModule} value={details[activeModule]?.value} />
           )}
         </ConfigPanel>
       </main>
@@ -459,15 +460,9 @@ function menuItem(module: SystemConfigModule, summary?: ConfigSummary) {
   };
 }
 
-function MailFields({
-  form,
-  disabled,
-}: {
-  form: ReturnType<typeof Form.useForm<MailConfig>>[0];
-  disabled: boolean;
-}) {
+function MailFields({ form }: { form: ReturnType<typeof Form.useForm<MailConfig>>[0] }) {
   return (
-    <Form className="system-config-form" form={form} layout="vertical" disabled={disabled}>
+    <Form className="system-config-form" form={form} layout="vertical">
       <Divider titlePlacement="start">SMTP 设置</Divider>
       <Row gutter={16}>
         <Col xs={24} md={12}>
@@ -535,15 +530,9 @@ function MailFields({
   );
 }
 
-function AiFields({
-  form,
-  disabled,
-}: {
-  form: ReturnType<typeof Form.useForm<AiConfig>>[0];
-  disabled: boolean;
-}) {
+function AiFields({ form }: { form: ReturnType<typeof Form.useForm<AiConfig>>[0] }) {
   return (
-    <Form className="system-config-form" form={form} layout="vertical" disabled={disabled}>
+    <Form className="system-config-form" form={form} layout="vertical">
       <Row gutter={16}>
         <Col xs={24} md={8}>
           <Form.Item label="服务商" name="provider" rules={[{ required: true }]}>
@@ -586,13 +575,11 @@ function AiFields({
 
 function TencentMeetingFields({
   form,
-  disabled,
 }: {
   form: ReturnType<typeof Form.useForm<TencentMeetingConfig>>[0];
-  disabled: boolean;
 }) {
   return (
-    <Form className="system-config-form" form={form} layout="vertical" disabled={disabled}>
+    <Form className="system-config-form" form={form} layout="vertical">
       <Row gutter={16}>
         <Col xs={24} md={12}>
           <Form.Item label="App ID" name="appId" rules={[{ required: true }]}>
@@ -631,15 +618,9 @@ function TencentMeetingFields({
   );
 }
 
-function LarkFields({
-  form,
-  disabled,
-}: {
-  form: ReturnType<typeof Form.useForm<LarkConfig>>[0];
-  disabled: boolean;
-}) {
+function LarkFields({ form }: { form: ReturnType<typeof Form.useForm<LarkConfig>>[0] }) {
   return (
-    <Form className="system-config-form" form={form} layout="vertical" disabled={disabled}>
+    <Form className="system-config-form" form={form} layout="vertical">
       <Divider titlePlacement="start">应用与事件</Divider>
       <Form.Item label="App ID" name="appId" rules={[{ required: true }]}>
         <Input />
@@ -695,13 +676,11 @@ function LarkFields({
 
 function WechatShopFields({
   form,
-  disabled,
 }: {
   form: ReturnType<typeof Form.useForm<WechatShopConfig>>[0];
-  disabled: boolean;
 }) {
   return (
-    <Form className="system-config-form" form={form} layout="vertical" disabled={disabled}>
+    <Form className="system-config-form" form={form} layout="vertical">
       <Form.Item label="App ID" name="appId" rules={[{ required: true }]}>
         <Input />
       </Form.Item>

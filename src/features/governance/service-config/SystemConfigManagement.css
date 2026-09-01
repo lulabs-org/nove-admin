@@ -131,6 +131,73 @@
   margin-bottom: 20px;
 }
 
+.system-config-readonly {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.system-config-readonly-section h3 {
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #1f2329;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.system-config-readonly-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 32px;
+  margin: 0;
+}
+
+.system-config-readonly-item {
+  min-width: 0;
+  padding: 12px 0 16px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.system-config-readonly-item.is-full-width {
+  grid-column: 1 / -1;
+}
+
+.system-config-readonly-item dt {
+  margin-bottom: 6px;
+  color: #8f959e;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.system-config-readonly-item dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #1f2329;
+  font-size: 14px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.system-config-readonly-empty {
+  color: #b1b5bc;
+}
+
+.system-config-readonly-color {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.system-config-readonly-swatch {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border: 1px solid rgb(0 0 0 / 8%);
+  border-radius: 4px;
+}
+
 .system-config-form .ant-form-item {
   margin-bottom: 20px;
 }
@@ -201,5 +268,13 @@
   .system-config-card .ant-card-body {
     padding-right: 16px;
     padding-left: 16px;
+  }
+
+  .system-config-readonly-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .system-config-readonly-item.is-full-width {
+    grid-column: auto;
   }
 }
