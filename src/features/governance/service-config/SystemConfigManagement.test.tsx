@@ -61,7 +61,17 @@ describe('SystemConfigManagement', () => {
         updatedAt: null,
         environmentImportedAt: module === 'mail' ? '2026-09-01T00:00:00.000Z' : null,
         environmentImportedFields: module === 'mail' ? ['host', 'user'] : [],
-        value: {},
+        value:
+          module === 'mail'
+            ? {
+                host: 'smtp.example.com',
+                port: 465,
+                secure: true,
+                user: 'noreply@example.com',
+                pass: '********',
+                from: 'noreply@example.com',
+              }
+            : {},
       })
     );
   });
@@ -76,6 +86,12 @@ describe('SystemConfigManagement', () => {
     expect(screen.getByText('AI 能力')).toBeInTheDocument();
     expect(screen.getByText('会议集成')).toBeInTheDocument();
     expect(screen.getByText('交易集成')).toBeInTheDocument();
+
+    const passwordInput = screen.getByPlaceholderText('输入新密码以替换');
+    expect(passwordInput).toHaveValue('********');
+    await userEvent.clear(passwordInput);
+    await userEvent.type(passwordInput, 'replacement-secret');
+    expect(passwordInput).toHaveValue('replacement-secret');
 
     await userEvent.click(screen.getByLabelText('查看配置说明'));
     expect(await screen.findByText('初始配置来源')).toBeInTheDocument();

@@ -25,7 +25,7 @@ import Space from 'antd/es/space';
 import Switch from 'antd/es/switch';
 import Tag from 'antd/es/tag';
 import message from 'antd/es/message';
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { PERMISSIONS } from '../../../shared/utils/permissions';
@@ -93,9 +93,12 @@ const SOURCE_TEXT: Record<ConfigSource, string> = {
   default: '默认值',
 };
 
-function SecretInput({ placeholder }: { placeholder: string }) {
+type SecretInputProps = ComponentProps<typeof Input.Password>;
+
+function SecretInput({ placeholder, ...inputProps }: SecretInputProps) {
   return (
     <Input.Password
+      {...inputProps}
       autoComplete="new-password"
       placeholder={placeholder}
       visibilityToggle={false}
