@@ -1,13 +1,40 @@
 import { http } from '../../../../shared/lib/api/http';
-import type { MailConfig, SaveConfigResult, SystemConfigModule, WechatShopConfig } from '../types';
+import type {
+  ConfigDetail,
+  ConfigSummary,
+  ModuleConfigMap,
+  SaveConfigResult,
+  SystemConfigModule,
+  TestConfigResult,
+} from '../types';
 
-async function getConfig<T>(module: SystemConfigModule): Promise<T | null> {
-  const response = await http.get<T | null>(`/admin/system-config/${module}`);
+async function listConfigs(): Promise<ConfigSummary[]> {
+  const response = await http.get<ConfigSummary[]>('/admin/system-config');
   return response.data;
 }
 
-async function updateConfig<T>(module: SystemConfigModule, data: T): Promise<SaveConfigResult> {
+async function getConfig<M extends SystemConfigModule>(
+  module: M
+): Promise<ConfigDetail<ModuleConfigMap[M]>> {
+  const response = await http.get<ConfigDetail<ModuleConfigMap[M]>>(
+    `/admin/system-config/${module}`
+  );
+  return response.data;
+}
+
+async function updateConfig<M extends SystemConfigModule>(
+  module: M,
+  data: ModuleConfigMap[M]
+): Promise<SaveConfigResult> {
   const response = await http.put<SaveConfigResult>(`/admin/system-config/${module}`, data);
+  return response.data;
+}
+
+async function testConfig<M extends SystemConfigModule>(
+  module: M,
+  data: ModuleConfigMap[M]
+): Promise<TestConfigResult> {
+  const response = await http.post<TestConfigResult>(`/admin/system-config/${module}/test`, data);
   return response.data;
 }
 
@@ -17,9 +44,9 @@ async function deleteConfig(module: SystemConfigModule): Promise<SaveConfigResul
 }
 
 export const systemConfigApi = {
-  getMailConfig: () => getConfig<MailConfig>('mail'),
-  updateMailConfig: (data: MailConfig) => updateConfig('mail', data),
-  getWechatShopConfig: () => getConfig<WechatShopConfig>('wechat-shop'),
-  updateWechatShopConfig: (data: WechatShopConfig) => updateConfig('wechat-shop', data),
+  listConfigs,
+  getConfig,
+  updateConfig,
+  testConfig,
   deleteConfig,
 };

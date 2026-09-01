@@ -1,4 +1,10 @@
-import type { MailConfig, WechatShopConfig } from '../types';
+import type {
+  AiConfig,
+  LarkConfig,
+  MailConfig,
+  TencentMeetingConfig,
+  WechatShopConfig,
+} from '../types';
 
 /**
  * Do not submit an empty secret field: the API merges updates, so omission
@@ -25,4 +31,23 @@ export function buildMailConfigPayload(values: MailConfig): MailConfig {
 
 export function buildWechatShopConfigPayload(values: WechatShopConfig): WechatShopConfig {
   return omitEmptySecrets(values, ['appSecret', 'webhookToken', 'encodingAesKey']);
+}
+
+export function buildAiConfigPayload(values: AiConfig): AiConfig {
+  return omitEmptySecrets(values, ['apiKey']);
+}
+
+export function buildTencentMeetingConfigPayload(
+  values: TencentMeetingConfig
+): TencentMeetingConfig {
+  return omitEmptySecrets(values, ['secretId', 'secretKey', 'webhookToken', 'encodingAesKey']);
+}
+
+export function buildLarkConfigPayload(values: LarkConfig): LarkConfig {
+  return omitEmptySecrets(values, [
+    'appSecret',
+    'eventEncryptKey',
+    'eventVerificationToken',
+    'bitableAppToken',
+  ]);
 }

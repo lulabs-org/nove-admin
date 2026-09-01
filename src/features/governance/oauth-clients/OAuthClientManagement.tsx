@@ -312,7 +312,7 @@ export function OAuthClientManagement() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
+    <div>
       <Space style={{ marginBottom: 16 }} wrap>
         <Input.Search
           allowClear

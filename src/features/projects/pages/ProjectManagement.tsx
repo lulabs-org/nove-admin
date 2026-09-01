@@ -484,7 +484,7 @@ export function ProjectManagement() {
 
   if (!currentOrgId) {
     return (
-      <div style={{ padding: 24 }}>
+      <div>
         <Alert
           type="warning"
           showIcon
