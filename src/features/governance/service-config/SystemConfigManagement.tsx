@@ -1,5 +1,6 @@
 import {
   ApiOutlined,
+  EditOutlined,
   MailOutlined,
   QuestionCircleOutlined,
   ReloadOutlined,
@@ -115,8 +116,11 @@ interface ConfigPanelProps {
   testing: boolean;
   deleting: boolean;
   canWrite: boolean;
+  isEditing: boolean;
   testResult?: TestConfigResult;
   onRefresh: () => void;
+  onEdit: () => void;
+  onCancelEdit: () => void;
   onSave: () => void;
   onTest: () => void;
   onDelete: () => void;
@@ -131,8 +135,11 @@ function ConfigPanel({
   testing,
   deleting,
   canWrite,
+  isEditing,
   testResult,
   onRefresh,
+  onEdit,
+  onCancelEdit,
   onSave,
   onTest,
   onDelete,
@@ -204,13 +211,18 @@ function ConfigPanel({
               <Tag>{SOURCE_TEXT[summary.source]}</Tag>
             </>
           )}
+          {canWrite && !isEditing && (
+            <Button type="primary" icon={<EditOutlined />} onClick={onEdit}>
+              编辑配置
+            </Button>
+          )}
           <Button icon={<ReloadOutlined />} onClick={onRefresh}>
             刷新
           </Button>
         </Space>
       }
     >
-      {canWrite && testResult && (
+      {isEditing && testResult && (
         <Alert
           className="system-config-test-result"
           type={testResult.success ? 'success' : 'error'}
@@ -219,7 +231,7 @@ function ConfigPanel({
         />
       )}
       {children}
-      {canWrite && (
+      {isEditing && (
         <>
           <Divider className="system-config-divider" />
           <div className="system-config-actions">
@@ -237,6 +249,7 @@ function ConfigPanel({
               </Button>
             </Popconfirm>
             <Space>
+              <Button onClick={onCancelEdit}>取消编辑</Button>
               <Button loading={testing} onClick={onTest}>
                 测试连接
               </Button>
@@ -255,6 +268,7 @@ export function SystemConfigManagement() {
   const { checkPermission } = useAuth();
   const canWrite = checkPermission(PERMISSIONS.SYSTEM.CONFIG_WRITE);
   const [activeModule, setActiveModule] = useState<SystemConfigModule>('mail');
+  const [editingModule, setEditingModule] = useState<SystemConfigModule | null>(null);
   const [summaries, setSummaries] = useState<ConfigSummary[]>([]);
   const [details, setDetails] = useState<
     Partial<{ [M in SystemConfigModule]: ConfigDetail<ModuleConfigMap[M]> }>
@@ -297,21 +311,23 @@ export function SystemConfigManagement() {
     }
   }, []);
 
-  const loadConfig = useCallback(
-    async (module: SystemConfigModule) => {
-      setLoading(true);
-      try {
-        const detail = await systemConfigApi.getConfig(module);
-        setDetails((current) => ({ ...current, [module]: detail }));
-        if (canWrite) setFormValue(module, detail.value);
-      } catch {
-        message.error(`加载${MODULE_META[module].label}配置失败`);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [canWrite, setFormValue]
-  );
+  const loadConfig = useCallback(async (module: SystemConfigModule) => {
+    setLoading(true);
+    try {
+      const detail = await systemConfigApi.getConfig(module);
+      setDetails((current) => ({ ...current, [module]: detail }));
+    } catch {
+      message.error(`加载${MODULE_META[module].label}配置失败`);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!canWrite || editingModule === null) return;
+    const detail = details[editingModule];
+    if (detail) setFormValue(editingModule, detail.value);
+  }, [canWrite, details, editingModule, setFormValue]);
 
   useEffect(() => {
     void loadSummaries();
@@ -344,6 +360,7 @@ export function SystemConfigManagement() {
       if (result.restartRequired) message.warning(result.message);
       else message.success(result.message);
       await Promise.all([loadConfig(activeModule), loadSummaries()]);
+      setEditingModule(null);
     } catch (error) {
       if (error instanceof Error) message.error('保存配置失败');
     } finally {
@@ -372,6 +389,7 @@ export function SystemConfigManagement() {
       else message.success(result.message);
       setTestResults((current) => ({ ...current, [activeModule]: undefined }));
       await Promise.all([loadConfig(activeModule), loadSummaries()]);
+      setEditingModule(null);
     } catch {
       message.error('删除配置失败');
     } finally {
@@ -405,6 +423,8 @@ export function SystemConfigManagement() {
     },
   ];
 
+  const isEditing = canWrite && editingModule === activeModule;
+
   return (
     <div className="system-config-page">
       <aside className="system-config-sidebar">
@@ -412,7 +432,10 @@ export function SystemConfigManagement() {
           mode="inline"
           selectedKeys={[activeModule]}
           items={menuItems}
-          onSelect={({ key }) => setActiveModule(key as SystemConfigModule)}
+          onSelect={({ key }) => {
+            setEditingModule(null);
+            setActiveModule(key as SystemConfigModule);
+          }}
         />
       </aside>
       <main className="system-config-content">
@@ -424,13 +447,16 @@ export function SystemConfigManagement() {
           testing={testing}
           deleting={deleting}
           canWrite={canWrite}
+          isEditing={isEditing}
           testResult={testResults[activeModule]}
           onRefresh={() => void Promise.all([loadConfig(activeModule), loadSummaries()])}
+          onEdit={() => setEditingModule(activeModule)}
+          onCancelEdit={() => setEditingModule(null)}
           onSave={() => void saveConfig()}
           onTest={() => void testConfig()}
           onDelete={() => void deleteConfig()}
         >
-          {canWrite ? (
+          {isEditing ? (
             <>
               {activeModule === 'mail' && <MailFields form={mailForm} />}
               {activeModule === 'ai' && <AiFields form={aiForm} />}

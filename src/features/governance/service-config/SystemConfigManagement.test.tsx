@@ -129,12 +129,21 @@ describe('SystemConfigManagement', () => {
     expect(screen.getByText('AI 能力')).toBeInTheDocument();
     expect(screen.getByText('会议集成')).toBeInTheDocument();
     expect(screen.getByText('交易集成')).toBeInTheDocument();
+    expect(screen.getByLabelText('只读配置详情')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /编辑配置/ })).toBeInTheDocument();
 
-    const passwordInput = screen.getByPlaceholderText('输入新密码以替换');
+    await userEvent.click(screen.getByRole('button', { name: /编辑配置/ }));
+
+    const passwordInput = await screen.findByPlaceholderText('输入新密码以替换');
     expect(passwordInput).toHaveValue('********');
     await userEvent.clear(passwordInput);
     await userEvent.type(passwordInput, 'replacement-secret');
     expect(passwordInput).toHaveValue('replacement-secret');
+
+    await userEvent.click(screen.getByRole('button', { name: '取消编辑' }));
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /编辑配置/ })).toBeInTheDocument();
 
     await userEvent.click(screen.getByLabelText('查看配置说明'));
     expect(await screen.findByText('初始配置来源')).toBeInTheDocument();
@@ -163,6 +172,7 @@ describe('SystemConfigManagement', () => {
     expect(screen.queryByRole('button', { name: /保存配置/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /刷新/ })).toBeInTheDocument();
     expect(screen.getByLabelText('查看配置说明')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /编辑配置/ })).not.toBeInTheDocument();
     expect(screen.getByText('已启用')).toBeInTheDocument();
     expect(screen.getByText('#2563eb')).toBeInTheDocument();
     expect(screen.getAllByText('已配置（不可查看）')).toHaveLength(1);
