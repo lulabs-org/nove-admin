@@ -152,7 +152,7 @@ export function MeetingFormModal({ open, meeting, submitting, onCancel, onSubmit
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="hostUserId" label="主持人平台用户 ID">
+            <Form.Item name="hostUserId" label="主持人平台身份 ID">
               <Input />
             </Form.Item>
           </Col>

@@ -60,17 +60,17 @@ const TASK_HANDLER_OPTIONS = [
   {
     label: '同步手机号哈希',
     value: 'migrate_phone_hashes',
-    description: '重新计算用户手机号哈希，无需额外参数',
+    description: '重新计算系统账号手机号哈希，无需额外参数',
   },
   {
-    label: '关联平台用户',
+    label: '关联平台身份',
     value: 'link_platform_users_by_phone_hash',
-    description: '根据同一平台的手机号哈希，将未关联的平台用户关联到本地用户',
+    description: '根据同一平台的手机号哈希，将未关联的平台身份关联系统账号',
   },
   {
     label: '关联订单购买者',
     value: 'link_orders_to_users_by_phone',
-    description: '按国家代码和手机号关联未关联的订单，找不到用户时自动创建',
+    description: '按国家代码和手机号关联未关联的订单，找不到系统账号时自动创建',
   },
   {
     label: '调用 HTTP 接口',
@@ -737,7 +737,7 @@ export function TaskManagement() {
               type="info"
               showIcon
               title="同步手机号哈希"
-              description="该处理器无需额外参数，将为所有存在手机号的用户重新计算并写入哈希。"
+              description="该处理器无需额外参数，将为所有存在手机号的系统账号重新计算并写入哈希。"
               style={{ marginBottom: 24 }}
             />
           ) : null}
@@ -747,8 +747,8 @@ export function TaskManagement() {
               <Alert
                 type="info"
                 showIcon
-                title="关联平台用户"
-                description="仅处理尚未关联且未删除的平台用户，按相同平台和手机号 Hash 匹配，不会覆盖已有的本地用户关联。"
+                title="关联平台身份"
+                description="仅处理尚未关联且未删除的平台身份，按相同平台和手机号 Hash 匹配，不会覆盖已有的系统账号关联。"
                 style={{ marginBottom: 24 }}
               />
 
@@ -780,7 +780,7 @@ export function TaskManagement() {
                 type="info"
                 showIcon
                 title="关联订单购买者"
-                description="仅处理尚未关联购买者且未删除的订单。国家代码和手机号会先标准化；匹配不到用户时自动创建，已软删除用户的联系方式会作为冲突跳过。"
+                description="仅处理尚未关联购买者且未删除的订单。国家代码和手机号会先标准化；匹配不到系统账号时自动创建，已软删除系统账号的联系方式会作为冲突跳过。"
                 style={{ marginBottom: 24 }}
               />
 

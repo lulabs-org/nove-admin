@@ -1,8 +1,8 @@
 import {
   ArrowRightOutlined,
   LockOutlined,
-  MailOutlined,
   SafetyCertificateOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import Button from 'antd/es/button';
 import Form from 'antd/es/form';
@@ -12,13 +12,19 @@ import Tabs from 'antd/es/tabs';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../shared/hooks/useAuth';
-import { verificationControllerSend } from '../../../shared/lib/api/orval/business/auth';
+import { otpControllerSend } from '../../../shared/lib/api/orval/business/auth';
+import {
+  buildLoginCodeRequest,
+  buildLoginRequest,
+  parseLoginIdentifier,
+} from '../model/loginIdentifier';
+import { getLoginErrorMessage } from '../model/loginError';
 import './LoginPage.css';
 
 type LoginType = 'password' | 'code';
 
 interface LoginValues {
-  email: string;
+  account: string;
   password?: string;
   code?: string;
 }
@@ -38,21 +44,10 @@ export function LoginPage() {
   const onFinish = async (values: LoginValues) => {
     setLoading(true);
     try {
-      if (loginType === 'password') {
-        await login({
-          type: 'email_password',
-          email: values.email,
-          password: values.password,
-          clientType: 'web',
-        });
-      } else {
-        await login({
-          type: 'email_code',
-          email: values.email,
-          code: values.code,
-          clientType: 'web',
-        });
-      }
+      const identifier = parseLoginIdentifier(values.account);
+      if (!identifier) return;
+      const credential = loginType === 'password' ? values.password! : values.code!;
+      await login(buildLoginRequest(identifier, loginType, credential));
       message.success('登录成功');
       const requestedReturnTo = searchParams.get('returnTo');
       const returnTo =
@@ -60,22 +55,27 @@ export function LoginPage() {
           ? requestedReturnTo
           : '/';
       navigate(returnTo, { replace: true });
-    } catch {
-      message.error('登录失败，请检查输入信息');
+    } catch (error) {
+      const errorMessage = getLoginErrorMessage(error);
+      if (errorMessage) {
+        message.error(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleSendCode = async () => {
-    const email = form.getFieldValue('email');
-    if (!email) {
-      message.warning('请先输入邮箱');
+    try {
+      await form.validateFields(['account']);
+    } catch {
       return;
     }
+    const identifier = parseLoginIdentifier(form.getFieldValue('account'));
+    if (!identifier) return;
     setSendingCode(true);
     try {
-      await verificationControllerSend({ target: email, type: 'login' });
+      await otpControllerSend(buildLoginCodeRequest(identifier));
       message.success('验证码已发送');
       setCountdown(60);
       const timer = window.setInterval(() => {
@@ -197,18 +197,23 @@ export function LoginPage() {
             />
 
             <Form.Item
-              name="email"
-              label="工作邮箱"
+              name="account"
+              label="邮箱或手机号"
               rules={[
-                { required: true, message: '请输入邮箱' },
-                { type: 'email', message: '请输入有效的邮箱地址' },
+                { required: true, message: '请输入邮箱或手机号' },
+                {
+                  validator: (_, value: string) =>
+                    !value || parseLoginIdentifier(value)
+                      ? Promise.resolve()
+                      : Promise.reject(new Error('请输入有效的邮箱或中国大陆手机号')),
+                },
               ]}
             >
               <Input
-                prefix={<MailOutlined />}
-                placeholder="name@company.com"
+                prefix={<UserOutlined />}
+                placeholder="邮箱或手机号"
                 size="large"
-                autoComplete="email"
+                autoComplete="username"
               />
             </Form.Item>
 
@@ -228,7 +233,7 @@ export function LoginPage() {
             ) : (
               <Form.Item
                 name="code"
-                label="邮箱验证码"
+                label="验证码"
                 rules={[{ required: true, message: '请输入验证码' }]}
               >
                 <Input

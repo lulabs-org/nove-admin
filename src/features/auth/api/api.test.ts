@@ -9,7 +9,7 @@ const authApiMock = vi.hoisted(() => ({
 
 vi.mock('../../../shared/lib/api/orval/business/auth', () => authApiMock);
 
-import { logout, normalizeAuthUser } from './api';
+import { login, logout, normalizeAuthUser } from './api';
 
 const baseUser: Omit<User, 'permissions'> = {
   id: 'user-id',
@@ -29,6 +29,33 @@ const baseUser: Omit<User, 'permissions'> = {
 describe('auth api helpers', () => {
   afterEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
+  });
+
+  it('adds a stable browser device identity to login requests', async () => {
+    vi.spyOn(window.crypto, 'randomUUID').mockReturnValue('11111111-1111-4111-8111-111111111111');
+    authApiMock.authControllerLogin.mockResolvedValue({
+      accessToken: 'token',
+      expiresIn: 900,
+      user: { ...baseUser, permissions: [] },
+    });
+
+    await login({
+      type: 'email_password',
+      email: 'yangshiming@proflu.cn',
+      password: 'Password1',
+      clientType: 'web',
+    });
+
+    expect(authApiMock.authControllerLogin).toHaveBeenCalledWith(
+      expect.objectContaining({
+        deviceId: '11111111-1111-4111-8111-111111111111',
+        deviceInfo: expect.stringContaining('Web ·'),
+      })
+    );
+    expect(window.localStorage.getItem('nove-device-id')).toBe(
+      '11111111-1111-4111-8111-111111111111'
+    );
   });
 
   it('maps backend perm field to permissions', () => {

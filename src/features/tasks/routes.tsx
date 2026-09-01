@@ -7,7 +7,7 @@ export const taskRoutes: RouteConfig[] = [
   {
     path: '/tasks',
     element: <TaskManagement />,
-    title: '任务管理',
+    title: '任务调度',
     menu: true,
     icon: <ScheduleOutlined />,
     permission: PERMISSIONS.TASK.READ,

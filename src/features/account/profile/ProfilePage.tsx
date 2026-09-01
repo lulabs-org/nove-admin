@@ -4,15 +4,20 @@ import Button from 'antd/es/button';
 import Col from 'antd/es/col';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
+import Popconfirm from 'antd/es/popconfirm';
 import Row from 'antd/es/row';
 import Skeleton from 'antd/es/skeleton';
 import Space from 'antd/es/space';
 import Tag from 'antd/es/tag';
 import Typography from 'antd/es/typography';
+import Upload from 'antd/es/upload';
 import message from 'antd/es/message';
+import type { UploadProps } from 'antd/es/upload/interface';
+import ImgCrop from 'antd-img-crop';
 import axios from 'axios';
 import {
   ClockCircleOutlined,
+  DeleteOutlined,
   EditOutlined,
   IdcardOutlined,
   MailOutlined,
@@ -20,6 +25,7 @@ import {
   ReloadOutlined,
   SafetyCertificateOutlined,
   SaveOutlined,
+  UploadOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -37,6 +43,7 @@ import type {
   UpdateProfileDto,
   UserProfileResponseDto,
 } from '../../../shared/lib/api/orval/business/schemas';
+import { deleteProfileAvatar, uploadProfileAvatar } from './api/profileAvatarApi';
 import './ProfilePage.css';
 
 const { Text, Title } = Typography;
@@ -44,11 +51,7 @@ const { TextArea } = Input;
 
 interface ProfileFormValues {
   username?: string;
-  email?: string;
-  countryCode?: string;
-  phone?: string;
   displayName?: string;
-  avatar?: string;
   bio?: string;
 }
 
@@ -83,11 +86,7 @@ function getProfileName(profile?: UserProfileResponseDto, user?: User | null) {
 function toFormValues(profile?: UserProfileResponseDto, user?: User | null): ProfileFormValues {
   return {
     username: profile?.username || user?.username || undefined,
-    email: profile?.email || user?.email || undefined,
-    countryCode: profile?.countryCode || user?.countryCode || undefined,
-    phone: profile?.phone || user?.phone || undefined,
     displayName: getProfileName(profile, user),
-    avatar: profile?.profile?.avatar || user?.avatar || undefined,
     bio: profile?.profile?.bio || undefined,
   };
 }
@@ -104,11 +103,7 @@ function trimEditable(value?: string) {
 function toUpdatePayload(values: ProfileFormValues): UpdateProfileDto {
   return {
     username: trimOptional(values.username),
-    email: trimOptional(values.email),
-    countryCode: trimOptional(values.countryCode),
-    phone: trimOptional(values.phone),
     displayName: trimOptional(values.displayName),
-    avatar: trimEditable(values.avatar),
     bio: trimEditable(values.bio),
   };
 }
@@ -138,9 +133,10 @@ export function ProfilePage() {
   const [form] = Form.useForm<ProfileFormValues>();
   const [editingProfile, setEditingProfile] = useState(false);
   const user = useAuthStore((state) => state.user);
+  const profileQueryKey = ['settings-profile', user?.id] as const;
 
   const profileQuery = useQuery({
-    queryKey: ['settings-profile', user?.id],
+    queryKey: profileQueryKey,
     queryFn: ({ signal }) => userControllerGetProfile(signal),
   });
 
@@ -150,25 +146,51 @@ export function ProfilePage() {
     }
   }, [editingProfile, form, profileQuery.data, user]);
 
+  const syncUpdatedProfile = async (updatedProfile: UserProfileResponseDto) => {
+    queryClient.setQueryData(profileQueryKey, updatedProfile);
+    form.setFieldsValue(toFormValues(updatedProfile, user));
+
+    try {
+      const refreshedUser = await getMe();
+      authService.setUser(refreshedUser);
+      useAuthStore.setState({ user: refreshedUser });
+    } catch {
+      await queryClient.invalidateQueries({ queryKey: profileQueryKey });
+    }
+  };
+
   const saveProfileMutation = useMutation({
     mutationFn: (values: ProfileFormValues) => userControllerUpdateProfile(toUpdatePayload(values)),
     onSuccess: async (updatedProfile) => {
-      queryClient.setQueryData(['settings-profile'], updatedProfile);
-      form.setFieldsValue(toFormValues(updatedProfile, user));
-
-      try {
-        const refreshedUser = await getMe();
-        authService.setUser(refreshedUser);
-        useAuthStore.setState({ user: refreshedUser });
-      } catch {
-        await queryClient.invalidateQueries({ queryKey: ['settings-profile'] });
-      }
+      await syncUpdatedProfile(updatedProfile);
 
       message.success('个人资料已保存');
       setEditingProfile(false);
     },
     onError: (error) => {
       message.error(getErrorMessage(error, '保存个人资料失败'));
+    },
+  });
+
+  const uploadAvatarMutation = useMutation({
+    mutationFn: uploadProfileAvatar,
+    onSuccess: async (updatedProfile) => {
+      await syncUpdatedProfile(updatedProfile);
+      message.success('头像已更新');
+    },
+    onError: (error) => {
+      message.error(getErrorMessage(error, '头像上传失败'));
+    },
+  });
+
+  const deleteAvatarMutation = useMutation({
+    mutationFn: deleteProfileAvatar,
+    onSuccess: async (updatedProfile) => {
+      await syncUpdatedProfile(updatedProfile);
+      message.success('头像已移除');
+    },
+    onError: (error) => {
+      message.error(getErrorMessage(error, '头像移除失败'));
     },
   });
 
@@ -187,6 +209,35 @@ export function ProfilePage() {
   const cancelEditing = () => {
     form.resetFields();
     setEditingProfile(false);
+  };
+
+  const validateAvatarFile = (file: File) => {
+    const supported = ['image/jpeg', 'image/png', 'image/webp'].includes(file.type);
+    if (!supported) {
+      message.error('头像仅支持 JPEG、PNG 或 WebP 格式');
+      return false;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      message.error('头像文件不能超过 5 MB');
+      return false;
+    }
+    return true;
+  };
+
+  const uploadAvatar: UploadProps['customRequest'] = async ({
+    file,
+    onError,
+    onProgress,
+    onSuccess,
+  }) => {
+    try {
+      onProgress?.({ percent: 10 });
+      const updatedProfile = await uploadAvatarMutation.mutateAsync(file as Blob);
+      onProgress?.({ percent: 100 });
+      onSuccess?.(updatedProfile);
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error('头像上传失败'));
+    }
   };
 
   if (profileQuery.isLoading && !profile) {
@@ -269,8 +320,61 @@ export function ProfilePage() {
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Form.Item name="avatar" label="头像 URL">
-                    <Input placeholder="https://example.com/avatar.png" maxLength={500} />
+                  <Form.Item label="头像">
+                    <div className="profile-avatar-editor">
+                      <Avatar size={56} src={avatar} icon={<UserOutlined />} />
+                      <div className="profile-avatar-editor-main">
+                        <Space size="small" wrap>
+                          <ImgCrop
+                            aspect={1}
+                            rotationSlider
+                            quality={0.92}
+                            modalTitle="裁剪头像"
+                            modalOk="使用此头像"
+                            modalCancel="取消"
+                            beforeCrop={(file) => validateAvatarFile(file as File)}
+                          >
+                            <Upload
+                              accept="image/jpeg,image/png,image/webp"
+                              showUploadList={false}
+                              beforeUpload={(file) => validateAvatarFile(file)}
+                              customRequest={uploadAvatar}
+                              disabled={
+                                uploadAvatarMutation.isPending || deleteAvatarMutation.isPending
+                              }
+                            >
+                              <Button
+                                icon={<UploadOutlined />}
+                                loading={uploadAvatarMutation.isPending}
+                              >
+                                上传新头像
+                              </Button>
+                            </Upload>
+                          </ImgCrop>
+                          {avatar ? (
+                            <Popconfirm
+                              title="移除当前头像？"
+                              description="移除后将显示系统默认头像。"
+                              okText="移除"
+                              cancelText="取消"
+                              onConfirm={() => deleteAvatarMutation.mutate()}
+                            >
+                              <Button
+                                danger
+                                icon={<DeleteOutlined />}
+                                loading={deleteAvatarMutation.isPending}
+                                disabled={uploadAvatarMutation.isPending}
+                              >
+                                移除头像
+                              </Button>
+                            </Popconfirm>
+                          ) : null}
+                        </Space>
+                        <Text type="secondary">
+                          支持 JPEG、PNG、WebP，最大 5 MB；裁剪确认后立即生效。
+                        </Text>
+                      </div>
+                    </div>
                   </Form.Item>
                 </Col>
                 <Col span={24}>
@@ -287,7 +391,7 @@ export function ProfilePage() {
 
               <div className="profile-form-group-heading profile-form-group-heading-divided">
                 <span>账号与联系方式</span>
-                <Text type="secondary">用于登录、通知与账号找回</Text>
+                <Text type="secondary">联系方式请在安全设置中验证和换绑</Text>
               </div>
               <Row gutter={16}>
                 <Col xs={24} md={12}>
@@ -306,27 +410,19 @@ export function ProfilePage() {
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Form.Item
-                    name="email"
-                    label="邮箱"
-                    rules={[{ type: 'email', message: '邮箱格式不正确' }]}
-                  >
-                    <Input placeholder="name@example.com" />
+                  <Form.Item label="安全联系方式">
+                    <Space direction="vertical" size={2}>
+                      <Text>{displayText(profile?.email)}</Text>
+                      <Text type="secondary">{phone}</Text>
+                      <Button
+                        type="link"
+                        className="profile-security-link"
+                        href="/settings/security"
+                      >
+                        前往安全设置修改
+                      </Button>
+                    </Space>
                   </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Row gutter={8}>
-                    <Col span={8}>
-                      <Form.Item name="countryCode" label="区号">
-                        <Input placeholder="+86" maxLength={10} />
-                      </Form.Item>
-                    </Col>
-                    <Col span={16}>
-                      <Form.Item name="phone" label="手机号">
-                        <Input placeholder="13800138000" maxLength={20} />
-                      </Form.Item>
-                    </Col>
-                  </Row>
                 </Col>
               </Row>
               <div className="profile-form-actions">

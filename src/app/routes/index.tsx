@@ -18,16 +18,20 @@ import { governanceRoutes } from '../../features/governance';
 import { settingsRoutes } from '../../features/settings';
 import { accountRoutes } from '../../features/account';
 import { meetingRoutes } from '../../features/meetings';
+import { minuteRoutes } from '../../features/minutes';
 import { reportRoutes } from '../../features/reports';
 import { taskRoutes } from '../../features/tasks';
 import { errorRoutes } from '../../features/errors';
+import { projectRoutes } from '../../features/projects';
 
 export const routes: RouteConfig[] = [
   ...authRoutes,
   ...dashboardRoutes,
   organizationRoutes,
   transactionRoutes,
+  ...projectRoutes,
   ...meetingRoutes,
+  ...minuteRoutes,
   ...reportRoutes,
   ...taskRoutes,
   governanceRoutes,

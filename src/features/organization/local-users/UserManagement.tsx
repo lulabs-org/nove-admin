@@ -94,7 +94,7 @@ export function UserManagement() {
 
   useEffect(() => {
     if (editDetailQuery.error) {
-      void message.error(errorMessage(editDetailQuery.error, '获取用户详情失败'));
+      void message.error(errorMessage(editDetailQuery.error, '获取系统账号详情失败'));
     }
   }, [editDetailQuery.error]);
 
@@ -104,22 +104,22 @@ export function UserManagement() {
     mutationFn: (values: UserWritePayload) =>
       editing ? userApi.update(editing.id, values) : userApi.create(values),
     onSuccess: () => {
-      void message.success(editing ? '用户已更新' : '用户已创建');
+      void message.success(editing ? '系统账号已更新' : '系统账号已创建');
       setFormOpen(false);
       setEditing(null);
       form.resetFields();
       void invalidate();
     },
-    onError: (error) => void message.error(errorMessage(error, '保存用户失败')),
+    onError: (error) => void message.error(errorMessage(error, '保存系统账号失败')),
   });
 
   const deleteMutation = useMutation({
     mutationFn: userApi.delete,
     onSuccess: () => {
-      void message.success('用户已删除');
+      void message.success('系统账号已删除');
       void invalidate();
     },
-    onError: (error) => void message.error(errorMessage(error, '删除用户失败')),
+    onError: (error) => void message.error(errorMessage(error, '删除系统账号失败')),
   });
 
   const importMutation = useMutation({
@@ -127,9 +127,9 @@ export function UserManagement() {
     onSuccess: (result) => {
       setImportResult(result);
       void invalidate();
-      if (!result.failureCount) void message.success(`成功导入 ${result.successCount} 位用户`);
+      if (!result.failureCount) void message.success(`成功导入 ${result.successCount} 个系统账号`);
     },
-    onError: (error) => void message.error(errorMessage(error, '导入用户失败')),
+    onError: (error) => void message.error(errorMessage(error, '导入系统账号失败')),
   });
 
   const openCreate = () => {
@@ -169,7 +169,7 @@ export function UserManagement() {
 
   const columns: TableProps<AdminUser>['columns'] = [
     {
-      title: '用户',
+      title: '系统账号',
       key: 'user',
       width: 190,
       render: (_value, record) => {
@@ -237,8 +237,8 @@ export function UserManagement() {
           </Perm>
           <Perm permission={PERMISSIONS.USER.DELETE}>
             <Popconfirm
-              title="确定删除此用户？"
-              description="用户将被停用并软删除。"
+              title="确定删除此系统账号？"
+              description="系统账号将被停用并软删除。"
               okType="danger"
               onConfirm={() => deleteMutation.mutate(record.id)}
             >
@@ -290,7 +290,7 @@ export function UserManagement() {
                 批量导入
               </Button>
               <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-                新建用户
+                新建系统账号
               </Button>
             </Perm>
           </Space>
@@ -308,13 +308,13 @@ export function UserManagement() {
           pageSize: filters.pageSize,
           total: usersQuery.data?.total ?? 0,
           showSizeChanger: true,
-          showTotal: (total) => `共 ${total} 位用户`,
+          showTotal: (total) => `共 ${total} 个系统账号`,
           onChange: (page, pageSize) => setFilters((current) => ({ ...current, page, pageSize })),
         }}
       />
 
       <Modal
-        title={editing ? '编辑用户' : '新建用户'}
+        title={editing ? '编辑系统账号' : '新建系统账号'}
         open={formOpen}
         onCancel={() => {
           setFormOpen(false);
@@ -427,7 +427,7 @@ export function UserManagement() {
       </Modal>
 
       <Modal
-        title="批量导入用户"
+        title="批量导入系统账号"
         open={importOpen}
         onCancel={() => setImportOpen(false)}
         onOk={submitImport}
@@ -473,7 +473,7 @@ export function UserManagement() {
           <p className="ant-upload-drag-icon">
             <UploadOutlined />
           </p>
-          <p>点击或拖拽用户文件到此处</p>
+          <p>点击或拖拽系统账号文件到此处</p>
         </Upload.Dragger>
 
         {importResult && (
@@ -492,7 +492,7 @@ export function UserManagement() {
                 dataSource={importResult.failures}
                 columns={[
                   { title: '行', dataIndex: 'row', width: 60 },
-                  { title: '用户', dataIndex: 'identifier', width: 180 },
+                  { title: '系统账号', dataIndex: 'identifier', width: 180 },
                   { title: '失败原因', dataIndex: 'reason' },
                 ]}
               />

@@ -113,8 +113,8 @@ export function DashboardPage() {
   }
   quickLinks.push({
     icon: <ScheduleOutlined />,
-    title: '任务管理',
-    desc: '查看定时任务',
+    title: '任务调度',
+    desc: '管理一次性与周期任务',
     onClick: () => navigate('/tasks'),
   });
   if (checkPermission(PERMISSIONS.PERMISSION.READ)) {

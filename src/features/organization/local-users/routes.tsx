@@ -6,7 +6,7 @@ export const userRoutes: RouteConfig[] = [
   {
     path: '/user-management',
     element: <UserManagement />,
-    title: '本地用户',
+    title: '系统账号',
     menu: true,
     permission: PERMISSIONS.USER.READ,
   },

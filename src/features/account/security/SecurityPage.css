@@ -1,0 +1,71 @@
+.security-page {
+  max-width: 1180px;
+  min-height: calc(100vh - 148px);
+  margin: 0 auto;
+}
+
+.security-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.security-header h3.ant-typography {
+  margin: 0 0 4px;
+}
+
+.security-overview {
+  margin-top: 16px;
+}
+
+.security-overview .ant-card {
+  height: 100%;
+  border-radius: 12px;
+}
+
+.security-overview .ant-list-item {
+  padding: 9px 0;
+}
+
+.security-section {
+  margin-top: 16px;
+  border-radius: 12px;
+}
+
+.security-session-note {
+  margin-bottom: 12px;
+}
+
+.security-device-icon {
+  padding: 10px;
+  border-radius: 10px;
+  background: #f0f5ff;
+  color: #3370ff;
+  font-size: 22px;
+}
+
+.security-login-failed > td {
+  background: #fff7f6 !important;
+}
+
+.security-pagination {
+  margin-top: 18px;
+  text-align: right;
+}
+
+.security-modal-steps {
+  margin-bottom: 24px;
+}
+
+.security-password-tip {
+  margin-bottom: 18px;
+}
+
+@media (max-width: 760px) {
+  .security-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

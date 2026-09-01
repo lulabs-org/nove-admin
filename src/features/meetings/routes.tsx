@@ -10,10 +10,10 @@
  */
 import type { RouteConfig } from '../../shared/types/index';
 import { MeetingList } from './pages/MeetingList';
-import { MeetingDetail } from './pages/MeetingDetail';
 import { PERMISSIONS } from '../../shared/utils/permissions';
 import { CalendarOutlined } from '@ant-design/icons';
 import { Navigate } from 'react-router-dom';
+import { LegacyMeetingDetailRedirect } from './pages/LegacyMeetingDetailRedirect';
 
 export const meetingRoutes: RouteConfig[] = [
   {
@@ -33,8 +33,8 @@ export const meetingRoutes: RouteConfig[] = [
   },
   {
     path: '/meetings/:id',
-    element: <MeetingDetail />,
-    title: '会议详情',
+    element: <LegacyMeetingDetailRedirect />,
+    title: '会议妙记重定向',
     menu: false,
     permission: PERMISSIONS.MEETING.READ,
   },
