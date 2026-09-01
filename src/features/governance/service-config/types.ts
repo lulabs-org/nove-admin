@@ -3,6 +3,7 @@ export type SystemConfigModule = 'mail' | 'ai' | 'tencent-meeting' | 'lark' | 'w
 export type ConfigSource = 'database' | 'default';
 
 export interface ConfigSummary {
+  readonly orgId: string;
   module: SystemConfigModule;
   configured: boolean;
   source: ConfigSource;
@@ -77,12 +78,14 @@ export type ModuleConfigMap = {
 };
 
 export interface SaveConfigResult {
+  readonly orgId: string;
   success: boolean;
   message: string;
   restartRequired: boolean;
 }
 
 export interface TestConfigResult {
+  readonly orgId: string;
   success: boolean;
   message: string;
 }

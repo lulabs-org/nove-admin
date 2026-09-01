@@ -45,6 +45,7 @@ describe('SystemConfigManagement', () => {
   beforeEach(() => {
     mocks.listConfigs.mockResolvedValue(
       ['mail', 'ai', 'tencent-meeting', 'lark', 'wechat-shop'].map((module) => ({
+        orgId: 'org-1',
         module,
         configured: module === 'mail',
         source: module === 'mail' ? 'database' : 'default',
@@ -55,6 +56,7 @@ describe('SystemConfigManagement', () => {
     );
     mocks.getConfig.mockImplementation((module: string) =>
       Promise.resolve({
+        orgId: 'org-1',
         module,
         configured: module === 'mail',
         source: module === 'mail' ? 'database' : 'default',
