@@ -23,6 +23,7 @@ import { reportRoutes } from '../../features/reports';
 import { taskRoutes } from '../../features/tasks';
 import { errorRoutes } from '../../features/errors';
 import { projectRoutes } from '../../features/projects';
+import { profitSharingRoutes } from '../../features/profit-sharing';
 
 export const routes: RouteConfig[] = [
   ...authRoutes,
@@ -34,6 +35,7 @@ export const routes: RouteConfig[] = [
   ...minuteRoutes,
   ...reportRoutes,
   ...taskRoutes,
+  profitSharingRoutes,
   governanceRoutes,
   settingsRoutes,
   ...accountRoutes,

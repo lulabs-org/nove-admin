@@ -36,9 +36,8 @@ export interface OrderUserOption {
   email: string | null;
   countryCode: string | null;
   phone: string | null;
-  profile: {
-    displayName: string | null;
-  } | null;
+  displayName?: string | null;
+  fullName?: string | null;
 }
 
 export interface OrderUserOptionList {
