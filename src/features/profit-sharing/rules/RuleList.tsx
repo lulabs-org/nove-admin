@@ -124,18 +124,47 @@ export const RuleList: React.FC = () => {
 
   const columns: ColumnsType<ProfitSharingRule> = [
     {
-      title: '规则名称',
+      title: '规则名称与款项板块',
       key: 'name',
       render: (_, record: ProfitSharingRule) => {
         const isFixed = record.ruleType === 'FIXED_MONTHLY';
+        const cats = new Set<string>();
+        record.modules?.forEach((m) => {
+          if (/\[奖金\]|奖|绩效|销冠|全勤|激励|优秀|年终|分红/i.test(m.name)) cats.add('奖金');
+          else if (/\[补贴\]|补|津贴|餐|车|房|交通|话费|通讯|差旅|住宿/i.test(m.name))
+            cats.add('补贴');
+          else if (/\[扣减\]|扣|罚|缺勤|迟到|事假|病假|代扣/i.test(m.name)) cats.add('扣除');
+          else cats.add('底薪课酬');
+        });
+
         return (
           <Space direction="vertical" size={2}>
             <span className="font-medium text-gray-800">{record.name}</span>
-            {isFixed ? (
-              <Tag color="purple">月度固定分账</Tag>
-            ) : (
-              <Tag color="blue">按单比例分润</Tag>
-            )}
+            <Space size={4} wrap>
+              {isFixed ? (
+                <Tag color="purple">月度固定薪资/津贴</Tag>
+              ) : (
+                <Tag color="blue">按单比例分润</Tag>
+              )}
+              {isFixed &&
+                Array.from(cats).map((c) => (
+                  <Tag
+                    key={c}
+                    color={
+                      c === '奖金'
+                        ? 'gold'
+                        : c === '补贴'
+                          ? 'cyan'
+                          : c === '扣除'
+                            ? 'red'
+                            : 'geekblue'
+                    }
+                    className="text-xs"
+                  >
+                    {c}
+                  </Tag>
+                ))}
+            </Space>
           </Space>
         );
       },
@@ -187,8 +216,22 @@ export const RuleList: React.FC = () => {
                     return `¥${amount}/月`;
                   })
                   .join(', ');
+
+                const isBonus = /\[奖金\]|奖|绩效|销冠|全勤|激励|优秀|年终|分红/i.test(m.name);
+                const isSubsidy = /\[补贴\]|补|津贴|餐|车|房|交通|话费|通讯|差旅|住宿/i.test(
+                  m.name
+                );
+                const isDeduction = /\[扣减\]|扣|罚|缺勤|迟到|事假|病假|代扣/i.test(m.name);
+                const tagColor = isBonus
+                  ? 'gold'
+                  : isSubsidy
+                    ? 'cyan'
+                    : isDeduction
+                      ? 'red'
+                      : 'purple';
+
                 return (
-                  <Tag key={m.id} color="purple">
+                  <Tag key={m.id} color={tagColor}>
                     {m.name} {allocDesc ? `(${allocDesc})` : ''}
                   </Tag>
                 );
@@ -378,7 +421,7 @@ export const RuleList: React.FC = () => {
 
       <Drawer
         title={editingRuleId ? '编辑分润规则' : copyFromRuleId ? '复制并新建规则' : '新建分润规则'}
-        width={720}
+        width={760}
         onClose={() => {
           setDrawerVisible(false);
           setEditingRuleId(null);

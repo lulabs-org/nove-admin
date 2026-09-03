@@ -64,3 +64,14 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Ant Design Table 全局表头与单元格防挤压、防折行优化 */
+.ant-table-thead > tr > th {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+.ant-table-cell {
+  word-break: keep-all;
+}
+

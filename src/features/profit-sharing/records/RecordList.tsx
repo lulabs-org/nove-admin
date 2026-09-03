@@ -171,12 +171,17 @@ export const RecordList: React.FC = () => {
       title: '流水号',
       dataIndex: 'id',
       key: 'id',
-      width: 110,
-      render: (text: string) => <span className="text-gray-500">{text.slice(0, 8)}...</span>,
+      width: 100,
+      render: (text: string) => (
+        <span className="text-gray-500 font-mono text-xs" style={{ whiteSpace: 'nowrap' }}>
+          {text.slice(0, 8)}...
+        </span>
+      ),
     },
     {
       title: '所属规则 / 周期',
       key: 'rulePeriod',
+      width: 170,
       render: (_, record) => {
         const rule = record.rule;
         const snapshot = record.ruleSnapshot as
@@ -188,17 +193,29 @@ export const RecordList: React.FC = () => {
 
         let periodTag = null;
         if (record.periodMonth) {
-          periodTag = <Tag color="purple">{record.periodMonth} 固定</Tag>;
+          periodTag = (
+            <Tag color="purple" style={{ margin: 0 }}>
+              {record.periodMonth} 固定
+            </Tag>
+          );
         } else if (start && end) {
           const dStart = dayjs(start);
           const dEnd = dayjs(end);
           if (dEnd.year() >= 2090) {
-            periodTag = <Tag color="purple">长期有效</Tag>;
+            periodTag = (
+              <Tag color="purple" style={{ margin: 0 }}>
+                长期有效
+              </Tag>
+            );
           } else if (dStart.format('YYYY-MM') === dEnd.format('YYYY-MM')) {
-            periodTag = <Tag color="cyan">{dStart.format('YYYY年MM月')}</Tag>;
+            periodTag = (
+              <Tag color="cyan" style={{ margin: 0 }}>
+                {dStart.format('YYYY年MM月')}
+              </Tag>
+            );
           } else {
             periodTag = (
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500" style={{ whiteSpace: 'nowrap' }}>
                 {dStart.format('YYYY-MM-DD')} ~ {dEnd.format('MM-DD')}
               </span>
             );
@@ -207,7 +224,17 @@ export const RecordList: React.FC = () => {
 
         return (
           <div>
-            <div className="font-medium text-gray-800">{ruleName}</div>
+            <div
+              className="font-medium text-gray-800"
+              style={{
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: 160,
+              }}
+            >
+              {ruleName}
+            </div>
             <div className="mt-0.5">{periodTag}</div>
           </div>
         );
@@ -216,9 +243,14 @@ export const RecordList: React.FC = () => {
     {
       title: '订单号',
       key: 'orderNumber',
+      width: 150,
       render: (_, record) => {
         if (record.order?.orderNumber) {
-          return record.order.orderNumber;
+          return (
+            <span className="font-mono text-xs text-gray-700" style={{ whiteSpace: 'nowrap' }}>
+              {record.order.orderNumber}
+            </span>
+          );
         }
         return <Tag color="purple">月度固定</Tag>;
       },
@@ -227,36 +259,55 @@ export const RecordList: React.FC = () => {
       title: '分润模块',
       dataIndex: ['module', 'name'],
       key: 'moduleName',
-      render: (text: string) => <Tag color="blue">{text}</Tag>,
+      width: 95,
+      align: 'center',
+      render: (text: string) => (
+        <Tag color="blue" style={{ margin: 0 }}>
+          {text}
+        </Tag>
+      ),
     },
     {
       title: '收益人',
       key: 'memberId',
+      width: 140,
       render: (_, record) => (
-        <Space size="small">
-          <span className="font-medium text-gray-800">{record.memberName || record.memberId}</span>
-          {record.memberRole && <Tag color="geekblue">{record.memberRole}</Tag>}
-        </Space>
+        <div style={{ whiteSpace: 'nowrap' }}>
+          <span className="font-medium text-gray-800" style={{ marginRight: 6 }}>
+            {record.memberName || record.memberId}
+          </span>
+          {record.memberRole && (
+            <Tag color="geekblue" style={{ margin: 0 }}>
+              {record.memberRole}
+            </Tag>
+          )}
+        </div>
       ),
     },
     {
       title: '订单基数 (元)',
       dataIndex: 'baseAmount',
       key: 'baseAmount',
+      width: 110,
+      align: 'right',
       render: (amount: number, record) => {
         if (!record.orderId) return '-';
-        return (amount / 100).toFixed(2);
+        return <span className="font-mono">{(amount / 100).toFixed(2)}</span>;
       },
     },
     {
       title: '分润金额 (元)',
       dataIndex: 'profitAmount',
       key: 'profitAmount',
+      width: 110,
+      align: 'right',
       render: (amount: number) => {
         const value = (amount / 100).toFixed(2);
         return (
-          <span className={amount < 0 ? 'text-red-500' : 'text-green-600 font-medium'}>
-            {value}
+          <span
+            className={`font-mono font-medium ${amount < 0 ? 'text-red-500' : 'text-green-600'}`}
+          >
+            ¥{value}
           </span>
         );
       },
@@ -265,6 +316,8 @@ export const RecordList: React.FC = () => {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
+      width: 85,
+      align: 'center',
       render: (status: string) => {
         const statusMap: Record<string, { color: string; text: string }> = {
           PENDING: { color: 'warning', text: '待结算' },
@@ -273,24 +326,40 @@ export const RecordList: React.FC = () => {
           CANCELLED: { color: 'default', text: '已取消' },
         };
         const config = statusMap[status] || { color: 'default', text: status };
-        return <Tag color={config.color}>{config.text}</Tag>;
+        return (
+          <Tag color={config.color} style={{ margin: 0 }}>
+            {config.text}
+          </Tag>
+        );
       },
     },
     {
       title: '预计结算时间',
       dataIndex: 'settlementTime',
       key: 'settlementTime',
-      render: (time: string) => (time ? dayjs(time).format('YYYY-MM-DD HH:mm') : '-'),
+      width: 135,
+      render: (time: string) => (
+        <span className="text-gray-500 font-mono text-xs" style={{ whiteSpace: 'nowrap' }}>
+          {time ? dayjs(time).format('YYYY-MM-DD HH:mm') : '-'}
+        </span>
+      ),
     },
     {
       title: '流水生成时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (time: string) => dayjs(time).format('YYYY-MM-DD HH:mm'),
+      width: 135,
+      render: (time: string) => (
+        <span className="text-gray-500 font-mono text-xs" style={{ whiteSpace: 'nowrap' }}>
+          {dayjs(time).format('YYYY-MM-DD HH:mm')}
+        </span>
+      ),
     },
     {
       title: '操作',
       key: 'action',
+      width: 130,
+      align: 'center',
       render: (_, record) => {
         const deleteBtn = (
           <Popconfirm
@@ -301,24 +370,24 @@ export const RecordList: React.FC = () => {
             cancelText="取消"
             onConfirm={() => deleteMutation.mutate(record.id)}
           >
-            <Button type="link" danger size="small">
+            <Button type="link" danger size="small" style={{ padding: 0 }}>
               删除
             </Button>
           </Popconfirm>
         );
 
         if (record.status === 'CLAWBACK') {
-          return <Space>{deleteBtn}</Space>;
+          return <Space size="small">{deleteBtn}</Space>;
         }
 
         if (record.status === 'SETTLED') {
           return (
-            <Space>
+            <Space size="small">
               <Popconfirm
                 title="确定要撤销结算吗？这会将流水恢复为待结算状态。"
                 onConfirm={() => undoSettleMutation.mutate(record.id)}
               >
-                <Button type="link" size="small">
+                <Button type="link" size="small" style={{ padding: 0 }}>
                   撤销结算
                 </Button>
               </Popconfirm>
@@ -329,12 +398,12 @@ export const RecordList: React.FC = () => {
 
         if (record.status === 'CANCELLED') {
           return (
-            <Space>
+            <Space size="small">
               <Popconfirm
                 title="确定要恢复该笔流水吗？"
                 onConfirm={() => restoreMutation.mutate(record.id)}
               >
-                <Button type="link" size="small">
+                <Button type="link" size="small" style={{ padding: 0 }}>
                   恢复
                 </Button>
               </Popconfirm>
@@ -344,12 +413,12 @@ export const RecordList: React.FC = () => {
         }
 
         return (
-          <Space>
+          <Space size="small">
             <Popconfirm
               title="确定要结算该笔流水吗？"
               onConfirm={() => settleMutation.mutate(record.id)}
             >
-              <Button type="link" size="small">
+              <Button type="link" size="small" style={{ padding: 0 }}>
                 结算
               </Button>
             </Popconfirm>
@@ -357,7 +426,7 @@ export const RecordList: React.FC = () => {
               title="确定要取消该笔流水吗？"
               onConfirm={() => cancelMutation.mutate(record.id)}
             >
-              <Button type="link" danger size="small">
+              <Button type="link" danger size="small" style={{ padding: 0 }}>
                 取消
               </Button>
             </Popconfirm>
@@ -453,6 +522,7 @@ export const RecordList: React.FC = () => {
             total: recordsData?.total || 0,
             showSizeChanger: true,
           }}
+          scroll={{ x: 1200 }}
           onChange={handleTableChange}
         />
       </Card>

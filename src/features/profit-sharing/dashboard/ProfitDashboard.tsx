@@ -1,54 +1,91 @@
 import React, { useState } from 'react';
-import {
-  Card,
-  Row,
-  Col,
-  Statistic,
-  Progress,
-  List,
-  Typography,
-  Tag,
-  Spin,
-  Button,
-  DatePicker,
-  Space,
-  Radio,
-} from 'antd';
-import {
-  DollarOutlined,
-  FallOutlined,
-  ProfileOutlined,
-  ReloadOutlined,
-  CalendarOutlined,
-} from '@ant-design/icons';
+import { Card, Row, Col, Statistic, Segmented, Spin, Button, Typography } from 'antd';
+import { TeamOutlined, DollarOutlined, RiseOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { recordApi } from '../records/api/recordApi';
+import { payslipApi } from '../payslips/api/payslipApi';
 import type { ProfitSharingDashboardStats } from '../records/types';
+import { MultiMemberCompareView } from './components/MultiMemberCompareView';
+import { SingleMemberDrilldownView } from './components/SingleMemberDrilldownView';
+import { MonthlyOperationsView } from './components/MonthlyOperationsView';
+import './ProfitDashboard.css';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 export const ProfitDashboard: React.FC = () => {
+  // 核心视角切换：'COMPARE'（全员多人员对比） | 'DRILLDOWN'（单人深度透视） | 'OPERATIONS'（账期经营盘点）
+  const [activeTab, setActiveTab] = useState<'COMPARE' | 'DRILLDOWN' | 'OPERATIONS'>('COMPARE');
+
+  // 历史数据配置
+  const [monthsCount, setMonthsCount] = useState<number>(6);
+  const [drilldownMemberId, setDrilldownMemberId] = useState<string>('');
+
+  // 账期经营配置
   const currentMonthStr = dayjs().format('YYYY-MM');
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthStr);
 
-  const { data, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ['profit-dashboard-stats', selectedMonth],
-    queryFn: () => recordApi.getDashboardStats(selectedMonth),
-    staleTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
+  // 1. 查询全员历史数据与成员列表
+  const {
+    data: historicalData,
+    isLoading: isHistoricalLoading,
+    isFetching: isHistoricalFetching,
+    refetch: refetchHistorical,
+  } = useQuery({
+    queryKey: ['profit-sharing-historical-stats', drilldownMemberId, monthsCount],
+    queryFn: () =>
+      payslipApi.getHistoricalStats({
+        memberId: activeTab === 'DRILLDOWN' && drilldownMemberId ? drilldownMemberId : undefined,
+        months: monthsCount,
+      }),
   });
 
-  if (isLoading) {
+  // 2. 查询单月经营统计
+  const {
+    data: operationStatsData,
+    isLoading: isOpsLoading,
+    isFetching: isOpsFetching,
+    refetch: refetchOps,
+  } = useQuery({
+    queryKey: ['profit-dashboard-stats', selectedMonth],
+    queryFn: () => recordApi.getDashboardStats(selectedMonth),
+  });
+
+  const handleRefresh = () => {
+    refetchHistorical();
+    refetchOps();
+  };
+
+  const isRefreshing = isHistoricalFetching || isOpsFetching;
+  const isLoading = isHistoricalLoading || isOpsLoading;
+
+  if (isLoading && !historicalData && !operationStatsData) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 320 }}>
         <Spin size="large" />
       </div>
     );
   }
 
-  const stats: ProfitSharingDashboardStats = data || {
+  const months = historicalData?.months || [];
+  const memberSeries = historicalData?.memberSeries || [];
+  const members = historicalData?.members || [];
+  const overall = historicalData?.overall || {
+    totalGrossAmount: 0,
+    totalSettledAmount: 0,
+    totalPendingAmount: 0,
+    avgMonthlyGross: 0,
+    maxMonthlyGross: 0,
+  };
+  const categoryTotals = historicalData?.categoryTotals || {
+    baseSalaryAmount: 0,
+    commissionAmount: 0,
+    bonusAmount: 0,
+    subsidyAmount: 0,
+    deductionAmount: 0,
+  };
+
+  const opsStats: ProfitSharingDashboardStats = operationStatsData || {
     month: selectedMonth,
     totalOrders: 0,
     totalSettled: 0,
@@ -58,201 +95,235 @@ export const ProfitDashboard: React.FC = () => {
     memberRankings: [],
   };
 
-  const periodDisplay = selectedMonth === 'ALL' ? '全部历史累计' : `${selectedMonth} 账期`;
+  // 当前钻取选中的成员
+  const activeDrilldownMember = members.find((m) => m.id === drilldownMemberId) || members[0];
+  const effectiveDrilldownId = activeDrilldownMember?.id || '';
+
+  // 从全员对比点击“单人透视”快捷跳转
+  const handleSelectMemberForDrilldown = (memberId: string) => {
+    setDrilldownMemberId(memberId);
+    setActiveTab('DRILLDOWN');
+  };
 
   return (
-    <div className="p-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <div>
-          <div className="flex items-center gap-3">
-            <Title level={4} className="!mb-0">
-              分润数据看板
-            </Title>
-            <Tag
-              color={selectedMonth === 'ALL' ? 'blue' : 'cyan'}
-              className="text-sm px-2.5 py-0.5"
-            >
-              {periodDisplay}
-            </Tag>
-          </div>
-          <Text type="secondary" className="text-xs mt-1 block">
-            实时统计分润订单、发放状态、模块占比与成员收益排名
-          </Text>
-        </div>
+    <div className="profit-dashboard-page">
+      {/* 顶部控制栏 */}
+      <div className="profit-dashboard-header">
+        <Title level={4} style={{ margin: 0, fontWeight: 700, color: '#1e293b' }}>
+          数据看板
+        </Title>
 
-        <Space wrap align="center">
-          <div className="flex items-center gap-2">
-            <CalendarOutlined className="text-gray-400" />
-            <span className="text-sm text-gray-600">统计月份：</span>
-            <DatePicker
-              picker="month"
-              value={selectedMonth !== 'ALL' ? dayjs(selectedMonth, 'YYYY-MM') : null}
-              placeholder="选择其他月份"
-              allowClear={false}
-              onChange={(date) => {
-                if (date) {
-                  setSelectedMonth(date.format('YYYY-MM'));
-                }
-              }}
-              style={{ width: 140 }}
-            />
-          </div>
-
-          <Radio.Group
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            optionType="button"
-            buttonStyle="solid"
+        <div className="profit-dashboard-controls">
+          {/* 顶级视角切换导航 */}
+          <Segmented
+            value={activeTab}
+            onChange={(val) => setActiveTab(val as 'COMPARE' | 'DRILLDOWN' | 'OPERATIONS')}
+            options={[
+              {
+                label: '👥 全员薪酬对比与趋势',
+                value: 'COMPARE',
+              },
+              {
+                label: '👤 员工个人薪酬透视',
+                value: 'DRILLDOWN',
+              },
+              {
+                label: '📦 月度账期经营分析',
+                value: 'OPERATIONS',
+              },
+            ]}
             size="middle"
-          >
-            <Radio.Button value={currentMonthStr}>本月</Radio.Button>
-            <Radio.Button value={dayjs().subtract(1, 'month').format('YYYY-MM')}>上月</Radio.Button>
-            <Radio.Button value="ALL">全部累计</Radio.Button>
-          </Radio.Group>
+          />
 
           <Button
-            icon={<ReloadOutlined spin={isFetching} />}
-            loading={isFetching}
-            onClick={() => refetch()}
+            icon={<ReloadOutlined spin={isRefreshing} />}
+            loading={isRefreshing}
+            onClick={handleRefresh}
           >
             刷新数据
           </Button>
-        </Space>
+        </div>
       </div>
 
-      <Row gutter={[16, 16]} className="mb-6">
-        <Col span={6}>
-          <Card bordered={false} className="shadow-sm">
-            <Statistic
-              title={selectedMonth === 'ALL' ? '累计处理订单' : `${periodDisplay}处理订单`}
-              value={stats.totalOrders}
-              prefix={<ProfileOutlined />}
-              suffix="笔"
-            />
-            <div className="mt-2 text-gray-400 text-xs">（已完成分润流水的订单）</div>
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card bordered={false} className="shadow-sm bg-blue-50">
-            <Statistic
-              title={selectedMonth === 'ALL' ? '累计分润金额 (已发)' : `${periodDisplay}已发分润`}
-              value={stats.totalSettled}
-              precision={2}
-              prefix={<DollarOutlined />}
-            />
-            <div className="mt-2 text-gray-400 text-xs">（SETTLED 状态已发放金额）</div>
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card bordered={false} className="shadow-sm bg-orange-50">
-            <Statistic
-              title={selectedMonth === 'ALL' ? '待结算金额 (未发)' : `${periodDisplay}待结算金额`}
-              value={stats.totalPending}
-              precision={2}
-              valueStyle={{ color: '#cf1322' }}
-              prefix={<DollarOutlined />}
-            />
-            <div className="mt-2 text-gray-500 text-xs">（等待定时任务自动结算）</div>
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card bordered={false} className="shadow-sm bg-red-50">
-            <Statistic
-              title={selectedMonth === 'ALL' ? '累计退款回扣金额' : `${periodDisplay}退款回扣`}
-              value={stats.totalClawback}
-              precision={2}
-              valueStyle={{ color: '#cf1322' }}
-              prefix={<FallOutlined />}
-            />
-            <div className="mt-2 text-gray-500 text-xs">（退款导致的追回金额）</div>
-          </Card>
-        </Col>
-      </Row>
-
-      <Row gutter={[16, 16]}>
-        {/* 模块分润占比 */}
-        <Col span={14}>
-          <Card
-            title={`各分润模块金额占比 (${periodDisplay})`}
-            bordered={false}
-            className="shadow-sm h-full"
-          >
-            <div className="flex flex-col gap-4">
-              {stats.moduleStats.length === 0 && (
-                <div className="text-gray-400 text-center py-8">该周期内暂无分润模块数据</div>
-              )}
-              {stats.moduleStats.map((item, index) => (
-                <div key={index}>
-                  <div className="flex justify-between mb-1">
-                    <Text strong>
-                      {item.name} ({item.percent}%)
-                    </Text>
-                    <Text>
-                      ¥{' '}
-                      {Number(item.amount).toLocaleString('zh-CN', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </Text>
-                  </div>
-                  <Progress
-                    percent={item.percent}
-                    strokeColor={
-                      index === 0
-                        ? '#1890ff'
-                        : index === 1
-                          ? '#52c41a'
-                          : index === 2
-                            ? '#faad14'
-                            : '#f5222d'
+      {/* 全局精简 4 维动态财务 KPI 指标栏 (在全员对比与单人透视模式下呈现) */}
+      {activeTab !== 'OPERATIONS' && (
+        <Row gutter={[16, 16]}>
+          {activeTab === 'COMPARE' ? (
+            <>
+              <Col xs={24} sm={12} lg={6}>
+                <Card bordered={false} className="profit-kpi-card profit-kpi-card-blue">
+                  <Statistic
+                    title={
+                      <span style={{ color: '#475569', fontSize: 13, fontWeight: 500 }}>
+                        周期内全员发薪总盘
+                      </span>
                     }
-                    showInfo={false}
+                    value={overall.totalGrossAmount / 100}
+                    precision={2}
+                    prefix={<DollarOutlined style={{ color: '#2563eb' }} />}
+                    valueStyle={{ color: '#1677ff', fontWeight: 700 }}
                   />
-                </div>
-              ))}
-            </div>
-          </Card>
-        </Col>
-
-        {/* 个人收益排行榜 */}
-        <Col span={10}>
-          <Card
-            title={`成员收益排行榜 TOP 5 (${periodDisplay})`}
-            bordered={false}
-            className="shadow-sm h-full"
-          >
-            <List
-              itemLayout="horizontal"
-              dataSource={stats.memberRankings}
-              locale={{ emptyText: '该周期内暂无收益排行数据' }}
-              renderItem={(item, index) => (
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${index === 0 ? 'bg-yellow-400' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-400' : 'bg-blue-300'}`}
-                      >
-                        {index + 1}
-                      </div>
-                    }
-                    title={item.name}
-                    description={<Tag>{item.role}</Tag>}
-                  />
-                  <div className="text-right">
-                    <div className="text-lg font-medium text-gray-800">
-                      ¥{' '}
-                      {Number(item.amount).toLocaleString('zh-CN', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </div>
+                  <div className="profit-kpi-subtext">
+                    涵盖近 {monthsCount} 个月全员全部发薪总额
                   </div>
-                </List.Item>
-              )}
-            />
-          </Card>
-        </Col>
-      </Row>
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} lg={6}>
+                <Card bordered={false} className="profit-kpi-card profit-kpi-card-green">
+                  <Statistic
+                    title={
+                      <span style={{ color: '#475569', fontSize: 13, fontWeight: 500 }}>
+                        全员月均发薪支出
+                      </span>
+                    }
+                    value={overall.avgMonthlyGross / 100}
+                    precision={2}
+                    prefix="¥"
+                    valueStyle={{ color: '#16a34a', fontWeight: 700 }}
+                  />
+                  <div className="profit-kpi-subtext">全平台月均平稳薪资水平</div>
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} lg={6}>
+                <Card bordered={false} className="profit-kpi-card profit-kpi-card-amber">
+                  <Statistic
+                    title={
+                      <span style={{ color: '#475569', fontSize: 13, fontWeight: 500 }}>
+                        创收领先标杆员工
+                      </span>
+                    }
+                    value={memberSeries.length > 0 ? memberSeries[0].memberName : '-'}
+                    prefix={<RiseOutlined style={{ color: '#d97706' }} />}
+                    valueStyle={{ color: '#d97706', fontWeight: 700 }}
+                  />
+                  <div className="profit-kpi-subtext">
+                    {memberSeries.length > 0
+                      ? `累计创收 ¥${(memberSeries[0].totalGrossAmount / 100).toFixed(2)}`
+                      : '业绩排名第一位'}
+                  </div>
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} lg={6}>
+                <Card bordered={false} className="profit-kpi-card profit-kpi-card-purple">
+                  <Statistic
+                    title={
+                      <span style={{ color: '#475569', fontSize: 13, fontWeight: 500 }}>
+                        核算覆盖人员规模
+                      </span>
+                    }
+                    value={memberSeries.length}
+                    suffix="人"
+                    prefix={<TeamOutlined style={{ color: '#9333ea' }} />}
+                    valueStyle={{ color: '#722ed1', fontWeight: 700 }}
+                  />
+                  <div className="profit-kpi-subtext">共包含 {members.length} 名在册核算成员</div>
+                </Card>
+              </Col>
+            </>
+          ) : (
+            <>
+              <Col xs={24} sm={12} lg={6}>
+                <Card bordered={false} className="profit-kpi-card profit-kpi-card-blue">
+                  <Statistic
+                    title={
+                      <span style={{ color: '#475569', fontSize: 13, fontWeight: 500 }}>
+                        该员工周期总实发
+                      </span>
+                    }
+                    value={overall.totalGrossAmount / 100}
+                    precision={2}
+                    prefix={<DollarOutlined style={{ color: '#2563eb' }} />}
+                    valueStyle={{ color: '#1677ff', fontWeight: 700 }}
+                  />
+                  <div className="profit-kpi-subtext">近 {monthsCount} 个月该员工累计发薪总额</div>
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} lg={6}>
+                <Card bordered={false} className="profit-kpi-card profit-kpi-card-green">
+                  <Statistic
+                    title={
+                      <span style={{ color: '#475569', fontSize: 13, fontWeight: 500 }}>
+                        该员工月均实发
+                      </span>
+                    }
+                    value={overall.avgMonthlyGross / 100}
+                    precision={2}
+                    prefix="¥"
+                    valueStyle={{ color: '#16a34a', fontWeight: 700 }}
+                  />
+                  <div className="profit-kpi-subtext">月度平均综合薪酬收益</div>
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} lg={6}>
+                <Card bordered={false} className="profit-kpi-card profit-kpi-card-amber">
+                  <Statistic
+                    title={
+                      <span style={{ color: '#475569', fontSize: 13, fontWeight: 500 }}>
+                        单月最高收入纪录
+                      </span>
+                    }
+                    value={overall.maxMonthlyGross / 100}
+                    precision={2}
+                    prefix={<RiseOutlined style={{ color: '#d97706' }} />}
+                    valueStyle={{ color: '#d97706', fontWeight: 700 }}
+                  />
+                  <div className="profit-kpi-subtext">峰值创收发薪月份记录</div>
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} lg={6}>
+                <Card bordered={false} className="profit-kpi-card profit-kpi-card-purple">
+                  <Statistic
+                    title={
+                      <span style={{ color: '#475569', fontSize: 13, fontWeight: 500 }}>
+                        待结算发放金额
+                      </span>
+                    }
+                    value={overall.totalPendingAmount / 100}
+                    precision={2}
+                    prefix="¥"
+                    valueStyle={{ color: '#722ed1', fontWeight: 700 }}
+                  />
+                  <div className="profit-kpi-subtext">
+                    已结清发放: ¥{(overall.totalSettledAmount / 100).toFixed(2)}
+                  </div>
+                </Card>
+              </Col>
+            </>
+          )}
+        </Row>
+      )}
+
+      {/* 主体分析内容区（根据选中视角无缝切换） */}
+      {activeTab === 'COMPARE' && (
+        <MultiMemberCompareView
+          months={months}
+          memberSeries={memberSeries}
+          monthsCount={monthsCount}
+          onMonthsCountChange={setMonthsCount}
+          onSelectMemberForDrilldown={handleSelectMemberForDrilldown}
+        />
+      )}
+
+      {activeTab === 'DRILLDOWN' && (
+        <SingleMemberDrilldownView
+          months={months}
+          categoryTotals={categoryTotals}
+          members={members}
+          selectedMemberId={effectiveDrilldownId}
+          selectedMember={activeDrilldownMember}
+          monthsCount={monthsCount}
+          onSelectMember={setDrilldownMemberId}
+          onMonthsCountChange={setMonthsCount}
+        />
+      )}
+
+      {activeTab === 'OPERATIONS' && (
+        <MonthlyOperationsView
+          stats={opsStats}
+          selectedMonth={selectedMonth}
+          onMonthChange={setSelectedMonth}
+        />
+      )}
     </div>
   );
 };

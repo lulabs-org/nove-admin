@@ -4,11 +4,13 @@ import { menuGroup } from '../../shared/utils/routes';
 import { dashboardRoutes } from './dashboard/routes';
 import { rulesRoutes } from './rules/routes';
 import { recordsRoutes } from './records/routes';
+import { payslipsRoutes } from './payslips/routes';
 
 const profitSharingRouteList: RouteConfig[] = [
   ...dashboardRoutes,
   ...rulesRoutes,
   ...recordsRoutes,
+  ...payslipsRoutes,
 ];
 
 export const profitSharingRoutes: RouteConfig = menuGroup(
