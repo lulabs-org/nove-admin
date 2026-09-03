@@ -23,4 +23,32 @@ export const ruleApi = {
   ): Promise<{ success: boolean; processedOrders: number; totalFound: number }> {
     return mutator({ url: `/profit-sharing/rules/${id}/calculate`, method: 'POST' });
   },
+
+  duplicate(id: string, data?: { name?: string; status?: string }): Promise<ProfitSharingRule> {
+    return mutator({
+      url: `/profit-sharing/rules/${id}/duplicate`,
+      method: 'POST',
+      data: data || {},
+    });
+  },
+
+  batchDuplicate(data: {
+    ruleIds: string[];
+    periodStrategy?: 'NEXT_MONTH' | 'SPECIFIC_MONTH' | 'CUSTOM_RANGE' | 'KEEP';
+    targetMonth?: string;
+    customStartTime?: string;
+    customEndTime?: string;
+    nameSuffix?: string;
+    status?: 'DRAFT' | 'ACTIVE' | 'INACTIVE';
+  }): Promise<{ success: boolean; totalRequested: number; duplicatedCount: number }> {
+    return mutator({ url: '/profit-sharing/rules/batch-duplicate', method: 'POST', data });
+  },
+
+  delete(id: string): Promise<void> {
+    return mutator({ url: `/profit-sharing/rules/${id}`, method: 'DELETE' });
+  },
+
+  toggleStatus(id: string): Promise<ProfitSharingRule> {
+    return mutator({ url: `/profit-sharing/rules/${id}/status`, method: 'PATCH' });
+  },
 };

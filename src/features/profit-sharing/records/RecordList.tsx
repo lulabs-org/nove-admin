@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { Table, Card, Tag, DatePicker, Select, Space, Button, Popconfirm, message } from 'antd';
+import {
+  Table,
+  Card,
+  Tag,
+  DatePicker,
+  Select,
+  Space,
+  Button,
+  Popconfirm,
+  message,
+  Alert,
+} from 'antd';
 import type { TableProps } from 'antd/es/table';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { recordApi } from './api/recordApi';
@@ -20,6 +31,7 @@ export const RecordList: React.FC = () => {
     page: 1,
     pageSize: 10,
   });
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   const { data: rulesData } = useQuery({
     queryKey: ['profit-sharing-rules'],
@@ -81,6 +93,34 @@ export const RecordList: React.FC = () => {
     onError: (error: unknown) => {
       const apiErr = error as { response?: { data?: { message?: string } } };
       message.error(apiErr?.response?.data?.message || '恢复失败');
+    },
+  });
+
+  const deleteMutation = useTableMutation({
+    queryKey: 'profit-sharing-records',
+    mutationFn: recordApi.delete,
+    onSuccess: () => {
+      message.success('分润流水删除成功');
+      setSelectedRowKeys((prev) => prev.filter((k) => !selectedRowKeys.includes(k)));
+      queryClient.invalidateQueries({ queryKey: ['profit-dashboard-stats'] });
+    },
+    onError: (error: unknown) => {
+      const apiErr = error as { response?: { data?: { message?: string } } };
+      message.error(apiErr?.response?.data?.message || '删除流水失败');
+    },
+  });
+
+  const batchDeleteMutation = useTableMutation({
+    queryKey: 'profit-sharing-records',
+    mutationFn: recordApi.batchDelete,
+    onSuccess: (res) => {
+      message.success(`成功批量删除 ${res?.count ?? selectedRowKeys.length} 笔分润流水`);
+      setSelectedRowKeys([]);
+      queryClient.invalidateQueries({ queryKey: ['profit-dashboard-stats'] });
+    },
+    onError: (error: unknown) => {
+      const apiErr = error as { response?: { data?: { message?: string } } };
+      message.error(apiErr?.response?.data?.message || '批量删除失败');
     },
   });
 
@@ -147,7 +187,9 @@ export const RecordList: React.FC = () => {
         const end = rule?.validEndTime || snapshot?.validEndTime;
 
         let periodTag = null;
-        if (start && end) {
+        if (record.periodMonth) {
+          periodTag = <Tag color="purple">{record.periodMonth} 固定</Tag>;
+        } else if (start && end) {
           const dStart = dayjs(start);
           const dEnd = dayjs(end);
           if (dEnd.year() >= 2090) {
@@ -173,8 +215,13 @@ export const RecordList: React.FC = () => {
     },
     {
       title: '订单号',
-      dataIndex: ['order', 'orderNumber'],
       key: 'orderNumber',
+      render: (_, record) => {
+        if (record.order?.orderNumber) {
+          return record.order.orderNumber;
+        }
+        return <Tag color="purple">月度固定</Tag>;
+      },
     },
     {
       title: '分润模块',
@@ -196,7 +243,10 @@ export const RecordList: React.FC = () => {
       title: '订单基数 (元)',
       dataIndex: 'baseAmount',
       key: 'baseAmount',
-      render: (amount: number) => (amount / 100).toFixed(2),
+      render: (amount: number, record) => {
+        if (!record.orderId) return '-';
+        return (amount / 100).toFixed(2);
+      },
     },
     {
       title: '分润金额 (元)',
@@ -242,33 +292,54 @@ export const RecordList: React.FC = () => {
       title: '操作',
       key: 'action',
       render: (_, record) => {
+        const deleteBtn = (
+          <Popconfirm
+            title="确定要删除该笔流水吗？"
+            description="删除后该分润记录将被彻底移除，不可恢复。"
+            okText="确认删除"
+            okButtonProps={{ danger: true }}
+            cancelText="取消"
+            onConfirm={() => deleteMutation.mutate(record.id)}
+          >
+            <Button type="link" danger size="small">
+              删除
+            </Button>
+          </Popconfirm>
+        );
+
         if (record.status === 'CLAWBACK') {
-          return '-';
+          return <Space>{deleteBtn}</Space>;
         }
 
         if (record.status === 'SETTLED') {
           return (
-            <Popconfirm
-              title="确定要撤销结算吗？这会将流水恢复为待结算状态。"
-              onConfirm={() => undoSettleMutation.mutate(record.id)}
-            >
-              <Button type="link" danger size="small">
-                撤销结算
-              </Button>
-            </Popconfirm>
+            <Space>
+              <Popconfirm
+                title="确定要撤销结算吗？这会将流水恢复为待结算状态。"
+                onConfirm={() => undoSettleMutation.mutate(record.id)}
+              >
+                <Button type="link" size="small">
+                  撤销结算
+                </Button>
+              </Popconfirm>
+              {deleteBtn}
+            </Space>
           );
         }
 
         if (record.status === 'CANCELLED') {
           return (
-            <Popconfirm
-              title="确定要恢复该笔流水吗？"
-              onConfirm={() => restoreMutation.mutate(record.id)}
-            >
-              <Button type="link" size="small">
-                恢复
-              </Button>
-            </Popconfirm>
+            <Space>
+              <Popconfirm
+                title="确定要恢复该笔流水吗？"
+                onConfirm={() => restoreMutation.mutate(record.id)}
+              >
+                <Button type="link" size="small">
+                  恢复
+                </Button>
+              </Popconfirm>
+              {deleteBtn}
+            </Space>
           );
         }
 
@@ -290,6 +361,7 @@ export const RecordList: React.FC = () => {
                 取消
               </Button>
             </Popconfirm>
+            {deleteBtn}
           </Space>
         );
       },
@@ -326,11 +398,55 @@ export const RecordList: React.FC = () => {
             </Select>
           </Space>
         </div>
+
+        {selectedRowKeys.length > 0 && (
+          <Alert
+            type="info"
+            showIcon
+            className="mb-4"
+            message={
+              <div className="flex justify-between items-center">
+                <span>
+                  已选择 <strong className="text-blue-600">{selectedRowKeys.length}</strong>{' '}
+                  笔流水记录
+                </span>
+                <Space>
+                  <Popconfirm
+                    title={`确定要批量删除选中的 ${selectedRowKeys.length} 笔流水吗？`}
+                    description="删除后这些分润记录将被彻底移除，不可恢复。"
+                    okText="确认删除"
+                    okButtonProps={{ danger: true }}
+                    cancelText="取消"
+                    onConfirm={() => batchDeleteMutation.mutate(selectedRowKeys as string[])}
+                  >
+                    <Button type="primary" danger size="small">
+                      批量删除 ({selectedRowKeys.length})
+                    </Button>
+                  </Popconfirm>
+                  <Button type="link" size="small" onClick={() => setSelectedRowKeys([])}>
+                    取消选择
+                  </Button>
+                </Space>
+              </div>
+            }
+          />
+        )}
+
         <Table
           columns={columns}
           dataSource={recordsData?.data || []}
           rowKey="id"
-          loading={isLoading || settleMutation.isPending || cancelMutation.isPending}
+          rowSelection={{
+            selectedRowKeys,
+            onChange: (keys) => setSelectedRowKeys(keys),
+          }}
+          loading={
+            isLoading ||
+            settleMutation.isPending ||
+            cancelMutation.isPending ||
+            deleteMutation.isPending ||
+            batchDeleteMutation.isPending
+          }
           pagination={{
             current: recordsData?.page || filters.page || 1,
             pageSize: recordsData?.pageSize || filters.pageSize || 10,

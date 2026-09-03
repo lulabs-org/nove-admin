@@ -1,6 +1,7 @@
 export interface ProfitSharingRecord {
   id: string;
-  orderId: string;
+  orderId?: string | null;
+  periodMonth?: string | null;
   memberId: string;
   memberName?: string;
   memberRole?: string;
@@ -8,7 +9,7 @@ export interface ProfitSharingRecord {
     orderNumber: string;
     amount: number;
     financialClosedAt?: string;
-  };
+  } | null;
   module?: {
     name: string;
   };
