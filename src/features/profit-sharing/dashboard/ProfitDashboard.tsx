@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Row, Col, Statistic, Segmented, Spin, Button, Typography } from 'antd';
+import { Card, Row, Col, Statistic, Segmented, Spin, Button } from 'antd';
 import { TeamOutlined, DollarOutlined, RiseOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
@@ -10,8 +10,6 @@ import { MultiMemberCompareView } from './components/MultiMemberCompareView';
 import { SingleMemberDrilldownView } from './components/SingleMemberDrilldownView';
 import { MonthlyOperationsView } from './components/MonthlyOperationsView';
 import './ProfitDashboard.css';
-
-const { Title } = Typography;
 
 export const ProfitDashboard: React.FC = () => {
   // 核心视角切换：'COMPARE'（全员多人员对比） | 'DRILLDOWN'（单人深度透视） | 'OPERATIONS'（账期经营盘点）
@@ -109,10 +107,6 @@ export const ProfitDashboard: React.FC = () => {
     <div className="profit-dashboard-page">
       {/* 顶部控制栏 */}
       <div className="profit-dashboard-header">
-        <Title level={4} style={{ margin: 0, fontWeight: 700, color: '#1e293b' }}>
-          数据看板
-        </Title>
-
         <div className="profit-dashboard-controls">
           {/* 顶级视角切换导航 */}
           <Segmented
