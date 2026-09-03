@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Form,
   Input,
@@ -9,6 +9,9 @@ import {
   Card,
   Switch,
   InputNumber,
+  Segmented,
+  Row,
+  Col,
   message,
 } from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
@@ -22,6 +25,8 @@ import type { ProfitSharingModule } from './types';
 import type { RuleWritePayload } from './types';
 
 const { RangePicker } = DatePicker;
+
+export type PeriodMode = 'MONTH' | 'CUSTOM' | 'PERMANENT';
 
 interface RuleFormProps {
   ruleId?: string | null;
@@ -48,13 +53,17 @@ interface RuleFormValues {
   name: string;
   productId?: string;
   channelId?: string;
-  validTime: [Dayjs, Dayjs];
+  periodMode: PeriodMode;
+  monthPicker?: Dayjs;
+  customRange?: [Dayjs, Dayjs];
+  permanentStart?: Dayjs;
   status: 'DRAFT' | 'ACTIVE' | 'INACTIVE';
   modules?: RuleFormModule[];
 }
 
 export const RuleForm: React.FC<RuleFormProps> = ({ ruleId, onSuccess, onCancel }) => {
   const [form] = Form.useForm();
+  const [periodMode, setPeriodMode] = useState<PeriodMode>('MONTH');
 
   const handleAllocationChange = (
     moduleIndex: number,
@@ -124,11 +133,31 @@ export const RuleForm: React.FC<RuleFormProps> = ({ ruleId, onSuccess, onCancel 
 
   React.useEffect(() => {
     if (ruleData) {
+      const start = dayjs(ruleData.validStartTime);
+      const end = dayjs(ruleData.validEndTime);
+
+      let mode: PeriodMode = 'CUSTOM';
+      if (end.year() >= 2090) {
+        mode = 'PERMANENT';
+      } else if (
+        start.format('YYYY-MM') === end.format('YYYY-MM') ||
+        (start.date() === 1 &&
+          Math.abs(end.diff(start, 'day')) >= 27 &&
+          Math.abs(end.diff(start, 'day')) <= 32)
+      ) {
+        mode = 'MONTH';
+      }
+
+      setPeriodMode(mode);
+
       form.setFieldsValue({
         name: ruleData.name,
         productId: ruleData.productId,
         channelId: ruleData.channelId,
-        validTime: [dayjs(ruleData.validStartTime), dayjs(ruleData.validEndTime)],
+        periodMode: mode,
+        monthPicker: start,
+        customRange: [start, end],
+        permanentStart: start,
         status: ruleData.status,
         modules: ruleData.modules?.map((m: ProfitSharingModule) => ({
           id: m.id,
@@ -144,7 +173,12 @@ export const RuleForm: React.FC<RuleFormProps> = ({ ruleId, onSuccess, onCancel 
         })),
       });
     } else {
+      setPeriodMode('MONTH');
       form.resetFields();
+      form.setFieldsValue({
+        periodMode: 'MONTH',
+        monthPicker: dayjs().startOf('month'),
+      });
     }
   }, [ruleData, form]);
 
@@ -160,21 +194,47 @@ export const RuleForm: React.FC<RuleFormProps> = ({ ruleId, onSuccess, onCancel 
         return;
       }
 
+      if (!values.productId && !values.channelId) {
+        message.error('限制品类和限制渠道必须选择一项');
+        return;
+      }
+
+      let validStartTime: string;
+      let validEndTime: string;
+
+      if (periodMode === 'MONTH') {
+        const month = values.monthPicker || dayjs();
+        validStartTime = month.startOf('month').toISOString();
+        validEndTime = month.endOf('month').toISOString();
+      } else if (periodMode === 'CUSTOM') {
+        const range = values.customRange;
+        if (!range || range.length < 2) {
+          message.error('请选择生效日期范围');
+          return;
+        }
+        validStartTime = range[0].startOf('day').toISOString();
+        validEndTime = range[1].endOf('day').toISOString();
+      } else {
+        const start = values.permanentStart || dayjs();
+        validStartTime = start.startOf('day').toISOString();
+        validEndTime = dayjs('2099-12-31T23:59:59.999Z').toISOString();
+      }
+
       // 转换数据格式，适应 API 需求
       const payload = {
         name: values.name,
         productId: values.productId || undefined,
         channelId: values.channelId ? Number(values.channelId) : undefined,
-        validStartTime: values.validTime[0].toISOString(),
-        validEndTime: values.validTime[1].toISOString(),
+        validStartTime,
+        validEndTime,
         status: values.status,
-        modules: values.modules?.map((m: RuleFormModule) => ({
+        modules: (values.modules || []).map((m: RuleFormModule) => ({
           id: m.id,
           name: m.name,
           shareRatio: m.shareRatio / 100, // 从百分比转为小数 (例如 4 -> 0.04)
           isRefundable: m.isRefundable ?? true,
           amortizationType: m.amortizationType ?? 'NONE',
-          allocations: m.allocations?.map((a: RuleFormAllocation) => ({
+          allocations: (m.allocations || []).map((a: RuleFormAllocation) => ({
             id: a.id,
             memberId: a.memberId,
             allocationRatio: a.allocationRatio / 100, // 从百分比转为小数
@@ -207,6 +267,8 @@ export const RuleForm: React.FC<RuleFormProps> = ({ ruleId, onSuccess, onCancel 
       onFinish={onFinish}
       initialValues={{
         status: 'ACTIVE',
+        periodMode: 'MONTH',
+        monthPicker: dayjs().startOf('month'),
         modules: [
           {
             name: '关单',
@@ -227,52 +289,152 @@ export const RuleForm: React.FC<RuleFormProps> = ({ ruleId, onSuccess, onCancel 
       </Form.Item>
 
       <Form.Item
-        name="validTime"
-        label="生效时间范围"
-        rules={[{ required: true, message: '请选择生效时间范围' }]}
+        label="生效周期"
+        required
+        className="mb-4"
+        extra={
+          <span className="text-xs text-gray-400">
+            {periodMode === 'MONTH' && '覆盖自然整月（该月 1 日 00:00:00 至月末 23:59:59）'}
+            {periodMode === 'CUSTOM' && '按自然天生效（起止日 00:00:00 至 23:59:59）'}
+            {periodMode === 'PERMANENT' && '自生效日起长期持续有效（至 2099 年），直至手动停用'}
+          </span>
+        }
       >
-        <RangePicker
-          showTime
-          className="w-full"
-          presets={[
-            {
-              label: '1个月',
-              value: [dayjs().startOf('day'), dayjs().startOf('day').add(1, 'month')],
-            },
-            {
-              label: '3个月',
-              value: [dayjs().startOf('day'), dayjs().startOf('day').add(3, 'months')],
-            },
-            {
-              label: '半年',
-              value: [dayjs().startOf('day'), dayjs().startOf('day').add(6, 'months')],
-            },
-            {
-              label: '1年',
-              value: [dayjs().startOf('day'), dayjs().startOf('day').add(1, 'year')],
-            },
-            {
-              label: '长期 (99年)',
-              value: [dayjs().startOf('day'), dayjs().startOf('day').add(99, 'years')],
-            },
-          ]}
-        />
+        <Space direction="vertical" className="w-full" size="small">
+          <Segmented
+            value={periodMode}
+            onChange={(val) => {
+              const newMode = val as PeriodMode;
+              setPeriodMode(newMode);
+              form.setFieldValue('periodMode', newMode);
+            }}
+            options={[
+              { label: '按月生效', value: 'MONTH' },
+              { label: '自定义日期', value: 'CUSTOM' },
+              { label: '长期有效', value: 'PERMANENT' },
+            ]}
+            block
+          />
+
+          {periodMode === 'MONTH' && (
+            <Form.Item
+              name="monthPicker"
+              noStyle
+              rules={[{ required: true, message: '请选择生效月份' }]}
+            >
+              <DatePicker
+                picker="month"
+                className="w-full"
+                placeholder="选择生效自然月份（例如：2026-09）"
+              />
+            </Form.Item>
+          )}
+
+          {periodMode === 'CUSTOM' && (
+            <Form.Item
+              name="customRange"
+              noStyle
+              rules={[{ required: true, message: '请选择生效日期范围' }]}
+            >
+              <RangePicker
+                className="w-full"
+                placeholder={['开始日期', '结束日期']}
+                presets={[
+                  {
+                    label: '本月',
+                    value: [dayjs().startOf('month'), dayjs().endOf('month')],
+                  },
+                  {
+                    label: '下月',
+                    value: [
+                      dayjs().add(1, 'month').startOf('month'),
+                      dayjs().add(1, 'month').endOf('month'),
+                    ],
+                  },
+                  {
+                    label: '本季度 (3个月)',
+                    value: [
+                      dayjs().startOf('day'),
+                      dayjs().startOf('day').add(3, 'months').endOf('day'),
+                    ],
+                  },
+                  {
+                    label: '半年',
+                    value: [
+                      dayjs().startOf('day'),
+                      dayjs().startOf('day').add(6, 'months').endOf('day'),
+                    ],
+                  },
+                  {
+                    label: '1年',
+                    value: [
+                      dayjs().startOf('day'),
+                      dayjs().startOf('day').add(1, 'year').endOf('day'),
+                    ],
+                  },
+                ]}
+              />
+            </Form.Item>
+          )}
+
+          {periodMode === 'PERMANENT' && (
+            <Form.Item
+              name="permanentStart"
+              noStyle
+              rules={[{ required: true, message: '请选择生效开始日期' }]}
+            >
+              <DatePicker className="w-full" placeholder="选择规则生效开始日期" />
+            </Form.Item>
+          )}
+        </Space>
       </Form.Item>
 
-      <Space className="w-full mb-4" size="large">
-        <Form.Item name="productId" label="限制品类 (可选)" className="w-64">
-          <OrderProductSelect />
-        </Form.Item>
-        <Form.Item name="channelId" label="限制渠道 (可选)" className="w-64">
-          <OrderChannelSelect />
-        </Form.Item>
-        <Form.Item name="status" label="状态">
-          <Select style={{ width: 120 }}>
-            <Select.Option value="ACTIVE">启用</Select.Option>
-            <Select.Option value="DRAFT">草稿</Select.Option>
-          </Select>
-        </Form.Item>
-      </Space>
+      <Row gutter={12} className="mb-2">
+        <Col span={10}>
+          <Form.Item
+            name="productId"
+            label="品类选择"
+            rules={[
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (value || getFieldValue('channelId')) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('品类和渠道至少必须选择一种'));
+                },
+              }),
+            ]}
+          >
+            <OrderProductSelect />
+          </Form.Item>
+        </Col>
+        <Col span={10}>
+          <Form.Item
+            name="channelId"
+            label="渠道选择"
+            rules={[
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (value || getFieldValue('productId')) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('品类和渠道至少必须选择一种'));
+                },
+              }),
+            ]}
+          >
+            <OrderChannelSelect />
+          </Form.Item>
+        </Col>
+        <Col span={4}>
+          <Form.Item name="status" label="状态">
+            <Select style={{ width: '100%' }}>
+              <Select.Option value="ACTIVE">启用</Select.Option>
+              <Select.Option value="DRAFT">草稿</Select.Option>
+            </Select>
+          </Form.Item>
+        </Col>
+      </Row>
 
       {/* 动态分润模块配置 */}
       <Form.List name="modules">

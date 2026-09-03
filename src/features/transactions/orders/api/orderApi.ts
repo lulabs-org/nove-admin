@@ -35,7 +35,7 @@ export const orderApi = {
       method: 'GET',
       params: {
         page: 1,
-        pageSize: 20,
+        pageSize: 50,
         isActive: true,
         keyword: keyword || undefined,
       },
@@ -48,7 +48,7 @@ export const orderApi = {
       method: 'GET',
       params: {
         page: 1,
-        pageSize: 20,
+        pageSize: 50,
         status: 'ACTIVE',
         keyword: keyword || undefined,
       },
@@ -61,7 +61,7 @@ export const orderApi = {
       method: 'GET',
       params: {
         page: 1,
-        pageSize: 20,
+        pageSize: 50,
         active: true,
         keyword: keyword || undefined,
       },
