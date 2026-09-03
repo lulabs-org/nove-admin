@@ -9,8 +9,10 @@ import {
   Button,
   Popconfirm,
   message,
+  notification,
   Alert,
 } from 'antd';
+import { SyncOutlined } from '@ant-design/icons';
 import type { TableProps } from 'antd/es/table';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { recordApi } from './api/recordApi';
@@ -123,6 +125,34 @@ export const RecordList: React.FC = () => {
       message.error(apiErr?.response?.data?.message || '批量删除失败');
     },
   });
+
+  const [isReconciling, setIsReconciling] = useState(false);
+
+  const handleReconcile = async () => {
+    setIsReconciling(true);
+    try {
+      const res = await recordApi.reconcileRefunds();
+      if (res.compensatedOrders > 0) {
+        notification.success({
+          message: '退款对账与补偿完成',
+          description: `全库共扫描 ${res.scannedRefunds} 笔已结算退款，成功补偿 ${res.compensatedOrders} 笔漏扣流水，总计扣减 ¥${res.totalCompensatedAmount.toFixed(2)}。`,
+          duration: 6,
+        });
+      } else {
+        message.success(
+          `退款对账完成：全库共扫描 ${res.scannedRefunds} 笔已结算退款，数据全部一致，无遗漏扣款。`
+        );
+      }
+      queryClient.invalidateQueries({ queryKey: ['profit-sharing-records'] });
+      queryClient.invalidateQueries({ queryKey: ['profit-dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['profit-sharing-payslips'] });
+    } catch (err: unknown) {
+      const apiErr = err as { response?: { data?: { message?: string } } };
+      message.error(apiErr?.response?.data?.message || '退款对账失败');
+    } finally {
+      setIsReconciling(false);
+    }
+  };
 
   const handleTableChange: TableProps<ProfitSharingRecord>['onChange'] = (pagination) => {
     setFilters((prev) => ({
@@ -440,7 +470,7 @@ export const RecordList: React.FC = () => {
   return (
     <div className="p-6">
       <Card bordered={false} className="shadow-sm">
-        <div className="mb-4">
+        <div className="mb-4 flex justify-between items-center flex-wrap gap-2">
           <Space wrap>
             <Select
               placeholder="按所属规则筛选"
@@ -465,6 +495,16 @@ export const RecordList: React.FC = () => {
               <Select.Option value="CLAWBACK">已回扣</Select.Option>
               <Select.Option value="CANCELLED">已取消</Select.Option>
             </Select>
+          </Space>
+
+          <Space>
+            <Button
+              icon={<SyncOutlined spin={isReconciling} />}
+              onClick={handleReconcile}
+              loading={isReconciling}
+            >
+              退款对账同步
+            </Button>
           </Space>
         </div>
 
