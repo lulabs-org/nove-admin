@@ -19,6 +19,7 @@ import { ruleApi } from './api/ruleApi';
 import { RuleForm } from './RuleForm';
 import { BatchDuplicateModal } from './BatchDuplicateModal';
 import type { ProfitSharingModule, ProfitSharingRule } from './types';
+import './RuleList.css';
 
 export const RuleList: React.FC = () => {
   const {
@@ -139,7 +140,7 @@ export const RuleList: React.FC = () => {
 
         return (
           <Space direction="vertical" size={2}>
-            <span className="font-medium text-gray-800">{record.name}</span>
+            <span style={{ fontWeight: 500, color: '#1e293b' }}>{record.name}</span>
             <Space size={4} wrap>
               {isFixed ? (
                 <Tag color="purple">月度固定薪资/津贴</Tag>
@@ -159,7 +160,7 @@ export const RuleList: React.FC = () => {
                             ? 'red'
                             : 'geekblue'
                     }
-                    className="text-xs"
+                    style={{ fontSize: 11 }}
                   >
                     {c}
                   </Tag>
@@ -180,7 +181,9 @@ export const RuleList: React.FC = () => {
           return (
             <Space size="small">
               <Tag color="purple">长期有效</Tag>
-              <span className="text-gray-500 text-xs">自 {start.format('YYYY-MM-DD')} 起</span>
+              <span style={{ color: '#64748b', fontSize: 12 }}>
+                自 {start.format('YYYY-MM-DD')} 起
+              </span>
             </Space>
           );
         }
@@ -189,13 +192,13 @@ export const RuleList: React.FC = () => {
           return (
             <Space size="small">
               <Tag color="cyan">{start.format('YYYY年MM月')}</Tag>
-              <span className="text-gray-400 text-xs">整月</span>
+              <span style={{ color: '#94a3b8', fontSize: 12 }}>整月</span>
             </Space>
           );
         }
 
         return (
-          <span className="text-gray-600">
+          <span style={{ color: '#475569' }}>
             {start.format('YYYY-MM-DD')} ~ {end.format('YYYY-MM-DD')}
           </span>
         );
@@ -279,9 +282,14 @@ export const RuleList: React.FC = () => {
         const isFixed = record.ruleType === 'FIXED_MONTHLY';
         return (
           <Space size="middle">
-            <a className="text-blue-500 hover:text-blue-600" onClick={() => handleEdit(record.id)}>
+            <Button
+              type="link"
+              size="small"
+              style={{ padding: 0 }}
+              onClick={() => handleEdit(record.id)}
+            >
               编辑
-            </a>
+            </Button>
             <Dropdown
               menu={{
                 items: [
@@ -300,9 +308,11 @@ export const RuleList: React.FC = () => {
                 ],
               }}
             >
-              <a className="text-blue-500 hover:text-blue-600 flex items-center gap-0.5">
-                复制 <DownOutlined style={{ fontSize: 9 }} />
-              </a>
+              <Button type="link" size="small" style={{ padding: 0 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                  复制 <DownOutlined style={{ fontSize: 9 }} />
+                </span>
+              </Button>
             </Dropdown>
             <Popconfirm
               title={isFixed ? '确认生成月度固定分账流水？' : '确认执行批量补算？'}
@@ -315,7 +325,14 @@ export const RuleList: React.FC = () => {
               okText="确认计算"
               cancelText="取消"
             >
-              <a className="text-orange-500 hover:text-orange-600">计算</a>
+              <Button
+                type="link"
+                size="small"
+                className="rule-action-btn-calculate"
+                style={{ padding: 0 }}
+              >
+                计算
+              </Button>
             </Popconfirm>
             {record.status === 'ACTIVE' ? (
               <Popconfirm
@@ -325,7 +342,14 @@ export const RuleList: React.FC = () => {
                 okText="确认停用"
                 cancelText="取消"
               >
-                <a className="text-amber-600 hover:text-amber-700">停用</a>
+                <Button
+                  type="link"
+                  size="small"
+                  className="rule-action-btn-disable"
+                  style={{ padding: 0 }}
+                >
+                  停用
+                </Button>
               </Popconfirm>
             ) : (
               <Popconfirm
@@ -335,7 +359,14 @@ export const RuleList: React.FC = () => {
                 okText="确认启用"
                 cancelText="取消"
               >
-                <a className="text-green-600 hover:text-green-700">启用</a>
+                <Button
+                  type="link"
+                  size="small"
+                  className="rule-action-btn-enable"
+                  style={{ padding: 0 }}
+                >
+                  启用
+                </Button>
               </Popconfirm>
             )}
 
@@ -347,7 +378,9 @@ export const RuleList: React.FC = () => {
               okButtonProps={{ danger: true }}
               cancelText="取消"
             >
-              <a className="text-red-500 hover:text-red-600">删除</a>
+              <Button type="link" size="small" danger style={{ padding: 0 }}>
+                删除
+              </Button>
             </Popconfirm>
           </Space>
         );
@@ -387,9 +420,12 @@ export const RuleList: React.FC = () => {
             showIcon
             className="mb-4"
             message={
-              <div className="flex justify-between items-center">
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
                 <span>
-                  已选择 <strong className="text-blue-600">{selectedRowKeys.length}</strong> 条规则
+                  已选择 <strong style={{ color: '#2563eb' }}>{selectedRowKeys.length}</strong>{' '}
+                  条规则
                 </span>
                 <Space>
                   <Button
