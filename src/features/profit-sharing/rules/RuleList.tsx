@@ -10,12 +10,20 @@ import {
   Popconfirm,
   Dropdown,
   Alert,
+  notification,
 } from 'antd';
-import { PlusOutlined, CopyOutlined, EditOutlined, DownOutlined } from '@ant-design/icons';
+import {
+  PlusOutlined,
+  CopyOutlined,
+  EditOutlined,
+  DownOutlined,
+  SyncOutlined,
+} from '@ant-design/icons';
 import { type ColumnsType } from 'antd/es/table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { ruleApi } from './api/ruleApi';
+import { recordApi } from '../records/api/recordApi';
 import { RuleForm } from './RuleForm';
 import { BatchDuplicateModal } from './BatchDuplicateModal';
 import type { ProfitSharingModule, ProfitSharingRule } from './types';
@@ -40,18 +48,24 @@ export const RuleList: React.FC = () => {
       processedOrders: number;
       totalFound: number;
       isFixedMonthly?: boolean;
+      compensatedRefundOrders?: number;
     }) => {
       if (data.isFixedMonthly) {
         message.success(
           `固定分账计算完成！共检查 ${data.totalFound} 个自然月，生成 ${data.processedOrders} 笔待结算流水。`
         );
       } else {
+        const extraInfo =
+          data.compensatedRefundOrders && data.compensatedRefundOrders > 0
+            ? `，并自动对账补发了 ${data.compensatedRefundOrders} 笔退款回扣流水`
+            : '';
         message.success(
-          `批量计算完成！共找到 ${data.totalFound} 笔匹配订单，其中 ${data.processedOrders} 笔已生成分润流水。`
+          `批量计算与退款对账完成！共匹配 ${data.totalFound} 笔订单（生成 ${data.processedOrders} 笔提成流水）${extraInfo}。`
         );
       }
       queryClient.invalidateQueries({ queryKey: ['profit-sharing-records'] });
       queryClient.invalidateQueries({ queryKey: ['profit-dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['profit-sharing-payslips'] });
     },
     onError: (error: unknown) => {
       const err = error as {
@@ -86,6 +100,35 @@ export const RuleList: React.FC = () => {
       message.error('切换规则状态失败');
     },
   });
+
+  const [isReconciling, setIsReconciling] = useState(false);
+
+  const handleReconcile = async () => {
+    setIsReconciling(true);
+    try {
+      const res = await recordApi.reconcileRefunds();
+      if (res.compensatedOrders > 0) {
+        notification.success({
+          message: '退款对账与补偿完成',
+          description: `全库共扫描 ${res.scannedRefunds} 笔已结算退款，成功补偿 ${res.compensatedOrders} 笔漏扣流水，总计扣减 ¥${res.totalCompensatedAmount.toFixed(2)}。`,
+          duration: 6,
+        });
+      } else {
+        message.success(
+          `退款对账完成：全库共扫描 ${res.scannedRefunds} 笔已结算退款，数据全部一致，无遗漏扣款。`
+        );
+      }
+      queryClient.invalidateQueries({ queryKey: ['profit-sharing-rules'] });
+      queryClient.invalidateQueries({ queryKey: ['profit-sharing-records'] });
+      queryClient.invalidateQueries({ queryKey: ['profit-dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['profit-sharing-payslips'] });
+    } catch (err: unknown) {
+      const apiErr = err as { response?: { data?: { message?: string } } };
+      message.error(apiErr?.response?.data?.message || '退款对账失败');
+    } finally {
+      setIsReconciling(false);
+    }
+  };
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => ruleApi.delete(id),
@@ -315,11 +358,11 @@ export const RuleList: React.FC = () => {
               </Button>
             </Dropdown>
             <Popconfirm
-              title={isFixed ? '确认生成月度固定分账流水？' : '确认执行批量补算？'}
+              title={isFixed ? '确认生成月度固定分账流水？' : '确认执行批量计算？'}
               description={
                 isFixed
                   ? '将为生效月份生成待结算流水（已生成的月份自动跳过，不重复发放）。'
-                  : '将自动查找匹配该规则且尚未分润的历史订单，并生成分润流水。'
+                  : '系统将自动核算该规则适用的订单提成，并自动对账补齐退款回扣流水。'
               }
               onConfirm={() => calculateMutation.mutate(record.id)}
               okText="确认计算"
@@ -408,6 +451,13 @@ export const RuleList: React.FC = () => {
                 批量复制 ({selectedRowKeys.length})
               </Button>
             )}
+            <Button
+              icon={<SyncOutlined spin={isReconciling} />}
+              onClick={handleReconcile}
+              loading={isReconciling}
+            >
+              退款对账同步
+            </Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
               新建规则
             </Button>

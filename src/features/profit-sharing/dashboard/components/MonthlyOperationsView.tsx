@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   Row,
@@ -13,6 +13,8 @@ import {
   Tag,
   Empty,
   Spin,
+  message,
+  notification,
 } from 'antd';
 import {
   CalendarOutlined,
@@ -21,11 +23,13 @@ import {
   AppstoreOutlined,
   TeamOutlined,
   ProfileOutlined,
+  SyncOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { payslipApi } from '../../payslips/api/payslipApi';
+import { recordApi } from '../../records/api/recordApi';
 import type { ProfitSharingDashboardStats } from '../../records/types';
 
 interface MonthlyOperationsViewProps {
@@ -66,6 +70,35 @@ export const MonthlyOperationsView: React.FC<MonthlyOperationsViewProps> = ({
 
   const totalModuleAmount = (stats.moduleStats || []).reduce((sum, m) => sum + Number(m.amount), 0);
 
+  const queryClient = useQueryClient();
+  const [isReconciling, setIsReconciling] = useState(false);
+
+  const handleReconcile = async () => {
+    setIsReconciling(true);
+    try {
+      const res = await recordApi.reconcileRefunds();
+      if (res.compensatedOrders > 0) {
+        notification.success({
+          message: '退款对账与补偿完成',
+          description: `全库共扫描 ${res.scannedRefunds} 笔已结算退款，成功补偿 ${res.compensatedOrders} 笔漏扣流水，总计扣减 ¥${res.totalCompensatedAmount.toFixed(2)}。`,
+          duration: 6,
+        });
+      } else {
+        message.success(
+          `退款对账完成：全库共扫描 ${res.scannedRefunds} 笔已结算退款，数据全部一致，无遗漏扣款。`
+        );
+      }
+      queryClient.invalidateQueries({ queryKey: ['profit-dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['profit-sharing-records'] });
+      queryClient.invalidateQueries({ queryKey: ['profit-sharing-monthly-payslips'] });
+    } catch (err: unknown) {
+      const apiErr = err as { response?: { data?: { message?: string } } };
+      message.error(apiErr?.response?.data?.message || '退款对账失败');
+    } finally {
+      setIsReconciling(false);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* 账期月份选择控制台（作为独立卡片板块拆分呈现，与其他板块工具栏保持一致） */}
@@ -101,6 +134,14 @@ export const MonthlyOperationsView: React.FC<MonthlyOperationsViewProps> = ({
             <Radio.Button value={dayjs().subtract(1, 'month').format('YYYY-MM')}>上月</Radio.Button>
             <Radio.Button value="ALL">全部累计</Radio.Button>
           </Radio.Group>
+
+          <Button
+            icon={<SyncOutlined spin={isReconciling} />}
+            onClick={handleReconcile}
+            loading={isReconciling}
+          >
+            退款对账同步
+          </Button>
         </Space>
       </div>
       {/* 5+1 薪酬板块全景指标卡（原放置在工资条页面，现统一归并至看板进行深度经营分析） */}

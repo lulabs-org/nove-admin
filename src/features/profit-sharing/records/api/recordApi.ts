@@ -31,4 +31,19 @@ export const recordApi = {
   batchDelete(ids: string[]): Promise<{ success: boolean; count: number }> {
     return mutator({ url: '/profit-sharing/records/batch-delete', method: 'POST', data: { ids } });
   },
+  reconcileRefunds(): Promise<{
+    success: boolean;
+    scannedRefunds: number;
+    compensatedOrders: number;
+    totalCompensatedAmount: number;
+    details: Array<{
+      orderId: string;
+      orderNumber: string;
+      afterSaleCode: string;
+      refundAmount: number;
+      compensatedAmount: number;
+    }>;
+  }> {
+    return mutator({ url: '/profit-sharing/records/reconcile-refunds', method: 'POST' });
+  },
 };
