@@ -6,8 +6,12 @@ export const recordApi = {
   list(params: TableQueryParams): Promise<TableQueryResult<ProfitSharingRecord>> {
     return mutator({ url: '/profit-sharing/records', method: 'GET', params });
   },
-  getDashboardStats(): Promise<ProfitSharingDashboardStats> {
-    return mutator({ url: '/profit-sharing/records/dashboard-stats', method: 'GET' });
+  getDashboardStats(month?: string): Promise<ProfitSharingDashboardStats> {
+    return mutator({
+      url: '/profit-sharing/records/dashboard-stats',
+      method: 'GET',
+      params: month ? { month } : undefined,
+    });
   },
   settle(id: string): Promise<void> {
     return mutator({ url: `/profit-sharing/records/${id}/settle`, method: 'POST' });

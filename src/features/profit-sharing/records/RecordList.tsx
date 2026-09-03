@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Table, Card, Tag, DatePicker, Select, Space, Button, Popconfirm, message } from 'antd';
 import type { TableProps } from 'antd/es/table';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { recordApi } from './api/recordApi';
+import { ruleApi } from '../rules/api/ruleApi';
 import dayjs from 'dayjs';
 import {
   useTableQuery,
@@ -13,9 +15,15 @@ import type { ProfitSharingRecord } from './types';
 const { RangePicker } = DatePicker;
 
 export const RecordList: React.FC = () => {
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<TableQueryParams>({
     page: 1,
     pageSize: 10,
+  });
+
+  const { data: rulesData } = useQuery({
+    queryKey: ['profit-sharing-rules'],
+    queryFn: () => ruleApi.list(),
   });
 
   const { data: recordsData, isLoading } = useTableQuery<ProfitSharingRecord>({
@@ -29,6 +37,7 @@ export const RecordList: React.FC = () => {
     mutationFn: recordApi.settle,
     onSuccess: () => {
       message.success('结算成功');
+      queryClient.invalidateQueries({ queryKey: ['profit-dashboard-stats'] });
     },
     onError: (error: unknown) => {
       const apiErr = error as { response?: { data?: { message?: string } } };
@@ -41,6 +50,7 @@ export const RecordList: React.FC = () => {
     mutationFn: recordApi.cancel,
     onSuccess: () => {
       message.success('取消成功');
+      queryClient.invalidateQueries({ queryKey: ['profit-dashboard-stats'] });
     },
     onError: (error: unknown) => {
       const apiErr = error as { response?: { data?: { message?: string } } };
@@ -53,6 +63,7 @@ export const RecordList: React.FC = () => {
     mutationFn: recordApi.undoSettle,
     onSuccess: () => {
       message.success('撤销结算成功');
+      queryClient.invalidateQueries({ queryKey: ['profit-dashboard-stats'] });
     },
     onError: (error: unknown) => {
       const apiErr = error as { response?: { data?: { message?: string } } };
@@ -65,6 +76,7 @@ export const RecordList: React.FC = () => {
     mutationFn: recordApi.restore,
     onSuccess: () => {
       message.success('恢复成功');
+      queryClient.invalidateQueries({ queryKey: ['profit-dashboard-stats'] });
     },
     onError: (error: unknown) => {
       const apiErr = error as { response?: { data?: { message?: string } } };
@@ -82,6 +94,18 @@ export const RecordList: React.FC = () => {
 
   const handleStatusChange = (status: string | undefined) => {
     setFilters((prev) => ({ ...prev, status, page: 1 }));
+  };
+
+  const handleRuleChange = (ruleId: string | undefined) => {
+    setFilters((prev) => {
+      const next = { ...prev, page: 1 } as Record<string, unknown>;
+      if (ruleId) {
+        next['ruleId'] = ruleId;
+      } else {
+        delete next['ruleId'];
+      }
+      return next as TableQueryParams;
+    });
   };
 
   const handleDateRangeChange = (dates: unknown, dateStrings: [string, string]) => {
@@ -107,8 +131,45 @@ export const RecordList: React.FC = () => {
       title: '流水号',
       dataIndex: 'id',
       key: 'id',
-      width: 120,
+      width: 110,
       render: (text: string) => <span className="text-gray-500">{text.slice(0, 8)}...</span>,
+    },
+    {
+      title: '所属规则 / 周期',
+      key: 'rulePeriod',
+      render: (_, record) => {
+        const rule = record.rule;
+        const snapshot = record.ruleSnapshot as
+          | { name?: string; validStartTime?: string; validEndTime?: string }
+          | undefined;
+        const ruleName = rule?.name || snapshot?.name || '-';
+        const start = rule?.validStartTime || snapshot?.validStartTime;
+        const end = rule?.validEndTime || snapshot?.validEndTime;
+
+        let periodTag = null;
+        if (start && end) {
+          const dStart = dayjs(start);
+          const dEnd = dayjs(end);
+          if (dEnd.year() >= 2090) {
+            periodTag = <Tag color="purple">长期有效</Tag>;
+          } else if (dStart.format('YYYY-MM') === dEnd.format('YYYY-MM')) {
+            periodTag = <Tag color="cyan">{dStart.format('YYYY年MM月')}</Tag>;
+          } else {
+            periodTag = (
+              <span className="text-xs text-gray-500">
+                {dStart.format('YYYY-MM-DD')} ~ {dEnd.format('MM-DD')}
+              </span>
+            );
+          }
+        }
+
+        return (
+          <div>
+            <div className="font-medium text-gray-800">{ruleName}</div>
+            <div className="mt-0.5">{periodTag}</div>
+          </div>
+        );
+      },
     },
     {
       title: '订单号',
@@ -239,10 +300,21 @@ export const RecordList: React.FC = () => {
     <div className="p-6">
       <Card title="分润流水" bordered={false} className="shadow-sm">
         <div className="mb-4">
-          <Space>
-            <RangePicker onChange={handleDateRangeChange} />
+          <Space wrap>
             <Select
-              placeholder="状态"
+              placeholder="按所属规则筛选"
+              style={{ width: 180 }}
+              allowClear
+              showSearch
+              filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              options={rulesData?.map((r) => ({ label: r.name, value: r.id }))}
+              onChange={handleRuleChange}
+            />
+            <RangePicker placeholder={['流水开始', '流水结束']} onChange={handleDateRangeChange} />
+            <Select
+              placeholder="结算状态"
               style={{ width: 120 }}
               allowClear
               onChange={handleStatusChange}
