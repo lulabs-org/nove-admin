@@ -6,11 +6,11 @@ import {
   Statistic,
   Progress,
   List,
-  Tag,
   Button,
   DatePicker,
   Radio,
   Space,
+  Tag,
   Empty,
   Spin,
 } from 'antd';
@@ -68,7 +68,7 @@ export const MonthlyOperationsView: React.FC<MonthlyOperationsViewProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* 账期月份选择控制台 */}
+      {/* 账期月份选择控制台（作为独立卡片板块拆分呈现，与其他板块工具栏保持一致） */}
       <div className="profit-toolbar-card">
         <Space size="middle" align="center">
           <CalendarOutlined style={{ color: '#2563eb' }} />
@@ -103,7 +103,6 @@ export const MonthlyOperationsView: React.FC<MonthlyOperationsViewProps> = ({
           </Radio.Group>
         </Space>
       </div>
-
       {/* 5+1 薪酬板块全景指标卡（原放置在工资条页面，现统一归并至看板进行深度经营分析） */}
       {isPayslipLoading ? (
         <div style={{ padding: '24px 0', textAlign: 'center' }}>

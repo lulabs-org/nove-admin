@@ -16,9 +16,9 @@
 .profit-dashboard-header {
   background: #ffffff;
   border-radius: 10px;
-  padding: 12px 20px;
+  padding: 10px 18px;
   border: 1px solid #edf2f7;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -31,6 +31,64 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+/* 精致轻量级现代 Segmented 胶囊导航 (Compact & Refined) */
+.profit-view-segmented {
+  background: #f1f5f9 !important;
+  padding: 3px !important;
+  border-radius: 8px !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.profit-view-segmented .ant-segmented-group {
+  gap: 2px;
+}
+
+.profit-view-segmented .ant-segmented-item {
+  border-radius: 6px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  color: #64748b !important;
+  font-size: 13px !important;
+  padding: 4px 12px !important;
+}
+
+.profit-view-segmented .ant-segmented-item:hover:not(.ant-segmented-item-selected) {
+  color: #1e293b !important;
+}
+
+.profit-view-segmented .ant-segmented-item-selected {
+  background: #ffffff !important;
+  color: #2563eb !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 1px rgba(0, 0, 0, 0.03) !important;
+}
+
+.profit-view-segmented .ant-segmented-item-selected .anticon {
+  color: #2563eb !important;
+}
+
+.profit-view-segmented .anticon {
+  font-size: 13.5px !important;
+  margin-right: 6px !important;
+  vertical-align: -1px !important;
+}
+
+.profit-dashboard-refresh-btn {
+  height: 32px !important;
+  border-radius: 6px !important;
+  padding: 0 12px !important;
+  font-size: 12.5px !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  transition: all 0.2s ease !important;
+}
+
+.profit-dashboard-refresh-btn:hover {
+  border-color: #cbd5e1 !important;
+  color: #2563eb !important;
+  background: #f8fafc !important;
 }
 
 /* KPI Cards */
