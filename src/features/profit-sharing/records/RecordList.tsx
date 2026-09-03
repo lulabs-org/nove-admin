@@ -439,7 +439,7 @@ export const RecordList: React.FC = () => {
 
   return (
     <div className="p-6">
-      <Card title="分润流水" bordered={false} className="shadow-sm">
+      <Card bordered={false} className="shadow-sm">
         <div className="mb-4">
           <Space wrap>
             <Select

@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { Card, Row, Col, Statistic, Segmented, Spin, Button } from 'antd';
-import { TeamOutlined, DollarOutlined, RiseOutlined, ReloadOutlined } from '@ant-design/icons';
+import {
+  TeamOutlined,
+  DollarOutlined,
+  RiseOutlined,
+  ReloadOutlined,
+  UserOutlined,
+  AccountBookOutlined,
+} from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { recordApi } from '../records/api/recordApi';
@@ -105,38 +112,41 @@ export const ProfitDashboard: React.FC = () => {
 
   return (
     <div className="profit-dashboard-page">
-      {/* 顶部控制栏 */}
+      {/* 顶部控制栏（全局统一：左侧视角切换，右侧刷新数据） */}
       <div className="profit-dashboard-header">
         <div className="profit-dashboard-controls">
-          {/* 顶级视角切换导航 */}
           <Segmented
+            className="profit-view-segmented"
             value={activeTab}
             onChange={(val) => setActiveTab(val as 'COMPARE' | 'DRILLDOWN' | 'OPERATIONS')}
             options={[
               {
-                label: '👥 全员薪酬对比与趋势',
                 value: 'COMPARE',
+                icon: <TeamOutlined />,
+                label: '全员薪酬对比与趋势',
               },
               {
-                label: '👤 员工个人薪酬透视',
                 value: 'DRILLDOWN',
+                icon: <UserOutlined />,
+                label: '员工个人薪酬透视',
               },
               {
-                label: '📦 月度账期经营分析',
                 value: 'OPERATIONS',
+                icon: <AccountBookOutlined />,
+                label: '月度账期经营分析',
               },
             ]}
-            size="middle"
           />
-
-          <Button
-            icon={<ReloadOutlined spin={isRefreshing} />}
-            loading={isRefreshing}
-            onClick={handleRefresh}
-          >
-            刷新数据
-          </Button>
         </div>
+
+        <Button
+          className="profit-dashboard-refresh-btn"
+          icon={<ReloadOutlined spin={isRefreshing} />}
+          loading={isRefreshing}
+          onClick={handleRefresh}
+        >
+          刷新数据
+        </Button>
       </div>
 
       {/* 全局精简 4 维动态财务 KPI 指标栏 (在全员对比与单人透视模式下呈现) */}
