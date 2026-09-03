@@ -26,6 +26,7 @@ export const RuleList: React.FC = () => {
         `批量计算完成！共找到 ${data.totalFound} 笔匹配订单，其中 ${data.processedOrders} 笔已生成分润流水。`
       );
       queryClient.invalidateQueries({ queryKey: ['profit-sharing-records'] });
+      queryClient.invalidateQueries({ queryKey: ['profit-dashboard-stats'] });
     },
     onError: (error: unknown) => {
       const err = error as {

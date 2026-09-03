@@ -7,13 +7,18 @@ export interface ProfitSharingRecord {
   order?: {
     orderNumber: string;
     amount: number;
+    financialClosedAt?: string;
   };
   module?: {
     name: string;
   };
   rule?: {
+    id: string;
     name: string;
+    validStartTime?: string;
+    validEndTime?: string;
   };
+  ruleSnapshot?: Record<string, unknown>;
   baseAmount: number;
   profitAmount: number;
   settlementTime?: string;
@@ -34,6 +39,7 @@ export interface ProfitSharingMemberRanking {
 }
 
 export interface ProfitSharingDashboardStats {
+  month?: string;
   totalOrders: number;
   totalSettled: number;
   totalPending: number;
