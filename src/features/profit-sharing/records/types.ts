@@ -1,7 +1,22 @@
 export interface ProfitSharingRecord {
   id: string;
   orderId: string;
-  amount: number;
+  memberId: string;
+  memberName?: string;
+  memberRole?: string;
+  order?: {
+    orderNumber: string;
+    amount: number;
+  };
+  module?: {
+    name: string;
+  };
+  rule?: {
+    name: string;
+  };
+  baseAmount: number;
+  profitAmount: number;
+  settlementTime?: string;
   status: string;
   createdAt: string;
 }

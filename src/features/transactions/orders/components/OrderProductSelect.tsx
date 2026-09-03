@@ -12,7 +12,6 @@ interface OrderProductSelectProps {
 }
 
 export function OrderProductSelect({ value, onChange, initialProduct }: OrderProductSelectProps) {
-  const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -24,7 +23,6 @@ export function OrderProductSelect({ value, onChange, initialProduct }: OrderPro
   const productsQuery = useQuery({
     queryKey: ['order-product-options', debouncedSearch],
     queryFn: () => orderApi.searchProducts(debouncedSearch),
-    enabled: open,
     staleTime: 30_000,
   });
 
@@ -49,7 +47,6 @@ export function OrderProductSelect({ value, onChange, initialProduct }: OrderPro
             ? '产品加载失败'
             : '未找到匹配产品'
       }
-      onOpenChange={setOpen}
       onSearch={setSearch}
       onChange={onChange}
     />

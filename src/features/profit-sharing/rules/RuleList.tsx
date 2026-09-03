@@ -59,15 +59,38 @@ export const RuleList: React.FC = () => {
       key: 'name',
     },
     {
-      title: '生效时间范围',
+      title: '生效时间周期',
       key: 'validTime',
-      render: (_: string, record: ProfitSharingRule) => (
-        <span className="text-gray-600">
-          {dayjs(record.validStartTime).format('YYYY-MM-DD')}
-          {' ~ '}
-          {dayjs(record.validEndTime).format('YYYY-MM-DD')}
-        </span>
-      ),
+      render: (_: string, record: ProfitSharingRule) => {
+        const start = dayjs(record.validStartTime);
+        const end = dayjs(record.validEndTime);
+
+        if (end.year() >= 2090) {
+          return (
+            <Space size="small">
+              <Tag color="purple">长期有效</Tag>
+              <span className="text-gray-500 text-xs">自 {start.format('YYYY-MM-DD')} 起</span>
+            </Space>
+          );
+        }
+
+        if (start.format('YYYY-MM') === end.format('YYYY-MM')) {
+          return (
+            <Space size="small">
+              <Tag color="cyan">{start.format('YYYY年MM月')}</Tag>
+              <span className="text-gray-500 text-xs">
+                ({start.format('MM-DD')} ~ {end.format('MM-DD')})
+              </span>
+            </Space>
+          );
+        }
+
+        return (
+          <span className="text-gray-600">
+            {start.format('YYYY-MM-DD')} ~ {end.format('YYYY-MM-DD')}
+          </span>
+        );
+      },
     },
     {
       title: '配置模块',
