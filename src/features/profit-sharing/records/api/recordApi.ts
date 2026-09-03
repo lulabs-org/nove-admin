@@ -25,4 +25,10 @@ export const recordApi = {
   restore(id: string): Promise<void> {
     return mutator({ url: `/profit-sharing/records/${id}/restore`, method: 'POST' });
   },
+  delete(id: string): Promise<void> {
+    return mutator({ url: `/profit-sharing/records/${id}`, method: 'DELETE' });
+  },
+  batchDelete(ids: string[]): Promise<{ success: boolean; count: number }> {
+    return mutator({ url: '/profit-sharing/records/batch-delete', method: 'POST', data: { ids } });
+  },
 };
