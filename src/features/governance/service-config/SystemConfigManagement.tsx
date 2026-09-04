@@ -79,7 +79,7 @@ const MODULE_META: Record<
   lark: {
     label: '飞书',
     title: '飞书开放平台配置',
-    description: '用于飞书事件接收及多维表格数据同步',
+    description: '用于飞书会议事件接收与开放平台集成',
     icon: <ApiOutlined />,
   },
   'wechat-shop': {
@@ -181,7 +181,7 @@ function ConfigPanel({
                     <div className="system-config-help-section">
                       <div className="system-config-help-section-title">飞书长连接</div>
                       <div>
-                        HTTP API、多维表格和 Webhook 配置会立即生效；App ID 或 App Secret
+                        HTTP API 和事件配置会立即生效；App ID 或 App Secret
                         变更后，事件长连接需要重启 API。
                       </div>
                     </div>
@@ -663,36 +663,6 @@ function LarkFields({ form }: { form: ReturnType<typeof Form.useForm<LarkConfig>
         <Col xs={24} md={12}>
           <Form.Item label="事件 Verification Token" name="eventVerificationToken">
             <SecretInput placeholder="输入新 Verification Token 以替换" />
-          </Form.Item>
-        </Col>
-      </Row>
-      <Divider titlePlacement="start">多维表格</Divider>
-      <Form.Item label="Bitable App Token" name="bitableAppToken" rules={[{ required: true }]}>
-        <SecretInput placeholder="输入新 App Token 以替换" />
-      </Form.Item>
-      <Row gutter={16}>
-        <Col xs={24} md={12}>
-          <Form.Item label="会议记录表 ID" name="meetingTableId" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item label="参会成员表 ID" name="meetingUserTableId" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item label="录制文件表 ID" name="recordingFileTableId" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item
-            label="个人总结表 ID"
-            name="personalSummaryTableId"
-            rules={[{ required: true }]}
-          >
-            <Input />
           </Form.Item>
         </Col>
       </Row>
