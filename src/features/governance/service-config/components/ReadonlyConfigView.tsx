@@ -102,21 +102,6 @@ const READONLY_SECTIONS: Record<SystemConfigModule, ReadonlySection[]> = {
         },
       ],
     },
-    {
-      title: '多维表格',
-      fields: [
-        {
-          key: 'bitableAppToken',
-          label: 'Bitable App Token',
-          kind: 'secret',
-          fullWidth: true,
-        },
-        { key: 'meetingTableId', label: '会议记录表 ID' },
-        { key: 'meetingUserTableId', label: '参会成员表 ID' },
-        { key: 'recordingFileTableId', label: '录制文件表 ID' },
-        { key: 'personalSummaryTableId', label: '个人总结表 ID' },
-      ],
-    },
   ],
   'wechat-shop': [
     {

@@ -54,11 +54,6 @@ export interface LarkConfig {
   appSecret?: string;
   eventEncryptKey?: string;
   eventVerificationToken?: string;
-  bitableAppToken?: string;
-  meetingTableId?: string;
-  meetingUserTableId?: string;
-  recordingFileTableId?: string;
-  personalSummaryTableId?: string;
 }
 
 export interface WechatShopConfig {

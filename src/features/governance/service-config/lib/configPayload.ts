@@ -44,10 +44,5 @@ export function buildTencentMeetingConfigPayload(
 }
 
 export function buildLarkConfigPayload(values: LarkConfig): LarkConfig {
-  return omitEmptySecrets(values, [
-    'appSecret',
-    'eventEncryptKey',
-    'eventVerificationToken',
-    'bitableAppToken',
-  ]);
+  return omitEmptySecrets(values, ['appSecret', 'eventEncryptKey', 'eventVerificationToken']);
 }

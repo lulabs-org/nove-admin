@@ -60,8 +60,7 @@ describe('system config payloads', () => {
         appSecret: '',
         eventEncryptKey: 'encrypt-key',
         eventVerificationToken: '',
-        bitableAppToken: '********',
       })
-    ).toEqual({ eventEncryptKey: 'encrypt-key', bitableAppToken: '********' });
+    ).toEqual({ eventEncryptKey: 'encrypt-key' });
   });
 });

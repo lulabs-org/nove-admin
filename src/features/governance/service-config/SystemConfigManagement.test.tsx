@@ -101,11 +101,6 @@ describe('SystemConfigManagement', () => {
             appSecret: '********',
             eventEncryptKey: '********',
             eventVerificationToken: '********',
-            bitableAppToken: '********',
-            meetingTableId: 'tbl-meeting',
-            meetingUserTableId: 'tbl-user',
-            recordingFileTableId: 'tbl-recording',
-            personalSummaryTableId: 'tbl-summary',
           },
           'wechat-shop': {
             appId: 'wechat-app',
@@ -191,8 +186,7 @@ describe('SystemConfigManagement', () => {
 
     await userEvent.click(screen.getByText('飞书'));
     expect(await screen.findByText('应用与事件')).toBeInTheDocument();
-    expect(screen.getByText('多维表格')).toBeInTheDocument();
-    expect(screen.getByText('tbl-summary')).toBeInTheDocument();
+    expect(screen.getByText('lark-app')).toBeInTheDocument();
 
     await userEvent.click(screen.getByText('微信小店'));
     expect(await screen.findByText('应用凭证')).toBeInTheDocument();
