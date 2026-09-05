@@ -90,9 +90,7 @@ export interface Order {
   status: OrderStatus;
   paidAt: string | null;
   cancelledAt: string | null;
-  refundedAt: string | null;
   completedAt: string | null;
-  effectiveAt: string | null;
   benefitStart: string | null;
   benefitEnd: string | null;
   paymentProvider: PaymentProvider | null;
@@ -127,9 +125,7 @@ export interface CreateOrder {
   status?: OrderStatus;
   paidAt?: string;
   cancelledAt?: string;
-  refundedAt?: string;
   completedAt?: string;
-  effectiveAt?: string;
   benefitStart?: string;
   benefitEnd?: string;
   paymentProvider?: PaymentProvider;
