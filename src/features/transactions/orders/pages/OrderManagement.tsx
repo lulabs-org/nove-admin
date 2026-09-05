@@ -70,9 +70,7 @@ interface OrderFormValues {
   status?: OrderStatus;
   paidAt?: Dayjs;
   cancelledAt?: Dayjs;
-  refundedAt?: Dayjs;
   completedAt?: Dayjs;
-  effectiveAt?: Dayjs;
   benefitStart?: Dayjs;
   benefitEnd?: Dayjs;
   paymentProvider?: PaymentProvider;
@@ -162,9 +160,7 @@ function buildPayload(values: OrderFormValues): CreateOrder {
     status: values.status,
     paidAt: toIso(values.paidAt),
     cancelledAt: toIso(values.cancelledAt),
-    refundedAt: toIso(values.refundedAt),
     completedAt: toIso(values.completedAt),
-    effectiveAt: toIso(values.effectiveAt),
     benefitStart: toIso(values.benefitStart),
     benefitEnd: toIso(values.benefitEnd),
     paymentProvider: values.paymentProvider,
@@ -289,9 +285,7 @@ export function OrderManagement() {
       status: 'UNPAID',
       paidAt: undefined,
       cancelledAt: undefined,
-      refundedAt: undefined,
       completedAt: undefined,
-      effectiveAt: undefined,
       benefitStart: undefined,
       benefitEnd: undefined,
       paymentProvider: undefined,
@@ -323,9 +317,7 @@ export function OrderManagement() {
       status: record.status,
       paidAt: toDayjs(record.paidAt),
       cancelledAt: toDayjs(record.cancelledAt),
-      refundedAt: toDayjs(record.refundedAt),
       completedAt: toDayjs(record.completedAt),
-      effectiveAt: toDayjs(record.effectiveAt),
       benefitStart: toDayjs(record.benefitStart),
       benefitEnd: toDayjs(record.benefitEnd),
       paymentProvider: record.paymentProvider ?? undefined,
@@ -706,11 +698,6 @@ export function OrderManagement() {
             </Col>
             <Col span={12}>
               <Form.Item name="financialClosedAt" label="财务结单时间">
-                <DatePicker showTime style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="effectiveAt" label="生效时间">
                 <DatePicker showTime style={{ width: '100%' }} />
               </Form.Item>
             </Col>
