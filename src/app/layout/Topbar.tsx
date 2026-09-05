@@ -25,7 +25,7 @@ interface TopbarProps {
 }
 
 export function Topbar({ collapsed, sidebarWidth }: TopbarProps) {
-  const { user, logout, checkPermission } = useAuth();
+  const { user, logout } = useAuth();
 
   const menuItems = [
     {
@@ -33,15 +33,11 @@ export function Topbar({ collapsed, sidebarWidth }: TopbarProps) {
       icon: <UserOutlined />,
       label: <Link to="/settings/profile">个人资料</Link>,
     },
-    ...(checkPermission('system:config')
-      ? [
-          {
-            key: 'security',
-            icon: <SafetyOutlined />,
-            label: <Link to="/settings/security">安全设置</Link>,
-          },
-        ]
-      : []),
+    {
+      key: 'security',
+      icon: <SafetyOutlined />,
+      label: <Link to="/settings/security">安全设置</Link>,
+    },
     { type: 'divider' as const },
     {
       key: 'logout',
