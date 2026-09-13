@@ -52,7 +52,6 @@ export interface UserWritePayload {
   countryCode?: string | null;
   phone?: string | null;
   displayName?: string | null;
-  avatar?: string | null;
   bio?: string | null;
   fullName?: string | null;
   dateOfBirth?: string | null;
