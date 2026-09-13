@@ -111,12 +111,14 @@ export function DashboardPage() {
       onClick: () => navigate('/meetings'),
     });
   }
-  quickLinks.push({
-    icon: <ScheduleOutlined />,
-    title: '任务调度',
-    desc: '管理一次性与周期任务',
-    onClick: () => navigate('/tasks'),
-  });
+  if (checkPermission(PERMISSIONS.TASK.READ)) {
+    quickLinks.push({
+      icon: <ScheduleOutlined />,
+      title: '任务调度',
+      desc: '管理一次性与周期任务',
+      onClick: () => navigate('/tasks'),
+    });
+  }
   if (checkPermission(PERMISSIONS.PERMISSION.READ)) {
     quickLinks.push({
       icon: <SafetyCertificateOutlined />,

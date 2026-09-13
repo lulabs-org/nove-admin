@@ -117,8 +117,11 @@ function StringListField({ name, label }: { name: 'prerequisites' | 'outcomes'; 
 }
 
 export function ProjectManagement() {
-  const { user } = useAuth();
+  const { user, checkPermission } = useAuth();
   const currentOrgId = user?.currentOrgId;
+  const canSearchOwners =
+    checkPermission(PERMISSIONS.PROJECT.UPDATE) && checkPermission(PERMISSIONS.USER.READ);
+  const canReadProducts = checkPermission(PERMISSIONS.PRODUCT.READ);
   const [filters, setFilters] = useState<TableQueryParams>({
     page: 1,
     pageSize: 10,
@@ -154,13 +157,13 @@ export function ProjectManagement() {
 
   const ownerQuery = useQuery({
     queryKey: ['project-owner-options', deferredOwnerKeyword],
-    enabled: Boolean(currentOrgId) && deferredOwnerKeyword.length >= 2,
+    enabled: canSearchOwners && Boolean(currentOrgId) && deferredOwnerKeyword.length >= 2,
     queryFn: () => projectApi.ownerOptions({ keyword: deferredOwnerKeyword }),
   });
 
   const productQuery = useQuery({
     queryKey: ['project-product-options'],
-    enabled: Boolean(currentOrgId),
+    enabled: canReadProducts && Boolean(currentOrgId),
     queryFn: () => productApi.list({ page: 1, pageSize: 100, sortField: 'name' }),
   });
 
@@ -505,25 +508,29 @@ export function ProjectManagement() {
             ]}
             onChange={(value) => handleFilter('isFeatured', value)}
           />
-          <Select
-            allowClear
-            showSearch
-            filterOption={false}
-            placeholder="负责人"
-            loading={ownerQuery.isFetching}
-            options={ownerOptions}
-            onSearch={setOwnerKeyword}
-            notFoundContent={ownerNotFoundContent}
-            onChange={(value) => handleFilter('ownerId', value)}
-          />
-          <Select
-            allowClear
-            showSearch
-            optionFilterProp="label"
-            placeholder="关联产品"
-            options={productOptions}
-            onChange={(value) => handleFilter('productId', value)}
-          />
+          {canSearchOwners && (
+            <Select
+              allowClear
+              showSearch
+              filterOption={false}
+              placeholder="负责人"
+              loading={ownerQuery.isFetching}
+              options={ownerOptions}
+              onSearch={setOwnerKeyword}
+              notFoundContent={ownerNotFoundContent}
+              onChange={(value) => handleFilter('ownerId', value)}
+            />
+          )}
+          {canReadProducts && (
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              placeholder="关联产品"
+              options={productOptions}
+              onChange={(value) => handleFilter('productId', value)}
+            />
+          )}
         </div>
         <div className="project-management-actions">
           <Button icon={<ReloadOutlined />} loading={isFetching} onClick={() => refetch()}>
@@ -680,31 +687,35 @@ export function ProjectManagement() {
 
           <Divider titlePlacement="start">关联关系与排期</Divider>
           <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="ownerId" label="负责人">
-                <Select
-                  allowClear
-                  showSearch
-                  filterOption={false}
-                  placeholder="搜索全部有效系统账号"
-                  loading={ownerQuery.isLoading}
-                  options={ownerOptions}
-                  onSearch={setOwnerKeyword}
-                  notFoundContent={ownerNotFoundContent}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="productId" label="关联产品">
-                <Select
-                  allowClear
-                  showSearch
-                  optionFilterProp="label"
-                  loading={productQuery.isLoading}
-                  options={productOptions}
-                />
-              </Form.Item>
-            </Col>
+            {canSearchOwners && (
+              <Col span={12}>
+                <Form.Item name="ownerId" label="负责人">
+                  <Select
+                    allowClear
+                    showSearch
+                    filterOption={false}
+                    placeholder="搜索全部有效系统账号"
+                    loading={ownerQuery.isLoading}
+                    options={ownerOptions}
+                    onSearch={setOwnerKeyword}
+                    notFoundContent={ownerNotFoundContent}
+                  />
+                </Form.Item>
+              </Col>
+            )}
+            {canReadProducts && (
+              <Col span={12}>
+                <Form.Item name="productId" label="关联产品">
+                  <Select
+                    allowClear
+                    showSearch
+                    optionFilterProp="label"
+                    loading={productQuery.isLoading}
+                    options={productOptions}
+                  />
+                </Form.Item>
+              </Col>
+            )}
             <Col span={6}>
               <Form.Item name="status" label="状态" rules={[{ required: true }]}>
                 <Select options={STATUS_OPTIONS.map(({ label, value }) => ({ label, value }))} />

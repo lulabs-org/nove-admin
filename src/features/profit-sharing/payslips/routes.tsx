@@ -1,4 +1,5 @@
 import type { RouteConfig } from '../../../shared/types';
+import { PERMISSIONS } from '../../../shared/utils/permissions';
 import { PayslipList } from './PayslipList';
 
 export const payslipsRoutes: RouteConfig[] = [
@@ -7,5 +8,6 @@ export const payslipsRoutes: RouteConfig[] = [
     title: '工资条',
     menu: true,
     element: <PayslipList />,
+    permission: PERMISSIONS.PROFIT_SHARING.READ,
   },
 ];
