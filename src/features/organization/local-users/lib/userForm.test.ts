@@ -72,7 +72,9 @@ describe('user form helpers', () => {
       },
     };
 
-    expect(userToFormValues(user)).toMatchObject({
+    const values = userToFormValues(user);
+
+    expect(values).toMatchObject({
       username: 'zhangsan',
       email: 'zhangsan@example.com',
       displayName: '张三',
@@ -81,5 +83,6 @@ describe('user form helpers', () => {
       gender: 'MALE',
       active: true,
     });
+    expect(values).not.toHaveProperty('avatar');
   });
 });
