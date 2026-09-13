@@ -17,7 +17,7 @@ describe('application routes', () => {
     {
       path: '/governance',
       title: '平台治理',
-      childPaths: ['/permissions', '/api-keys', '/oauth-clients', '/settings/system-config'],
+      childPaths: ['/permissions', '/api-keys', '/oauth-clients', '/settings/integrations'],
     },
     {
       path: '/settings',
@@ -52,6 +52,23 @@ describe('application routes', () => {
     expect(organizationRoutes?.find((route) => route.path === '/platform-users')?.title).toBe(
       '平台身份'
     );
+    expect(organizationRoutes?.find((route) => route.path === '/users/list')?.permission).toBe(
+      PERMISSIONS.ORG_MEMBER.READ
+    );
+    expect(organizationRoutes?.find((route) => route.path === '/platform-users')?.permission).toBe(
+      PERMISSIONS.PLATFORM_USER.READ
+    );
+  });
+
+  it('protects every profit sharing page with the backend read permission', () => {
+    const profitSharing = routes.find((route) => route.path === '/profit-sharing');
+
+    expect(profitSharing?.children).toHaveLength(4);
+    expect(
+      profitSharing?.children?.every(
+        (route) => route.permission === PERMISSIONS.PROFIT_SHARING.READ
+      )
+    ).toBe(true);
   });
 
   it('exposes project management as an independent top-level route', () => {

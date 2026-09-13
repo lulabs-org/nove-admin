@@ -12,7 +12,6 @@ interface OrderChannelSelectProps {
 }
 
 export function OrderChannelSelect({ value, onChange, initialChannel }: OrderChannelSelectProps) {
-  const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -24,7 +23,6 @@ export function OrderChannelSelect({ value, onChange, initialChannel }: OrderCha
   const channelsQuery = useQuery({
     queryKey: ['order-channel-options', debouncedSearch],
     queryFn: () => orderApi.searchChannels(debouncedSearch),
-    enabled: open,
     staleTime: 30_000,
   });
 
@@ -49,7 +47,6 @@ export function OrderChannelSelect({ value, onChange, initialChannel }: OrderCha
             ? '渠道加载失败'
             : '未找到匹配渠道'
       }
-      onOpenChange={setOpen}
       onSearch={setSearch}
       onChange={onChange}
     />

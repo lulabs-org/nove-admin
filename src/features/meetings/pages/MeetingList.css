@@ -1,7 +1,3 @@
-.meeting-list-page {
-  padding: 24px;
-}
-
 .meeting-list-toolbar {
   display: flex;
   align-items: center;
@@ -42,9 +38,6 @@
 }
 
 @media (max-width: 720px) {
-  .meeting-list-page {
-    padding: 16px;
-  }
   .meeting-create-button {
     margin-left: 0;
   }

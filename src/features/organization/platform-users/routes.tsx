@@ -8,6 +8,6 @@ export const platformUserRoutes: RouteConfig[] = [
     element: <PlatformUserManagement />,
     title: '平台身份',
     menu: true,
-    permission: PERMISSIONS.USER.READ,
+    permission: PERMISSIONS.PLATFORM_USER.READ,
   },
 ];

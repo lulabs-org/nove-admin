@@ -52,7 +52,6 @@ export interface UserWritePayload {
   countryCode?: string | null;
   phone?: string | null;
   displayName?: string | null;
-  avatar?: string | null;
   bio?: string | null;
   fullName?: string | null;
   dateOfBirth?: string | null;
@@ -77,4 +76,57 @@ export interface UserImportResponse {
   successCount: number;
   failureCount: number;
   failures: UserImportFailure[];
+}
+
+export type IdentityDocumentType =
+  | 'ID_CARD'
+  | 'PASSPORT'
+  | 'HOUSEHOLD_REGISTER'
+  | 'HK_MACAO_PERMIT'
+  | 'TAIWAN_PERMIT'
+  | 'FOREIGN_PERMANENT_RESIDENT'
+  | 'OTHER';
+
+export type DocumentVerifyStatus = 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'REJECTED' | 'EXPIRED';
+
+export interface IdentityDocumentFile {
+  driveFileId: string;
+  name: string;
+  contentType: string;
+}
+
+export interface IdentityDocument {
+  id: string;
+  userId: string;
+  documentType: IdentityDocumentType;
+  issuingCountry: string;
+  holderName: string;
+  maskedNumber: string;
+  issueDate: string | null;
+  expiryDate: string | null;
+  isPermanent: boolean;
+  issuingAuthority: string | null;
+  frontFile: IdentityDocumentFile | null;
+  backFile: IdentityDocumentFile | null;
+  metadata: Record<string, unknown> | null;
+  status: DocumentVerifyStatus;
+  rejectReason: string | null;
+  verifiedAt: string | null;
+  isPrimary: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IdentityDocumentWritePayload {
+  documentType?: IdentityDocumentType;
+  issuingCountry?: string;
+  holderName?: string;
+  documentNumber?: string;
+  issueDate?: string | null;
+  expiryDate?: string | null;
+  isPermanent?: boolean;
+  issuingAuthority?: string | null;
+  frontDriveFileId?: string | null;
+  backDriveFileId?: string | null;
+  isPrimary?: boolean;
 }

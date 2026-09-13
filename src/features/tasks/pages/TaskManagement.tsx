@@ -562,7 +562,7 @@ export function TaskManagement() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
+    <div>
       <div style={{ marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
           新建任务

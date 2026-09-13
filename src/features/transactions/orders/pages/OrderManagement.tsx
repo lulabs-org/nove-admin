@@ -18,11 +18,14 @@ import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import { useMemo, useState } from 'react';
 import {
+  ClockCircleOutlined,
+  CreditCardOutlined,
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
   ReloadOutlined,
   SearchOutlined,
+  SyncOutlined,
 } from '@ant-design/icons';
 import { Perm } from '../../../../app/guards/Perm';
 import {
@@ -33,8 +36,12 @@ import {
 } from '../../../../shared/hooks/useTableQuery';
 import { PERMISSIONS } from '../../../../shared/utils/permissions';
 import { orderApi } from '../api/orderApi';
+import { OrderBenefitModal } from '../components/OrderBenefitModal';
 import { OrderChannelSelect } from '../components/OrderChannelSelect';
 import { OrderProductSelect } from '../components/OrderProductSelect';
+import { ORDER_STATUS_OPTIONS } from '../components/orderStatusOptions';
+import { StripeOrderSyncModal } from '../components/StripeOrderSyncModal';
+import { stripeOrderSyncApi } from '../api/stripeOrderSyncApi';
 import { OrderUserSelect } from '../components/OrderUserSelect';
 import type {
   CreateOrder,
@@ -47,6 +54,12 @@ import type {
 
 const { Search } = Input;
 const { RangePicker } = DatePicker;
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  const responseMessage = (error as { response?: { data?: { message?: string | string[] } } })
+    ?.response?.data?.message;
+  return Array.isArray(responseMessage) ? responseMessage.join('；') : responseMessage || fallback;
+}
 
 type OrderFormMode = 'create' | 'edit';
 
@@ -70,22 +83,13 @@ interface OrderFormValues {
   status?: OrderStatus;
   paidAt?: Dayjs;
   cancelledAt?: Dayjs;
-  refundedAt?: Dayjs;
   completedAt?: Dayjs;
-  effectiveAt?: Dayjs;
+  durationDays?: number;
   benefitStart?: Dayjs;
   benefitEnd?: Dayjs;
   paymentProvider?: PaymentProvider;
   providerTradeNo?: string;
 }
-
-const STATUS_OPTIONS: Array<{ label: string; value: OrderStatus; color: string }> = [
-  { label: '未支付', value: 'UNPAID', color: 'default' },
-  { label: '已支付', value: 'PAID', color: 'processing' },
-  { label: '已取消', value: 'CANCELLED', color: 'warning' },
-  { label: '已退款', value: 'REFUNDED', color: 'error' },
-  { label: '已完成', value: 'COMPLETED', color: 'success' },
-];
 
 const CURRENCY_OPTIONS: Array<{ label: string; value: Currency }> = [
   { label: 'CNY', value: 'CNY' },
@@ -138,7 +142,7 @@ function formatMoney(amount: number, currency: Currency) {
 }
 
 function getStatusMeta(status: OrderStatus) {
-  return STATUS_OPTIONS.find((item) => item.value === status) || STATUS_OPTIONS[0];
+  return ORDER_STATUS_OPTIONS.find((item) => item.value === status) || ORDER_STATUS_OPTIONS[0];
 }
 
 function buildPayload(values: OrderFormValues): CreateOrder {
@@ -162,9 +166,8 @@ function buildPayload(values: OrderFormValues): CreateOrder {
     status: values.status,
     paidAt: toIso(values.paidAt),
     cancelledAt: toIso(values.cancelledAt),
-    refundedAt: toIso(values.refundedAt),
     completedAt: toIso(values.completedAt),
-    effectiveAt: toIso(values.effectiveAt),
+    durationDays: values.durationDays !== undefined ? values.durationDays : undefined,
     benefitStart: toIso(values.benefitStart),
     benefitEnd: toIso(values.benefitEnd),
     paymentProvider: values.paymentProvider,
@@ -186,6 +189,10 @@ export function OrderManagement() {
   const [modalOpen, setModalOpen] = useState(false);
   const [formMode, setFormMode] = useState<OrderFormMode>('create');
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [benefitModalOpen, setBenefitModalOpen] = useState(false);
+  const [benefitModalOrder, setBenefitModalOrder] = useState<Order | null>(null);
+  const [stripeSyncOpen, setStripeSyncOpen] = useState(false);
+  const [resyncingId, setResyncingId] = useState<string | null>(null);
   const [form] = Form.useForm<OrderFormValues>();
 
   const {
@@ -223,18 +230,6 @@ export function OrderManagement() {
     },
   });
 
-  const statusMutation = useTableMutation({
-    queryKey: 'orders',
-    mutationFn: ({ id, status }: { id: string; status: OrderStatus }) =>
-      orderApi.updateStatus(id, status),
-    onSuccess: () => {
-      message.success('订单状态已更新');
-    },
-    onError: () => {
-      message.error('更新订单状态失败');
-    },
-  });
-
   const deleteMutation = useTableDeleteMutation({
     queryKey: 'orders',
     mutationFn: orderApi.delete,
@@ -266,6 +261,19 @@ export function OrderManagement() {
     }));
   };
 
+  const handleStripeResync = async (externalId: string) => {
+    setResyncingId(externalId);
+    try {
+      await stripeOrderSyncApi.syncSingle(externalId);
+      message.success(`Stripe 订单 (${externalId}) 已同步最新状态`);
+      refetch();
+    } catch (error) {
+      message.error(getErrorMessage(error, 'Stripe 同步失败'));
+    } finally {
+      setResyncingId(null);
+    }
+  };
+
   const handleCreate = () => {
     setFormMode('create');
     setEditingOrder(null);
@@ -289,9 +297,8 @@ export function OrderManagement() {
       status: 'UNPAID',
       paidAt: undefined,
       cancelledAt: undefined,
-      refundedAt: undefined,
       completedAt: undefined,
-      effectiveAt: undefined,
+      durationDays: undefined,
       benefitStart: undefined,
       benefitEnd: undefined,
       paymentProvider: undefined,
@@ -323,9 +330,8 @@ export function OrderManagement() {
       status: record.status,
       paidAt: toDayjs(record.paidAt),
       cancelledAt: toDayjs(record.cancelledAt),
-      refundedAt: toDayjs(record.refundedAt),
       completedAt: toDayjs(record.completedAt),
-      effectiveAt: toDayjs(record.effectiveAt),
+      durationDays: record.durationDays ?? undefined,
       benefitStart: toDayjs(record.benefitStart),
       benefitEnd: toDayjs(record.benefitEnd),
       paymentProvider: record.paymentProvider ?? undefined,
@@ -411,26 +417,9 @@ export function OrderManagement() {
       key: 'status',
       width: 130,
       sorter: true,
-      render: (status: OrderStatus, record) => {
+      render: (status: OrderStatus) => {
         const meta = getStatusMeta(status);
-        return (
-          <Perm
-            permission={PERMISSIONS.ORDER.STATUS}
-            fallback={<Tag color={meta.color}>{meta.label}</Tag>}
-          >
-            <Select
-              size="small"
-              value={status}
-              options={STATUS_OPTIONS.map(({ label, value }) => ({ label, value }))}
-              style={{ width: 104 }}
-              disabled={statusMutation.isPending}
-              onClick={(event) => event.stopPropagation()}
-              onChange={(nextStatus) =>
-                statusMutation.mutate({ id: record.id, status: nextStatus })
-              }
-            />
-          </Perm>
-        );
+        return <Tag color={meta.color}>{meta.label}</Tag>;
       },
     },
     {
@@ -451,11 +440,32 @@ export function OrderManagement() {
       render: (_: unknown, record) => record.channel?.name || record.channelId || '-',
     },
     {
-      title: '权益结束',
+      title: '权益周期',
       dataIndex: 'benefitEnd',
       key: 'benefitEnd',
-      width: 180,
-      render: (value: string | null) => formatDateTime(value),
+      width: 200,
+      render: (value: string | null, record) => (
+        <Space direction="vertical" size={2}>
+          <span>{formatDateTime(value)}</span>
+          <Space size={4} wrap>
+            {record.durationDays ? (
+              <Tag color="blue" style={{ margin: 0 }}>
+                {record.durationDays} 天
+              </Tag>
+            ) : null}
+            {record.status === 'FROZEN' && (
+              <Tag color="cyan" style={{ margin: 0 }}>
+                已冻结
+              </Tag>
+            )}
+            {record.frozenDays > 0 && (
+              <Tag color="default" style={{ margin: 0 }}>
+                累计冻结 {record.frozenDays} 天
+              </Tag>
+            )}
+          </Space>
+        </Space>
+      ),
     },
     {
       title: '创建时间',
@@ -472,6 +482,30 @@ export function OrderManagement() {
       width: 120,
       render: (_: unknown, record) => (
         <Space size="small">
+          <Perm permission={PERMISSIONS.ORDER.UPDATE}>
+            <Tooltip title="权益调整 (冻结 / 解冻 / 延期)">
+              <Button
+                type="link"
+                size="small"
+                icon={<ClockCircleOutlined />}
+                onClick={() => {
+                  setBenefitModalOrder(record);
+                  setBenefitModalOpen(true);
+                }}
+              />
+            </Tooltip>
+          </Perm>
+          {record.paymentProvider === 'STRIPE' && record.externalId && (
+            <Tooltip title="从 Stripe 重新拉取最新状态">
+              <Button
+                type="link"
+                size="small"
+                icon={<SyncOutlined spin={resyncingId === record.externalId} />}
+                onClick={() => void handleStripeResync(record.externalId!)}
+                disabled={resyncingId === record.externalId}
+              />
+            </Tooltip>
+          )}
           <Perm permission={PERMISSIONS.ORDER.UPDATE}>
             <Tooltip title="编辑订单">
               <Button
@@ -507,7 +541,7 @@ export function OrderManagement() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
+    <div>
       <div
         style={{
           marginBottom: 16,
@@ -531,7 +565,7 @@ export function OrderManagement() {
           allowClear
           placeholder="状态"
           style={{ width: 140 }}
-          options={STATUS_OPTIONS.map(({ label, value }) => ({ label, value }))}
+          options={ORDER_STATUS_OPTIONS.map(({ label, value }) => ({ label, value }))}
           onChange={(value) => handleFilterChange('status', value)}
         />
         <Select
@@ -552,6 +586,11 @@ export function OrderManagement() {
         <Perm permission={PERMISSIONS.ORDER.CREATE}>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
             新增订单
+          </Button>
+        </Perm>
+        <Perm permission={PERMISSIONS.ORDER.CREATE}>
+          <Button icon={<CreditCardOutlined />} onClick={() => setStripeSyncOpen(true)}>
+            同步 Stripe 订单
           </Button>
         </Perm>
         <Button icon={<ReloadOutlined />} onClick={() => refetch()} loading={isFetching}>
@@ -642,7 +681,9 @@ export function OrderManagement() {
                 label="状态"
                 rules={[{ required: true, message: '请选择状态' }]}
               >
-                <Select options={STATUS_OPTIONS.map(({ label, value }) => ({ label, value }))} />
+                <Select
+                  options={ORDER_STATUS_OPTIONS.map(({ label, value }) => ({ label, value }))}
+                />
               </Form.Item>
             </Col>
             <Col span={8}>
@@ -709,24 +750,46 @@ export function OrderManagement() {
                 <DatePicker showTime style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item name="effectiveAt" label="生效时间">
-                <DatePicker showTime style={{ width: '100%' }} />
+            <Col span={8}>
+              <Form.Item name="durationDays" label="权益时长（天）">
+                <InputNumber
+                  min={1}
+                  max={3650}
+                  addonAfter="天"
+                  placeholder="留空默认继承商品"
+                  style={{ width: '100%' }}
+                />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item name="benefitStart" label="权益开始">
                 <DatePicker showTime style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item name="benefitEnd" label="权益结束">
-                <DatePicker showTime style={{ width: '100%' }} />
+                <DatePicker showTime placeholder="留空自动推算" style={{ width: '100%' }} />
               </Form.Item>
             </Col>
           </Row>
         </Form>
       </Modal>
+
+      <OrderBenefitModal
+        order={benefitModalOrder}
+        open={benefitModalOpen}
+        onClose={() => {
+          setBenefitModalOpen(false);
+          setBenefitModalOrder(null);
+          refetch();
+        }}
+      />
+
+      <StripeOrderSyncModal
+        open={stripeSyncOpen}
+        onCancel={() => setStripeSyncOpen(false)}
+        onSuccess={() => refetch()}
+      />
     </div>
   );
 }

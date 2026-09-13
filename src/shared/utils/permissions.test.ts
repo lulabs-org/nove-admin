@@ -33,3 +33,12 @@ describe('Minute permissions', () => {
     expect(PERMISSIONS.SPEAKER_SUMMARY.READ).toBe('speaker-summary:read');
   });
 });
+
+describe('organization permissions', () => {
+  it('uses the permission namespaces enforced by organization APIs', () => {
+    expect(PERMISSIONS.ORGANIZATION.READ).toBe('org:read');
+    expect(PERMISSIONS.ORG_MEMBER.READ).toBe('org-member:read');
+    expect(PERMISSIONS.DEPARTMENT.READ).toBe('dept:read');
+    expect(PERMISSIONS.PLATFORM_USER.READ).toBe('platform-user:read');
+  });
+});

@@ -3,13 +3,11 @@ import {
   EditOutlined,
   MinusCircleOutlined,
   PlusOutlined,
-  ProjectOutlined,
   ReloadOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import Alert from 'antd/es/alert';
-import Avatar from 'antd/es/avatar';
 import Button from 'antd/es/button';
 import Col from 'antd/es/col';
 import DatePicker from 'antd/es/date-picker';
@@ -41,6 +39,7 @@ import {
 import { PERMISSIONS } from '../../../shared/utils/permissions';
 import { productApi } from '../../transactions/products/api/productApi';
 import { projectApi } from '../api/projectApi';
+import { ProjectCoverAvatar, ProjectCoverPicker } from '../components/ProjectCoverPicker';
 import {
   buildProjectPayload,
   parseProjectMetadata,
@@ -118,8 +117,11 @@ function StringListField({ name, label }: { name: 'prerequisites' | 'outcomes'; 
 }
 
 export function ProjectManagement() {
-  const { user } = useAuth();
+  const { user, checkPermission } = useAuth();
   const currentOrgId = user?.currentOrgId;
+  const canSearchOwners =
+    checkPermission(PERMISSIONS.PROJECT.UPDATE) && checkPermission(PERMISSIONS.USER.READ);
+  const canReadProducts = checkPermission(PERMISSIONS.PRODUCT.READ);
   const [filters, setFilters] = useState<TableQueryParams>({
     page: 1,
     pageSize: 10,
@@ -155,13 +157,13 @@ export function ProjectManagement() {
 
   const ownerQuery = useQuery({
     queryKey: ['project-owner-options', deferredOwnerKeyword],
-    enabled: Boolean(currentOrgId) && deferredOwnerKeyword.length >= 2,
+    enabled: canSearchOwners && Boolean(currentOrgId) && deferredOwnerKeyword.length >= 2,
     queryFn: () => projectApi.ownerOptions({ keyword: deferredOwnerKeyword }),
   });
 
   const productQuery = useQuery({
     queryKey: ['project-product-options'],
-    enabled: Boolean(currentOrgId),
+    enabled: canReadProducts && Boolean(currentOrgId),
     queryFn: () => productApi.list({ page: 1, pageSize: 100, sortField: 'name' }),
   });
 
@@ -190,14 +192,6 @@ export function ProjectManagement() {
       closeModal();
     },
     onError: (error) => message.error(getErrorMessage(error, '项目更新失败')),
-  });
-
-  const statusMutation = useTableMutation({
-    queryKey: `projects-${currentOrgId ?? 'missing'}`,
-    mutationFn: ({ id, status }: { id: string; status: ProjectStatus }) =>
-      projectApi.updateStatus(id, status),
-    onSuccess: () => message.success('项目状态已更新'),
-    onError: (error) => message.error(getErrorMessage(error, '项目状态更新失败')),
   });
 
   const deleteMutation = useTableDeleteMutation({
@@ -299,13 +293,7 @@ export function ProjectManagement() {
       sorter: true,
       render: (_value, record) => (
         <div className="project-primary-cell">
-          <Avatar
-            className="project-primary-cell-avatar"
-            shape="square"
-            size={50}
-            src={record.image}
-            icon={!record.image ? <ProjectOutlined /> : undefined}
-          />
+          <ProjectCoverAvatar reference={record.image} />
           <div className="project-primary-cell-content">
             <div className="project-primary-cell-title-row">
               <Tooltip title={record.title}>
@@ -388,25 +376,9 @@ export function ProjectManagement() {
       dataIndex: 'status',
       key: 'status',
       width: 130,
-      render: (status: ProjectStatus, record) => {
+      render: (status: ProjectStatus) => {
         const meta = statusMeta(status);
-        return (
-          <Perm
-            permission={PERMISSIONS.PROJECT.TOGGLE_STATUS}
-            fallback={<Tag color={meta.color}>{meta.label}</Tag>}
-          >
-            <Select
-              size="small"
-              value={status}
-              style={{ width: 105 }}
-              options={STATUS_OPTIONS.map(({ label, value }) => ({ label, value }))}
-              loading={statusMutation.isPending && statusMutation.variables?.id === record.id}
-              onChange={(nextStatus) =>
-                statusMutation.mutate({ id: record.id, status: nextStatus })
-              }
-            />
-          </Perm>
-        );
+        return <Tag color={meta.color}>{meta.label}</Tag>;
       },
     },
     {
@@ -484,7 +456,7 @@ export function ProjectManagement() {
 
   if (!currentOrgId) {
     return (
-      <div style={{ padding: 24 }}>
+      <div>
         <Alert
           type="warning"
           showIcon
@@ -536,25 +508,29 @@ export function ProjectManagement() {
             ]}
             onChange={(value) => handleFilter('isFeatured', value)}
           />
-          <Select
-            allowClear
-            showSearch
-            filterOption={false}
-            placeholder="负责人"
-            loading={ownerQuery.isFetching}
-            options={ownerOptions}
-            onSearch={setOwnerKeyword}
-            notFoundContent={ownerNotFoundContent}
-            onChange={(value) => handleFilter('ownerId', value)}
-          />
-          <Select
-            allowClear
-            showSearch
-            optionFilterProp="label"
-            placeholder="关联产品"
-            options={productOptions}
-            onChange={(value) => handleFilter('productId', value)}
-          />
+          {canSearchOwners && (
+            <Select
+              allowClear
+              showSearch
+              filterOption={false}
+              placeholder="负责人"
+              loading={ownerQuery.isFetching}
+              options={ownerOptions}
+              onSearch={setOwnerKeyword}
+              notFoundContent={ownerNotFoundContent}
+              onChange={(value) => handleFilter('ownerId', value)}
+            />
+          )}
+          {canReadProducts && (
+            <Select
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              placeholder="关联产品"
+              options={productOptions}
+              onChange={(value) => handleFilter('productId', value)}
+            />
+          )}
         </div>
         <div className="project-management-actions">
           <Button icon={<ReloadOutlined />} loading={isFetching} onClick={() => refetch()}>
@@ -648,8 +624,8 @@ export function ProjectManagement() {
               </Form.Item>
             </Col>
             <Col span={24}>
-              <Form.Item name="image" label="封面路径或 URL">
-                <Input placeholder="/images/project.svg 或 https://..." />
+              <Form.Item name="image" label="项目封面">
+                <ProjectCoverPicker orgId={currentOrgId} />
               </Form.Item>
             </Col>
             <Col span={24}>
@@ -711,31 +687,35 @@ export function ProjectManagement() {
 
           <Divider titlePlacement="start">关联关系与排期</Divider>
           <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="ownerId" label="负责人">
-                <Select
-                  allowClear
-                  showSearch
-                  filterOption={false}
-                  placeholder="搜索全部有效系统账号"
-                  loading={ownerQuery.isLoading}
-                  options={ownerOptions}
-                  onSearch={setOwnerKeyword}
-                  notFoundContent={ownerNotFoundContent}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="productId" label="关联产品">
-                <Select
-                  allowClear
-                  showSearch
-                  optionFilterProp="label"
-                  loading={productQuery.isLoading}
-                  options={productOptions}
-                />
-              </Form.Item>
-            </Col>
+            {canSearchOwners && (
+              <Col span={12}>
+                <Form.Item name="ownerId" label="负责人">
+                  <Select
+                    allowClear
+                    showSearch
+                    filterOption={false}
+                    placeholder="搜索全部有效系统账号"
+                    loading={ownerQuery.isLoading}
+                    options={ownerOptions}
+                    onSearch={setOwnerKeyword}
+                    notFoundContent={ownerNotFoundContent}
+                  />
+                </Form.Item>
+              </Col>
+            )}
+            {canReadProducts && (
+              <Col span={12}>
+                <Form.Item name="productId" label="关联产品">
+                  <Select
+                    allowClear
+                    showSearch
+                    optionFilterProp="label"
+                    loading={productQuery.isLoading}
+                    options={productOptions}
+                  />
+                </Form.Item>
+              </Col>
+            )}
             <Col span={6}>
               <Form.Item name="status" label="状态" rules={[{ required: true }]}>
                 <Select options={STATUS_OPTIONS.map(({ label, value }) => ({ label, value }))} />

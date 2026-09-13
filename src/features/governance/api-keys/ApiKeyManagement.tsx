@@ -224,7 +224,7 @@ export function ApiKeyManagement() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
+    <div>
       <div style={{ marginBottom: 16, display: 'flex', gap: 12 }}>
         <Perm permission={PERMISSIONS.API_KEY.CREATE}>
           <Button type="primary" icon={<KeyOutlined />} onClick={handleCreate}>

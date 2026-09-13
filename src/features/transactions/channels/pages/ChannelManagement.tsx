@@ -271,7 +271,7 @@ export function ChannelManagement() {
   const submitting = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div style={{ padding: 24 }}>
+    <div>
       <div style={{ marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         <Perm permission={PERMISSIONS.CHANNEL.CREATE}>
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>

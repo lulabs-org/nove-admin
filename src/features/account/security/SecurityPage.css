@@ -1,7 +1,5 @@
 .security-page {
-  max-width: 1180px;
   min-height: calc(100vh - 148px);
-  margin: 0 auto;
 }
 
 .security-header {

@@ -2,6 +2,7 @@ import {
   DeleteOutlined,
   DownloadOutlined,
   EditOutlined,
+  FileProtectOutlined,
   PlusOutlined,
   ReloadOutlined,
   SearchOutlined,
@@ -14,7 +15,6 @@ import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import Avatar from 'antd/es/avatar';
 import Button from 'antd/es/button';
-import Divider from 'antd/es/divider';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
 import message from 'antd/es/message';
@@ -41,6 +41,7 @@ import {
 } from './lib/userForm';
 import { getUserIdentityDisplay } from './lib/userDisplay';
 import { COUNTRY_OPTIONS } from './lib/countryOptions';
+import { IdentityDocumentManager } from './IdentityDocumentManager';
 import type { AdminUser, UserImportResponse, UserListParams, UserWritePayload } from './types';
 import './UserManagement.css';
 
@@ -63,6 +64,7 @@ export function UserManagement() {
   const [importOpen, setImportOpen] = useState(false);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [importResult, setImportResult] = useState<UserImportResponse | null>(null);
+  const [identityUser, setIdentityUser] = useState<AdminUser | null>(null);
   const [form] = Form.useForm<UserWritePayload>();
 
   const usersQuery = useQuery({
@@ -229,9 +231,17 @@ export function UserManagement() {
       title: '操作',
       key: 'actions',
       fixed: 'right',
-      width: 105,
+      width: 145,
       render: (_value, record) => (
         <Space size={4}>
+          <Perm permission={PERMISSIONS.IDENTITY_DOCUMENT.READ}>
+            <Button
+              type="text"
+              icon={<FileProtectOutlined />}
+              title="身份凭证"
+              onClick={() => setIdentityUser(record)}
+            />
+          </Perm>
           <Perm permission={PERMISSIONS.USER.UPDATE}>
             <Button type="text" icon={<EditOutlined />} onClick={() => openEdit(record)} />
           </Perm>
@@ -314,7 +324,13 @@ export function UserManagement() {
       />
 
       <Modal
-        title={editing ? '编辑系统账号' : '新建系统账号'}
+        className="user-account-modal"
+        title={
+          <div className="user-account-modal-heading">
+            <span>{editing ? '编辑系统账号' : '新建系统账号'}</span>
+            <Text type="secondary">维护登录信息与基础资料</Text>
+          </div>
+        }
         open={formOpen}
         onCancel={() => {
           setFormOpen(false);
@@ -326,102 +342,116 @@ export function UserManagement() {
         okButtonProps={{
           disabled: Boolean(editing) && (!editDetailQuery.data || editDetailQuery.isFetching),
         }}
+        okText={editing ? '保存修改' : '创建账号'}
+        cancelText="取消"
+        centered
         destroyOnHidden
-        width={760}
+        width={820}
       >
         <Spin spinning={Boolean(editing) && editDetailQuery.isFetching}>
-          <Form form={form} layout="vertical" preserve={false}>
-            <Divider titlePlacement="start">账号信息</Divider>
-            <Form.Item label="显示名称" name="displayName">
-              <Input maxLength={100} placeholder="用于后台展示" />
-            </Form.Item>
-            <Form.Item
-              label="用户名"
-              name="username"
-              rules={[{ pattern: /^[a-zA-Z0-9_]+$/, message: '只能包含字母、数字和下划线' }]}
-            >
-              <Input maxLength={50} placeholder="用户名、邮箱、手机号至少填写一个" />
-            </Form.Item>
-            <Form.Item
-              label="邮箱"
-              name="email"
-              rules={[{ type: 'email', message: '邮箱格式不正确' }]}
-            >
-              <Input maxLength={255} placeholder="user@example.com" />
-            </Form.Item>
-            <Space align="start" className="user-phone-fields">
-              <Form.Item label="国家代码" name="countryCode">
-                <Input placeholder="+86" maxLength={5} />
-              </Form.Item>
-              <Form.Item
-                label="手机号"
-                name="phone"
-                rules={[{ pattern: /^[\d\s()-]+$/, message: '手机号格式不正确' }]}
-              >
-                <Input maxLength={30} placeholder="13800138000" />
-              </Form.Item>
-            </Space>
-            <Form.Item label="启用" name="active" valuePropName="checked">
-              <Switch />
-            </Form.Item>
+          <Form form={form} layout="vertical" preserve={false} className="user-account-form">
+            <section className="user-form-section">
+              <div className="user-form-section-header">
+                <Text strong>账号信息</Text>
+                <Text type="secondary">用户名、邮箱或手机号至少填写一项</Text>
+              </div>
+              <div className="user-form-grid">
+                <Form.Item label="显示名称" name="displayName">
+                  <Input maxLength={100} placeholder="用于后台展示" />
+                </Form.Item>
+                <Form.Item
+                  label="用户名"
+                  name="username"
+                  rules={[{ pattern: /^[a-zA-Z0-9_]+$/, message: '只能包含字母、数字和下划线' }]}
+                >
+                  <Input maxLength={50} placeholder="请输入用户名" />
+                </Form.Item>
+                <Form.Item
+                  label="邮箱"
+                  name="email"
+                  rules={[{ type: 'email', message: '邮箱格式不正确' }]}
+                >
+                  <Input maxLength={255} placeholder="user@example.com" />
+                </Form.Item>
+                <div className="user-phone-group">
+                  <Form.Item label="国家代码" name="countryCode">
+                    <Input placeholder="+86" maxLength={5} />
+                  </Form.Item>
+                  <Form.Item
+                    label="手机号"
+                    name="phone"
+                    rules={[{ pattern: /^[\d\s()-]+$/, message: '手机号格式不正确' }]}
+                  >
+                    <Input maxLength={30} placeholder="13800138000" />
+                  </Form.Item>
+                </div>
+              </div>
+              <div className="user-status-row">
+                <div>
+                  <Text strong>账号状态</Text>
+                  <Text type="secondary">停用后，该账号将无法登录系统</Text>
+                </div>
+                <Form.Item name="active" valuePropName="checked" noStyle>
+                  <Switch checkedChildren="启用" unCheckedChildren="停用" />
+                </Form.Item>
+              </div>
+            </section>
 
-            <Divider titlePlacement="start">个人资料</Divider>
-            <div className="user-profile-grid">
-              <Form.Item label="完整姓名" name="fullName" className="user-profile-wide">
-                <Input maxLength={200} placeholder="用户填写的完整姓名，未经实名认证" />
-              </Form.Item>
-              <Form.Item label="出生日期" name="dateOfBirth">
-                <Input type="date" />
-              </Form.Item>
-              <Form.Item label="性别" name="gender">
-                <Select
-                  allowClear
-                  options={[
-                    { label: '男', value: 'MALE' },
-                    { label: '女', value: 'FEMALE' },
-                    { label: '其他', value: 'OTHER' },
-                    { label: '不愿透露', value: 'PREFER_NOT_TO_SAY' },
-                  ]}
-                />
-              </Form.Item>
-              <Form.Item
-                label="头像 URL"
-                name="avatar"
-                rules={[{ type: 'url', message: '头像 URL 格式不正确' }]}
-                className="user-profile-wide"
-              >
-                <Input maxLength={500} placeholder="https://example.com/avatar.png" />
-              </Form.Item>
-              <Form.Item
-                label="个人网站"
-                name="website"
-                rules={[{ type: 'url', message: '个人网站 URL 格式不正确' }]}
-                className="user-profile-wide"
-              >
-                <Input maxLength={255} placeholder="https://example.com" />
-              </Form.Item>
-              <Form.Item label="国家" name="country">
-                <Select
-                  allowClear
-                  showSearch
-                  optionFilterProp="label"
-                  placeholder="请选择国家或地区"
-                  options={COUNTRY_OPTIONS}
-                />
-              </Form.Item>
-              <Form.Item label="城市" name="city">
-                <Input maxLength={100} />
-              </Form.Item>
-              <Form.Item label="邮政编码" name="zipCode">
-                <Input maxLength={20} />
-              </Form.Item>
-              <Form.Item label="详细地址" name="address" className="user-profile-wide">
-                <Input maxLength={500} />
-              </Form.Item>
-              <Form.Item label="个人简介" name="bio" className="user-profile-full">
-                <Input.TextArea maxLength={500} rows={3} showCount />
-              </Form.Item>
-            </div>
+            <section className="user-form-section">
+              <div className="user-form-section-header">
+                <Text strong>个人资料</Text>
+                <Text type="secondary">头像由用户在个人中心自行维护</Text>
+              </div>
+              <div className="user-form-grid">
+                <Form.Item label="完整姓名" name="fullName" className="user-form-wide">
+                  <Input maxLength={200} placeholder="用户填写的完整姓名，未经实名认证" />
+                </Form.Item>
+                <Form.Item label="出生日期" name="dateOfBirth">
+                  <Input type="date" />
+                </Form.Item>
+                <Form.Item label="性别" name="gender">
+                  <Select
+                    allowClear
+                    placeholder="请选择性别"
+                    options={[
+                      { label: '男', value: 'MALE' },
+                      { label: '女', value: 'FEMALE' },
+                      { label: '其他', value: 'OTHER' },
+                      { label: '不愿透露', value: 'PREFER_NOT_TO_SAY' },
+                    ]}
+                  />
+                </Form.Item>
+                <Form.Item
+                  label="个人网站"
+                  name="website"
+                  rules={[{ type: 'url', message: '个人网站 URL 格式不正确' }]}
+                  className="user-form-wide"
+                >
+                  <Input maxLength={255} placeholder="https://example.com" />
+                </Form.Item>
+                <Form.Item label="国家或地区" name="country">
+                  <Select
+                    allowClear
+                    showSearch
+                    optionFilterProp="label"
+                    placeholder="请选择国家或地区"
+                    options={COUNTRY_OPTIONS}
+                  />
+                </Form.Item>
+                <Form.Item label="城市" name="city">
+                  <Input maxLength={100} placeholder="请输入城市" />
+                </Form.Item>
+                <Form.Item label="邮政编码" name="zipCode">
+                  <Input maxLength={20} placeholder="请输入邮政编码" />
+                </Form.Item>
+                <Form.Item label="详细地址" name="address">
+                  <Input maxLength={500} placeholder="请输入详细地址" />
+                </Form.Item>
+                <Form.Item label="个人简介" name="bio" className="user-form-wide">
+                  <Input.TextArea maxLength={500} rows={3} showCount placeholder="补充用户简介" />
+                </Form.Item>
+              </div>
+            </section>
           </Form>
         </Spin>
       </Modal>
@@ -500,6 +530,12 @@ export function UserManagement() {
           </div>
         )}
       </Modal>
+
+      <IdentityDocumentManager
+        open={Boolean(identityUser)}
+        user={identityUser}
+        onClose={() => setIdentityUser(null)}
+      />
     </div>
   );
 }

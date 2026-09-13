@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import Select from 'antd/es/select';
 import { useEffect, useMemo, useState } from 'react';
+import { mutator } from '../../../../shared/lib/api/mutator';
 import { orderApi } from '../api/orderApi';
-import type { OrderRelation } from '../types';
+import type { OrderRelation, OrderUserOption } from '../types';
 import { mergeOrderUserOptions } from './orderUserOptions';
 
 interface OrderUserSelectProps {
@@ -18,7 +19,6 @@ export function OrderUserSelect({
   initialUser,
   placeholder,
 }: OrderUserSelectProps) {
-  const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -30,14 +30,23 @@ export function OrderUserSelect({
   const usersQuery = useQuery({
     queryKey: ['order-user-options', debouncedSearch],
     queryFn: () => orderApi.searchUsers(debouncedSearch),
-    enabled: open,
     staleTime: 30_000,
   });
 
-  const options = useMemo(
-    () => mergeOrderUserOptions(usersQuery.data?.items ?? [], initialUser),
-    [initialUser, usersQuery.data?.items]
-  );
+  const singleUserQuery = useQuery({
+    queryKey: ['order-user-single', value],
+    queryFn: () => mutator<OrderUserOption>({ url: `/admin/users/${value}`, method: 'GET' }),
+    enabled: Boolean(value && !usersQuery.data?.items?.some((u) => u.id === value)),
+    staleTime: 60_000,
+  });
+
+  const options = useMemo(() => {
+    const items = [...(usersQuery.data?.items ?? [])];
+    if (singleUserQuery.data && !items.some((u) => u.id === singleUserQuery.data?.id)) {
+      items.unshift(singleUserQuery.data);
+    }
+    return mergeOrderUserOptions(items, initialUser);
+  }, [initialUser, usersQuery.data?.items, singleUserQuery.data]);
 
   return (
     <Select
@@ -51,7 +60,6 @@ export function OrderUserSelect({
       notFoundContent={
         usersQuery.isFetching ? '搜索中...' : usersQuery.isError ? '用户加载失败' : '未找到匹配用户'
       }
-      onOpenChange={setOpen}
       onSearch={setSearch}
       onChange={onChange}
     />

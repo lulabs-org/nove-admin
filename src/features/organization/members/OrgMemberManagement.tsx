@@ -244,9 +244,12 @@ function clampNumber(value: number, min: number, max: number) {
 }
 
 export function OrgMemberManagement() {
-  const { user } = useAuth();
+  const { user, checkPermission } = useAuth();
   const queryClient = useQueryClient();
   const currentOrgId = user?.currentOrgId;
+  const canReadOrganization = checkPermission(PERMISSIONS.ORGANIZATION.READ);
+  const canReadDepartments = checkPermission(PERMISSIONS.DEPARTMENT.READ);
+  const canReadRoles = checkPermission(PERMISSIONS.ROLE.READ);
   const [activeTab, setActiveTab] = useState<OrgMemberTab>('members');
   const [selectedDeptId, setSelectedDeptId] = useState<string | undefined>();
   const [deptKeyword, setDeptKeyword] = useState('');
@@ -281,7 +284,7 @@ export function OrgMemberManagement() {
   const { data: organization } = useQuery({
     queryKey: ['org-member-organization', currentOrgId],
     queryFn: () => orgMemberApi.organization(currentOrgId!),
-    enabled: !!currentOrgId,
+    enabled: !!currentOrgId && canReadOrganization,
   });
 
   const {
@@ -291,12 +294,13 @@ export function OrgMemberManagement() {
   } = useQuery({
     queryKey: ['org-member-departments', currentOrgId],
     queryFn: () => orgMemberApi.departments(currentOrgId!),
-    enabled: !!currentOrgId,
+    enabled: !!currentOrgId && canReadDepartments,
   });
 
   const { data: roles = [] } = useQuery({
     queryKey: ['org-member-roles'],
     queryFn: orgMemberApi.roles,
+    enabled: canReadRoles,
   });
 
   const { data: leaderMemberList, isFetching: leaderMembersFetching } = useQuery({
@@ -1237,13 +1241,13 @@ export function OrgMemberManagement() {
 
   const renderMemberToolbar = () => (
     <div className="org-toolbar">
-      <Space size="small" wrap>
+      <Space className="org-toolbar-filters" size="small">
         {activeTab !== 'left' && (
           <Select
             value={filters.status as MemberStatus | undefined}
             placeholder="账号状态"
             allowClear
-            style={{ width: 140 }}
+            style={{ width: 120 }}
             onChange={(value) => handleFilterChange('status', value)}
             disabled={!currentOrgId}
             options={Object.entries(MEMBER_STATUS_META)
@@ -1255,7 +1259,7 @@ export function OrgMemberManagement() {
           value={filters.type as MemberType | undefined}
           placeholder="成员类型"
           allowClear
-          style={{ width: 140 }}
+          style={{ width: 120 }}
           onChange={(value) => handleFilterChange('type', value)}
           disabled={!currentOrgId}
           options={MEMBER_TYPE_OPTIONS}
@@ -1277,31 +1281,38 @@ export function OrgMemberManagement() {
         </Tooltip>
       </Space>
       {activeTab !== 'left' && (
-        <Space size="small" wrap>
-          <Popconfirm
-            title="确定将选中成员设为离职吗？"
-            okText="确定"
-            cancelText="取消"
-            disabled={!selectedRowKeys.length}
-            onConfirm={handleBulkLeave}
-          >
-            <Button danger disabled={!selectedRowKeys.length}>
-              批量操作离职
-            </Button>
-          </Popconfirm>
-          <Button
-            disabled={!selectedRowKeys.length}
-            onClick={() => {
-              batchDepartmentForm.setFieldsValue({
-                primaryDeptId: selectedDeptId,
-                departmentIds: selectedDeptId ? [selectedDeptId] : [],
-              });
-              setBatchDepartmentOpen(true);
-            }}
-          >
-            批量变更部门
-          </Button>
-          <Perm permission={PERMISSIONS.USER.CREATE}>
+        <Space className="org-toolbar-actions" size="small">
+          <Tooltip title="批量操作离职">
+            <Popconfirm
+              title="确定将选中成员设为离职吗？"
+              okText="确定"
+              cancelText="取消"
+              disabled={!selectedRowKeys.length}
+              onConfirm={handleBulkLeave}
+            >
+              <Button
+                danger
+                aria-label="批量操作离职"
+                icon={<DeleteOutlined />}
+                disabled={!selectedRowKeys.length}
+              />
+            </Popconfirm>
+          </Tooltip>
+          <Tooltip title="批量变更部门">
+            <Button
+              aria-label="批量变更部门"
+              icon={<ApartmentOutlined />}
+              disabled={!selectedRowKeys.length}
+              onClick={() => {
+                batchDepartmentForm.setFieldsValue({
+                  primaryDeptId: selectedDeptId,
+                  departmentIds: selectedDeptId ? [selectedDeptId] : [],
+                });
+                setBatchDepartmentOpen(true);
+              }}
+            />
+          </Tooltip>
+          <Perm permission={PERMISSIONS.ORG_MEMBER.CREATE}>
             <Button
               icon={<UserAddOutlined />}
               onClick={openCreateMemberModal}
@@ -1310,7 +1321,7 @@ export function OrgMemberManagement() {
               邀请成员
             </Button>
           </Perm>
-          <Perm permission={PERMISSIONS.USER.CREATE}>
+          <Perm permission={PERMISSIONS.ORG_MEMBER.CREATE}>
             <Button
               type="primary"
               icon={<PlusOutlined />}
@@ -1404,16 +1415,16 @@ export function OrgMemberManagement() {
         onChange={handleTabChange}
         items={[
           { key: 'members', label: '成员' },
-          { key: 'departments', label: '部门' },
+          ...(canReadDepartments ? [{ key: 'departments', label: '部门' }] : []),
           { key: 'left', label: '已离职成员' },
         ]}
       />
 
       <div
-        className={`org-structure-shell${activeTab !== 'members' ? ' org-structure-shell--no-aside' : ''}`}
+        className={`org-structure-shell${activeTab !== 'members' || !canReadDepartments ? ' org-structure-shell--no-aside' : ''}`}
         style={structureShellStyle}
       >
-        {activeTab === 'members' && (
+        {activeTab === 'members' && canReadDepartments && (
           <aside className={`org-structure-tree-pane${treePaneCollapsed ? ' is-collapsed' : ''}`}>
             <Tooltip title={treePaneCollapsed ? '展开部门树' : '收起部门树'} placement="right">
               <Button

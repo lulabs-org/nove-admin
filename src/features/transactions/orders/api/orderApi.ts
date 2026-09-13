@@ -1,13 +1,17 @@
 import { mutator } from '../../../../shared/lib/api/mutator';
 import type {
   CreateOrder,
-  OrderChannelOptionList,
+  ExtendOrderPayload,
+  FreezeOrderPayload,
   Order,
+  OrderBenefitAdjustment,
+  OrderChannelOptionList,
   OrderListData,
   OrderListParams,
   OrderProductOptionList,
   OrderStatus,
   OrderUserOptionList,
+  UnfreezeOrderPayload,
   UpdateOrder,
 } from '../types';
 
@@ -35,7 +39,7 @@ export const orderApi = {
       method: 'GET',
       params: {
         page: 1,
-        pageSize: 20,
+        pageSize: 50,
         isActive: true,
         keyword: keyword || undefined,
       },
@@ -48,7 +52,7 @@ export const orderApi = {
       method: 'GET',
       params: {
         page: 1,
-        pageSize: 20,
+        pageSize: 50,
         status: 'ACTIVE',
         keyword: keyword || undefined,
       },
@@ -61,7 +65,7 @@ export const orderApi = {
       method: 'GET',
       params: {
         page: 1,
-        pageSize: 20,
+        pageSize: 50,
         active: true,
         keyword: keyword || undefined,
       },
@@ -115,6 +119,40 @@ export const orderApi = {
     return mutator<void>({
       url: `/admin/orders/${id}`,
       method: 'DELETE',
+    });
+  },
+
+  freeze(id: string, data: FreezeOrderPayload): Promise<Order> {
+    return mutator<Order>({
+      url: `/admin/orders/${id}/freeze`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data,
+    });
+  },
+
+  unfreeze(id: string, data: UnfreezeOrderPayload): Promise<Order> {
+    return mutator<Order>({
+      url: `/admin/orders/${id}/unfreeze`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data,
+    });
+  },
+
+  extend(id: string, data: ExtendOrderPayload): Promise<Order> {
+    return mutator<Order>({
+      url: `/admin/orders/${id}/extend`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data,
+    });
+  },
+
+  getBenefitAdjustments(id: string): Promise<OrderBenefitAdjustment[]> {
+    return mutator<OrderBenefitAdjustment[]>({
+      url: `/admin/orders/${id}/benefit-adjustments`,
+      method: 'GET',
     });
   },
 };

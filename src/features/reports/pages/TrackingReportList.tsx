@@ -152,7 +152,7 @@ export function TrackingReportList() {
   ];
 
   return (
-    <div style={{ padding: '0 4px' }}>
+    <div>
       <div className="tracking-report-list-toolbar">
         <Input.Search
           allowClear
@@ -196,7 +196,7 @@ export function TrackingReportList() {
         />
       </div>
 
-      <div style={{ background: '#fff', borderRadius: 8, padding: 16 }}>
+      <div>
         <Table
           columns={columns}
           dataSource={data?.data ?? []}
