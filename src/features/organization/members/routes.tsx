@@ -9,7 +9,7 @@ export const memberRoutes: RouteConfig[] = [
     element: <OrgMemberManagement />,
     title: '成员部门',
     menu: true,
-    permission: PERMISSIONS.USER.READ,
+    permission: PERMISSIONS.ORG_MEMBER.READ,
   },
   {
     path: '/users/roles',

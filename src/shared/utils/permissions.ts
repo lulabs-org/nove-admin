@@ -25,16 +25,28 @@ export const PERMISSIONS = {
     DELETE: 'permission:delete',
   },
   ORGANIZATION: {
-    READ: 'organization:read',
-    CREATE: 'organization:create',
-    UPDATE: 'organization:update',
-    DELETE: 'organization:delete',
+    READ: 'org:read',
+    CREATE: 'org:create',
+    UPDATE: 'org:update',
+    DELETE: 'org:delete',
+  },
+  ORG_MEMBER: {
+    READ: 'org-member:read',
+    CREATE: 'org-member:create',
+    UPDATE: 'org-member:update',
+    DELETE: 'org-member:delete',
   },
   DEPARTMENT: {
-    READ: 'department:read',
-    CREATE: 'department:create',
-    UPDATE: 'department:update',
-    DELETE: 'department:delete',
+    READ: 'dept:read',
+    CREATE: 'dept:create',
+    UPDATE: 'dept:update',
+    DELETE: 'dept:delete',
+  },
+  PLATFORM_USER: {
+    READ: 'platform-user:read',
+    CREATE: 'platform-user:create',
+    UPDATE: 'platform-user:update',
+    DELETE: 'platform-user:delete',
   },
   API_KEY: {
     READ: 'api-key:read',
@@ -99,6 +111,12 @@ export const PERMISSIONS = {
   DASHBOARD: {
     READ: 'dashboard:read',
     MANAGE: 'dashboard:manage',
+  },
+  PROFIT_SHARING: {
+    READ: 'profit-sharing:read',
+    CREATE: 'profit-sharing:create',
+    UPDATE: 'profit-sharing:update',
+    DELETE: 'profit-sharing:delete',
   },
   MEETING: {
     READ: 'meeting:read',
