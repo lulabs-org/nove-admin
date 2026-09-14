@@ -145,6 +145,15 @@
 
 .minute-participant-toolbar .ant-input-search {
   width: 280px;
+  max-width: 100%;
+}
+
+.minute-participant-pane {
+  container-type: inline-size;
+}
+
+.minute-participant-toolbar {
+  align-items: center;
 }
 
 .minute-participant-item {
@@ -155,7 +164,7 @@
 
 .minute-participant-row {
   display: grid;
-  grid-template-columns: auto minmax(150px, 1fr) minmax(230px, 1fr) auto auto;
+  grid-template-columns: 32px minmax(0, 1fr) 190px 104px 88px;
   align-items: center;
   gap: 12px;
   padding: 14px;
@@ -166,6 +175,26 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
+}
+
+.minute-participant-identity {
+  overflow-wrap: anywhere;
+}
+
+.minute-participant-time {
+  font-variant-numeric: tabular-nums;
+}
+
+.minute-participant-row > .ant-tag {
+  justify-self: end;
+  max-width: 100%;
+  margin-inline-end: 0;
+  white-space: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.minute-participant-row > .ant-btn {
+  justify-self: end;
 }
 
 .minute-participant-identity span,
@@ -252,17 +281,42 @@
 
 @media (max-width: 900px) {
   .minute-detail-header,
-  .minute-section-heading,
-  .minute-participant-toolbar {
+  .minute-section-heading {
     flex-direction: column;
   }
 
-  .minute-participant-row,
   .minute-info-pane {
     grid-template-columns: 1fr;
   }
 
   .minute-info-pane section:last-child {
     grid-column: auto;
+  }
+}
+
+@container (max-width: 660px) {
+  .minute-participant-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .minute-participant-row {
+    grid-template-columns: 32px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .minute-participant-time,
+  .minute-participant-row > .ant-tag,
+  .minute-participant-row > .ant-btn {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .minute-participant-time {
+    overflow-wrap: anywhere;
+  }
+
+  .minute-participant-row > .ant-btn {
+    padding-inline: 0;
   }
 }
