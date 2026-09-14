@@ -252,7 +252,7 @@ export function OrgMemberManagement() {
   const canReadRoles = checkPermission(PERMISSIONS.ROLE.READ);
   const [activeTab, setActiveTab] = useState<OrgMemberTab>('members');
   const [selectedDeptId, setSelectedDeptId] = useState<string | undefined>();
-  const [deptKeyword, setDeptKeyword] = useState('');
+  const [unifiedKeyword, setUnifiedKeyword] = useState('');
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
   const [filters, setFilters] = useState<TableQueryParams>({
     page: 1,
@@ -342,8 +342,8 @@ export function OrgMemberManagement() {
     [allDepartments]
   );
   const filteredDepartmentTree = useMemo(
-    () => filterDepartmentTree(departmentTree, deptKeyword),
-    [departmentTree, deptKeyword]
+    () => filterDepartmentTree(departmentTree, unifiedKeyword),
+    [departmentTree, unifiedKeyword]
   );
   const selectedScopeName = getSelectedDepartmentName(selectedDeptId, departmentIndex, orgName);
   const treePaneColumnWidth = treePaneCollapsed ? TREE_PANE_COLLAPSED_WIDTH : treePaneWidth;
@@ -1241,7 +1241,20 @@ export function OrgMemberManagement() {
 
   const renderMemberToolbar = () => (
     <div className="org-toolbar">
-      <Space className="org-toolbar-filters" size="small">
+      <Space className="org-toolbar-filters" size="small" wrap>
+        <Search
+          allowClear
+          prefix={<SearchOutlined />}
+          placeholder="搜索部门、姓名、邮箱、手机号"
+          style={{ width: 280 }}
+          value={unifiedKeyword}
+          onChange={(e) => setUnifiedKeyword(e.target.value)}
+          onSearch={(keyword) => {
+            const trimmed = keyword.trim() || undefined;
+            handleFilterChange('keyword', trimmed);
+          }}
+          disabled={!currentOrgId}
+        />
         {activeTab !== 'left' && (
           <Select
             value={filters.status as MemberStatus | undefined}
@@ -1439,13 +1452,9 @@ export function OrgMemberManagement() {
             {!treePaneCollapsed && (
               <>
                 <div className="org-tree-pane-topbar">
-                  <Search
-                    allowClear
-                    prefix={<SearchOutlined />}
-                    placeholder="请输入姓名、邮箱、手机号或用户 ID"
-                    value={deptKeyword}
-                    onChange={(event) => setDeptKeyword(event.target.value)}
-                  />
+                  <Text type="secondary" style={{ padding: '0 12px', fontSize: 12 }}>
+                    使用上方搜索框可同时搜索部门和成员
+                  </Text>
                 </div>
                 <div className="org-tree-list">
                   <div className={`org-dept-node ${!selectedDeptId ? 'is-active' : ''}`}>
