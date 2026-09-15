@@ -14,8 +14,15 @@
   margin: 0 0 4px;
 }
 
-.security-overview-card {
+.security-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
   margin-top: 16px;
+}
+
+.security-overview-card,
+.security-sessions-card {
   border-radius: 12px;
 }
 
@@ -55,6 +62,16 @@
 
 .security-password-tip {
   margin-bottom: 18px;
+}
+
+@media (min-width: 1440px) {
+  .security-dashboard {
+    grid-template-columns: minmax(360px, 2fr) minmax(640px, 3fr);
+  }
+
+  .security-dashboard > .ant-card {
+    height: 100%;
+  }
 }
 
 @media (max-width: 760px) {

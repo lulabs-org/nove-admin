@@ -403,172 +403,175 @@ export function SecurityPage() {
         />
       ) : null}
 
-      <Card
-        className="security-overview-card"
-        title={
-          <Space>
-            <SafetyCertificateOutlined />
-            账号安全
-          </Space>
-        }
-      >
-        <List
-          dataSource={[
-            {
-              key: 'password',
-              icon: <KeyOutlined />,
-              label: '登录密码',
-              value: '用于账号登录和敏感操作验证',
-              verified: status?.hasPassword,
-              enabledText: '已设置',
-              disabledText: '未设置',
-              actionText: status?.hasPassword ? '修改密码' : '设置密码',
-              hasValue: false,
-            },
-            {
-              key: 'email',
-              icon: <MailOutlined />,
-              label: '邮箱',
-              value: revealedContacts.has('email')
-                ? status?.email || '未绑定'
-                : maskEmail(status?.email),
-              verified: status?.emailVerified,
-              enabledText: '已验证',
-              disabledText: '未验证',
-              actionText: status?.email ? '换绑' : '绑定',
-              hasValue: Boolean(status?.email),
-            },
-            {
-              key: 'phone',
-              icon: <MobileOutlined />,
-              label: '手机号',
-              value: status?.phone
-                ? `${status.countryCode || ''} ${
-                    revealedContacts.has('phone') ? status.phone : maskPhone(status.phone)
-                  }`
-                : '未绑定',
-              verified: status?.phoneVerified,
-              enabledText: '已验证',
-              disabledText: '未验证',
-              actionText: status?.phone ? '换绑' : '绑定',
-              hasValue: Boolean(status?.phone),
-            },
-          ]}
-          renderItem={(item) => {
-            const contactKey = item.key === 'email' || item.key === 'phone' ? item.key : undefined;
-            const isRevealed = contactKey ? revealedContacts.has(contactKey) : false;
-            return (
+      <div className="security-dashboard">
+        <Card
+          className="security-overview-card"
+          title={
+            <Space>
+              <SafetyCertificateOutlined />
+              账号安全
+            </Space>
+          }
+        >
+          <List
+            dataSource={[
+              {
+                key: 'password',
+                icon: <KeyOutlined />,
+                label: '登录密码',
+                value: '用于账号登录和敏感操作验证',
+                verified: status?.hasPassword,
+                enabledText: '已设置',
+                disabledText: '未设置',
+                actionText: status?.hasPassword ? '修改密码' : '设置密码',
+                hasValue: false,
+              },
+              {
+                key: 'email',
+                icon: <MailOutlined />,
+                label: '邮箱',
+                value: revealedContacts.has('email')
+                  ? status?.email || '未绑定'
+                  : maskEmail(status?.email),
+                verified: status?.emailVerified,
+                enabledText: '已验证',
+                disabledText: '未验证',
+                actionText: status?.email ? '换绑' : '绑定',
+                hasValue: Boolean(status?.email),
+              },
+              {
+                key: 'phone',
+                icon: <MobileOutlined />,
+                label: '手机号',
+                value: status?.phone
+                  ? `${status.countryCode || ''} ${
+                      revealedContacts.has('phone') ? status.phone : maskPhone(status.phone)
+                    }`
+                  : '未绑定',
+                verified: status?.phoneVerified,
+                enabledText: '已验证',
+                disabledText: '未验证',
+                actionText: status?.phone ? '换绑' : '绑定',
+                hasValue: Boolean(status?.phone),
+              },
+            ]}
+            renderItem={(item) => {
+              const contactKey =
+                item.key === 'email' || item.key === 'phone' ? item.key : undefined;
+              const isRevealed = contactKey ? revealedContacts.has(contactKey) : false;
+              return (
+                <List.Item
+                  actions={[
+                    ...(contactKey && item.hasValue
+                      ? [
+                          <Button
+                            key="visibility"
+                            type="link"
+                            icon={isRevealed ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                            aria-label={`${isRevealed ? '隐藏' : '查看'}${item.label}`}
+                            onClick={() => toggleContactVisibility(contactKey)}
+                          >
+                            {isRevealed ? '隐藏' : '查看'}
+                          </Button>,
+                        ]
+                      : []),
+                    <Button
+                      key="change"
+                      type="link"
+                      onClick={() => openAction(item.key as SecurityAction)}
+                    >
+                      {item.actionText}
+                    </Button>,
+                  ]}
+                >
+                  <List.Item.Meta
+                    avatar={item.icon}
+                    title={
+                      <Space>
+                        {item.label}
+                        <Tag color={item.verified ? 'success' : 'default'}>
+                          {item.verified ? item.enabledText : item.disabledText}
+                        </Tag>
+                      </Space>
+                    }
+                    description={item.value}
+                  />
+                </List.Item>
+              );
+            }}
+          />
+        </Card>
+
+        <Card
+          className="security-sessions-card"
+          title={
+            <Space>
+              <DesktopOutlined />
+              登录设备
+            </Space>
+          }
+          extra={
+            otherSessions.length ? (
+              <Popconfirm
+                title="下线全部其他设备？"
+                description="这些设备的刷新令牌将立即失效。"
+                onConfirm={() => revokeOthersMutation.mutate()}
+              >
+                <Button danger loading={revokeOthersMutation.isPending}>
+                  全部下线
+                </Button>
+              </Popconfirm>
+            ) : null
+          }
+        >
+          <Alert
+            className="security-session-note"
+            type="info"
+            showIcon
+            message="设备下线后，已签发的访问令牌最多仍可能继续有效 15 分钟。"
+          />
+          <List<SecuritySessionDto>
+            loading={sessionsQuery.isLoading}
+            dataSource={sessions}
+            locale={{ emptyText: '暂无活跃设备' }}
+            renderItem={(session) => (
               <List.Item
-                actions={[
-                  ...(contactKey && item.hasValue
+                actions={
+                  session.current
                     ? [
-                        <Button
-                          key="visibility"
-                          type="link"
-                          icon={isRevealed ? <EyeInvisibleOutlined /> : <EyeOutlined />}
-                          aria-label={`${isRevealed ? '隐藏' : '查看'}${item.label}`}
-                          onClick={() => toggleContactVisibility(contactKey)}
-                        >
-                          {isRevealed ? '隐藏' : '查看'}
-                        </Button>,
+                        <Tag key="current" color="processing">
+                          当前设备
+                        </Tag>,
                       ]
-                    : []),
-                  <Button
-                    key="change"
-                    type="link"
-                    onClick={() => openAction(item.key as SecurityAction)}
-                  >
-                    {item.actionText}
-                  </Button>,
-                ]}
+                    : [
+                        <Popconfirm
+                          key="revoke"
+                          title="下线这个设备？"
+                          onConfirm={() => revokeSessionMutation.mutate(session.id)}
+                        >
+                          <Button danger type="link" icon={<StopOutlined />}>
+                            下线
+                          </Button>
+                        </Popconfirm>,
+                      ]
+                }
               >
                 <List.Item.Meta
-                  avatar={item.icon}
-                  title={
-                    <Space>
-                      {item.label}
-                      <Tag color={item.verified ? 'success' : 'default'}>
-                        {item.verified ? item.enabledText : item.disabledText}
-                      </Tag>
+                  avatar={<DesktopOutlined className="security-device-icon" />}
+                  title={session.deviceInfo || '未知设备'}
+                  description={
+                    <Space size="large" wrap>
+                      <Text type="secondary">IP：{session.ip || '-'}</Text>
+                      <Text type="secondary">最近活动：{formatDateTime(session.lastActiveAt)}</Text>
+                      <Text type="secondary">到期：{formatDateTime(session.expiresAt)}</Text>
                     </Space>
                   }
-                  description={item.value}
                 />
               </List.Item>
-            );
-          }}
-        />
-      </Card>
-
-      <Card
-        className="security-section"
-        title={
-          <Space>
-            <DesktopOutlined />
-            登录设备
-          </Space>
-        }
-        extra={
-          otherSessions.length ? (
-            <Popconfirm
-              title="下线全部其他设备？"
-              description="这些设备的刷新令牌将立即失效。"
-              onConfirm={() => revokeOthersMutation.mutate()}
-            >
-              <Button danger loading={revokeOthersMutation.isPending}>
-                全部下线
-              </Button>
-            </Popconfirm>
-          ) : null
-        }
-      >
-        <Alert
-          className="security-session-note"
-          type="info"
-          showIcon
-          message="设备下线后，已签发的访问令牌最多仍可能继续有效 15 分钟。"
-        />
-        <List<SecuritySessionDto>
-          loading={sessionsQuery.isLoading}
-          dataSource={sessions}
-          locale={{ emptyText: '暂无活跃设备' }}
-          renderItem={(session) => (
-            <List.Item
-              actions={
-                session.current
-                  ? [
-                      <Tag key="current" color="processing">
-                        当前设备
-                      </Tag>,
-                    ]
-                  : [
-                      <Popconfirm
-                        key="revoke"
-                        title="下线这个设备？"
-                        onConfirm={() => revokeSessionMutation.mutate(session.id)}
-                      >
-                        <Button danger type="link" icon={<StopOutlined />}>
-                          下线
-                        </Button>
-                      </Popconfirm>,
-                    ]
-              }
-            >
-              <List.Item.Meta
-                avatar={<DesktopOutlined className="security-device-icon" />}
-                title={session.deviceInfo || '未知设备'}
-                description={
-                  <Space size="large" wrap>
-                    <Text type="secondary">IP：{session.ip || '-'}</Text>
-                    <Text type="secondary">最近活动：{formatDateTime(session.lastActiveAt)}</Text>
-                    <Text type="secondary">到期：{formatDateTime(session.expiresAt)}</Text>
-                  </Space>
-                }
-              />
-            </List.Item>
-          )}
-        />
-      </Card>
+            )}
+          />
+        </Card>
+      </div>
 
       <Card
         className="security-section"
