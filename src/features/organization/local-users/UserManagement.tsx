@@ -7,13 +7,11 @@ import {
   ReloadOutlined,
   SearchOutlined,
   UploadOutlined,
-  UserOutlined,
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
-import Avatar from 'antd/es/avatar';
 import Button from 'antd/es/button';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
@@ -43,6 +41,7 @@ import { getUserIdentityDisplay } from './lib/userDisplay';
 import { COUNTRY_OPTIONS } from './lib/countryOptions';
 import { IdentityDocumentManager } from './IdentityDocumentManager';
 import type { AdminUser, UserImportResponse, UserListParams, UserWritePayload } from './types';
+import { UserAvatar } from './UserAvatar';
 import './UserManagement.css';
 
 const { Search } = Input;
@@ -178,7 +177,7 @@ export function UserManagement() {
         const identity = getUserIdentityDisplay(record);
         return (
           <Space>
-            <Avatar src={record.profile?.avatar} icon={<UserOutlined />} />
+            <UserAvatar user={record} />
             <div className="user-primary-cell">
               <Text strong>{identity.primary}</Text>
               {identity.secondary ? <Text type="secondary">{identity.secondary}</Text> : null}
@@ -267,7 +266,7 @@ export function UserManagement() {
           <Search
             allowClear
             prefix={<SearchOutlined />}
-            placeholder="搜索用户名、邮箱、手机号或显示名称"
+            placeholder="搜索用户名、邮箱、手机号或昵称"
             onSearch={(keyword) =>
               setFilters((current) => ({ ...current, keyword: keyword || undefined, page: 1 }))
             }
@@ -356,8 +355,8 @@ export function UserManagement() {
                 <Text type="secondary">用户名、邮箱或手机号至少填写一项</Text>
               </div>
               <div className="user-form-grid">
-                <Form.Item label="显示名称" name="displayName">
-                  <Input maxLength={100} placeholder="用于后台展示" />
+                <Form.Item label="昵称" name="displayName">
+                  <Input maxLength={100} placeholder="请输入昵称" />
                 </Form.Item>
                 <Form.Item
                   label="用户名"
