@@ -34,8 +34,8 @@ export function StripeRefundSyncModal({ open, onCancel, onSuccess }: StripeRefun
         const startDate = dateRange?.[0] ? dateRange[0].startOf('day').toISOString() : undefined;
         const endDate = dateRange?.[1] ? dateRange[1].endOf('day').toISOString() : undefined;
 
-        const res = await stripeRefundSyncApi.historySync({ startDate, endDate });
-        message.success(res.result?.message || 'Stripe 历史退款同步任务已派发至后台队列');
+        await stripeRefundSyncApi.historySync({ startDate, endDate });
+        message.success('Stripe 退款同步任务已提交，后台处理完成后可刷新列表查看结果');
         onSuccess();
         onCancel();
       } else {
@@ -73,7 +73,7 @@ export function StripeRefundSyncModal({ open, onCancel, onSuccess }: StripeRefun
       onOk={handleSubmit}
       onCancel={handleClose}
       confirmLoading={loading}
-      okText={mode === 'batch' ? '下发批量同步任务' : '立即同步单笔'}
+      okText={mode === 'batch' ? '提交同步任务' : '立即同步单笔'}
       cancelText="取消"
       destroyOnClose
     >
@@ -94,7 +94,7 @@ export function StripeRefundSyncModal({ open, onCancel, onSuccess }: StripeRefun
             type="info"
             showIcon
             style={{ marginBottom: 16 }}
-            message="说明：后台将自动采用游标切片分页拉取 Stripe Refunds，自动关联本地订单并更新结算状态，异步队列处理不阻塞前台。"
+            message="说明：按所选时间范围补充 Stripe 历史退款并关联本地订单。提交后将在后台处理，结果不会立即出现在退款列表中。"
           />
           <Form.Item
             label="退款创建时间范围"

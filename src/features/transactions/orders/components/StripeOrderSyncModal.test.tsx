@@ -52,7 +52,7 @@ describe('StripeOrderSyncModal', () => {
     expect(screen.getByText('Stripe 交易订单数据同步')).toBeInTheDocument();
     expect(screen.getByText('按时间范围批量拉取')).toBeInTheDocument();
 
-    const okButton = screen.getByRole('button', { name: '下发批量同步任务' });
+    const okButton = screen.getByRole('button', { name: '提交同步任务' });
     await user.click(okButton);
 
     await waitFor(() => {

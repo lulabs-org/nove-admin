@@ -1,6 +1,5 @@
 import {
   CheckCircleOutlined,
-  CreditCardOutlined,
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
@@ -39,7 +38,6 @@ import { PERMISSIONS } from '../../../../shared/utils/permissions';
 import { orderRefundApi } from '../api/orderRefundApi';
 import { RefundOrderSelect } from '../components/RefundOrderSelect';
 import { ParentRefundSelect } from '../components/ParentRefundSelect';
-import { StripeRefundSyncModal } from '../components/StripeRefundSyncModal';
 import { stripeRefundSyncApi } from '../api/stripeRefundSyncApi';
 import type {
   BenefitCalculationPreview,
@@ -136,7 +134,6 @@ export function OrderRefundManagement() {
     null
   );
   const [isCalculating, setIsCalculating] = useState(false);
-  const [stripeSyncOpen, setStripeSyncOpen] = useState(false);
   const [resyncingCode, setResyncingCode] = useState<string | null>(null);
   const [form] = Form.useForm<RefundFormValues>();
 
@@ -462,11 +459,6 @@ export function OrderRefundManagement() {
             登记退款
           </Button>
         </Perm>
-        <Perm permission={PERMISSIONS.ORDER_REFUND.CREATE}>
-          <Button icon={<CreditCardOutlined />} onClick={() => setStripeSyncOpen(true)}>
-            同步 Stripe 退款
-          </Button>
-        </Perm>
         <Button icon={<ReloadOutlined />} loading={isFetching} onClick={() => refetch()}>
           刷新
         </Button>
@@ -657,12 +649,6 @@ export function OrderRefundManagement() {
           </Row>
         </Form>
       </Modal>
-
-      <StripeRefundSyncModal
-        open={stripeSyncOpen}
-        onCancel={() => setStripeSyncOpen(false)}
-        onSuccess={() => refetch()}
-      />
     </div>
   );
 }
