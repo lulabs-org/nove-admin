@@ -1,4 +1,6 @@
 import Col from 'antd/es/col';
+import ColorPicker from 'antd/es/color-picker';
+import type { Color } from 'antd/es/color-picker';
 import Divider from 'antd/es/divider';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
@@ -59,9 +61,15 @@ export function MailFields({ form }: { form: ReturnType<typeof Form.useForm<Mail
           <Form.Item
             label="主题色"
             name="brandPrimaryColor"
+            getValueFromEvent={(color: Color) => color.toHexString()}
             rules={[{ pattern: /^#[0-9a-fA-F]{6}$/ }]}
           >
-            <Input placeholder="#2563eb" />
+            <ColorPicker
+              disabledAlpha
+              format="hex"
+              showText={(color) => color.toHexString()}
+              style={{ width: '100%' }}
+            />
           </Form.Item>
         </Col>
       </Row>
