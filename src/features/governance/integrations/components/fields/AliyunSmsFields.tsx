@@ -53,12 +53,12 @@ export function AliyunSmsFields({
         <Row gutter={16}>
           <Col xs={24} md={12}>
             <Form.Item label="AccessKey ID" name="accessKeyId" rules={[{ required: true }]}>
-              <SecretInput placeholder="输入新值以替换" />
+              <SecretInput placeholder="请输入 AccessKey ID" />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item label="AccessKey Secret" name="accessKeySecret">
-              <SecretInput placeholder="留空保持原值" />
+            <Form.Item label="AccessKey Secret" name="accessKeySecret" rules={[{ required: true }]}>
+              <SecretInput placeholder="请输入 AccessKey Secret" />
             </Form.Item>
           </Col>
         </Row>
