@@ -392,9 +392,6 @@ export function SecurityPage() {
                   {status?.hasPassword ? '已设置' : '未设置'}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="设置时间">
-                {formatDateTime(status?.passwordSetAt)}
-              </Descriptions.Item>
             </Descriptions>
             <Button type="primary" icon={<KeyOutlined />} onClick={() => openAction('password')}>
               {status?.hasPassword ? '修改密码' : '设置密码'}
