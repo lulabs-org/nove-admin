@@ -65,9 +65,7 @@ const READONLY_SECTIONS: Record<IntegrationModule, ReadonlySection[]> = {
     {
       title: '模板代码',
       fields: [
-        { key: 'registerTemplateCode', label: '注册模板' },
-        { key: 'loginTemplateCode', label: '登录模板' },
-        { key: 'resetPasswordTemplateCode', label: '密码重置模板' },
+        { key: 'verificationTemplateCode', label: '验证码模板' },
         { key: 'securityChangeTemplateCode', label: '安全通知模板' },
       ],
     },

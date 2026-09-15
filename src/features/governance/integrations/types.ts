@@ -152,9 +152,7 @@ export interface AliyunSmsConfig {
   accessKeyId?: string;
   accessKeySecret?: string;
   signName?: string;
-  registerTemplateCode?: string;
-  loginTemplateCode?: string;
-  resetPasswordTemplateCode?: string;
+  verificationTemplateCode?: string;
   securityChangeTemplateCode?: string;
 }
 

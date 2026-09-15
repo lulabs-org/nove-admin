@@ -68,19 +68,9 @@ export function AliyunSmsFields({
         <Divider titlePlacement="start">模板代码</Divider>
         <Row gutter={16}>
           <Col xs={24} md={12}>
-            <Form.Item label="注册模板" name="registerTemplateCode" rules={[{ required: true }]}>
-              <Input placeholder="SMS_xxx" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={12}>
-            <Form.Item label="登录模板" name="loginTemplateCode" rules={[{ required: true }]}>
-              <Input placeholder="SMS_xxx" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={12}>
             <Form.Item
-              label="密码重置模板"
-              name="resetPasswordTemplateCode"
+              label="验证码模板"
+              name="verificationTemplateCode"
               rules={[{ required: true }]}
             >
               <Input placeholder="SMS_xxx" />
