@@ -33,6 +33,8 @@ import Tag from 'antd/es/tag';
 import message from 'antd/es/message';
 import type { ComponentProps, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { WechatShopSyncPanel } from './components/WechatShopSyncPanel';
+import { StripeSyncPanel } from './components/StripeSyncPanel';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { PERMISSIONS } from '../../../shared/utils/permissions';
 import { integrationsApi } from './api/integrationsApi';
@@ -565,6 +567,8 @@ export function IntegrationsManagement() {
             <ReadonlyConfigView module={activeModule} value={details[activeModule]?.value} />
           )}
         </ConfigPanel>
+        {activeModule === 'stripe' && <StripeSyncPanel />}
+        {activeModule === 'wechat-shop' && <WechatShopSyncPanel />}
       </main>
     </div>
   );

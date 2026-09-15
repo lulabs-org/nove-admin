@@ -19,7 +19,6 @@ import type { Dayjs } from 'dayjs';
 import { useMemo, useState } from 'react';
 import {
   ClockCircleOutlined,
-  CreditCardOutlined,
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
@@ -40,7 +39,6 @@ import { OrderBenefitModal } from '../components/OrderBenefitModal';
 import { OrderChannelSelect } from '../components/OrderChannelSelect';
 import { OrderProductSelect } from '../components/OrderProductSelect';
 import { ORDER_STATUS_OPTIONS } from '../components/orderStatusOptions';
-import { StripeOrderSyncModal } from '../components/StripeOrderSyncModal';
 import { stripeOrderSyncApi } from '../api/stripeOrderSyncApi';
 import { OrderUserSelect } from '../components/OrderUserSelect';
 import type {
@@ -191,7 +189,6 @@ export function OrderManagement() {
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [benefitModalOpen, setBenefitModalOpen] = useState(false);
   const [benefitModalOrder, setBenefitModalOrder] = useState<Order | null>(null);
-  const [stripeSyncOpen, setStripeSyncOpen] = useState(false);
   const [resyncingId, setResyncingId] = useState<string | null>(null);
   const [form] = Form.useForm<OrderFormValues>();
 
@@ -588,11 +585,6 @@ export function OrderManagement() {
             新增订单
           </Button>
         </Perm>
-        <Perm permission={PERMISSIONS.ORDER.CREATE}>
-          <Button icon={<CreditCardOutlined />} onClick={() => setStripeSyncOpen(true)}>
-            同步 Stripe 订单
-          </Button>
-        </Perm>
         <Button icon={<ReloadOutlined />} onClick={() => refetch()} loading={isFetching}>
           刷新
         </Button>
@@ -783,12 +775,6 @@ export function OrderManagement() {
           setBenefitModalOrder(null);
           refetch();
         }}
-      />
-
-      <StripeOrderSyncModal
-        open={stripeSyncOpen}
-        onCancel={() => setStripeSyncOpen(false)}
-        onSuccess={() => refetch()}
       />
     </div>
   );
