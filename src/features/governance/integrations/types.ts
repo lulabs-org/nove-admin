@@ -8,7 +8,8 @@ export type IntegrationModule =
   | 'storage'
   | 'drive'
   | 'file-scanning'
-  | 'stripe';
+  | 'stripe'
+  | 'aliyun-sms';
 
 export type IntegrationSource = 'database' | 'default';
 
@@ -131,6 +132,7 @@ export type IntegrationConfigMap = {
   drive: DriveConfig;
   'file-scanning': FileScanningConfig;
   stripe: StripeConfig;
+  'aliyun-sms': AliyunSmsConfig;
 };
 
 export interface SaveIntegrationResult {
@@ -144,4 +146,19 @@ export interface TestIntegrationResult {
   readonly orgId: string;
   success: boolean;
   message: string;
+}
+
+export interface AliyunSmsConfig {
+  accessKeyId?: string;
+  accessKeySecret?: string;
+  signName?: string;
+  registerTemplateCode?: string;
+  loginTemplateCode?: string;
+  resetPasswordTemplateCode?: string;
+  securityChangeTemplateCode?: string;
+}
+
+export interface TestAliyunSmsInput {
+  testCountryCode: string;
+  testPhoneNumber: string;
 }

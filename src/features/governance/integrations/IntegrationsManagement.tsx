@@ -1,4 +1,5 @@
 import Menu from 'antd/es/menu';
+import { useAuth } from '../../../shared/hooks/useAuth';
 import { WechatShopSyncPanel } from './components/WechatShopSyncPanel';
 import { StripeSyncPanel } from './components/StripeSyncPanel';
 import { ReadonlyConfigView } from './components/ReadonlyConfigView';
@@ -16,9 +17,12 @@ import { DriveFields } from './components/fields/DriveFields';
 import { FileScanningFields } from './components/fields/FileScanningFields';
 import { StorageFields } from './components/fields/StorageFields';
 import { StripeFields } from './components/fields/StripeFields';
+import { AliyunSmsFields } from './components/fields/AliyunSmsFields';
 import './IntegrationsManagement.css';
 
 export function IntegrationsManagement() {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.roles.includes('SUPER_ADMIN') ?? false;
   const {
     canWrite,
     activeModule,
@@ -47,8 +51,9 @@ export function IntegrationsManagement() {
     driveForm,
     fileScanningForm,
     stripeForm,
+    aliyunSmsForm,
   } = useIntegrationConfig();
-  const menuItems = buildIntegrationMenu(summaryMap);
+  const menuItems = buildIntegrationMenu(summaryMap, isSuperAdmin);
   const isEditing = canWrite && editingModule === activeModule;
 
   return (
@@ -94,6 +99,7 @@ export function IntegrationsManagement() {
               {activeModule === 'drive' && <DriveFields form={driveForm} />}
               {activeModule === 'file-scanning' && <FileScanningFields form={fileScanningForm} />}
               {activeModule === 'stripe' && <StripeFields form={stripeForm} />}
+              {activeModule === 'aliyun-sms' && <AliyunSmsFields form={aliyunSmsForm} />}
             </>
           ) : (
             <ReadonlyConfigView module={activeModule} value={details[activeModule]?.value} />

@@ -202,6 +202,14 @@
   margin-bottom: 20px;
 }
 
+.integrations-test-warning {
+  margin: 0 0 20px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #fff7e6;
+  color: #ad6800;
+}
+
 .integrations-form > .ant-divider-with-text-start .ant-divider-rail-start {
   width: 0;
 }

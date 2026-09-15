@@ -159,7 +159,7 @@ export function ConfigPanel({
             </Popconfirm>
             <Space>
               <Button onClick={onCancelEdit}>取消编辑</Button>
-              {module !== 'drive' && (
+              {module !== 'drive' && module !== 'aliyun-sms' && (
                 <Button loading={testing} onClick={onTest}>
                   测试连接
                 </Button>

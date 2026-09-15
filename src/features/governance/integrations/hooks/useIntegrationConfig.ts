@@ -16,6 +16,7 @@ import {
 } from '../lib/configPayload';
 import type {
   AiConfig,
+  AliyunSmsConfig,
   IntegrationDetail,
   IntegrationSummary,
   DriveConfig,
@@ -60,6 +61,7 @@ export function useIntegrationConfig() {
   const [driveForm] = Form.useForm<DriveConfig>();
   const [fileScanningForm] = Form.useForm<FileScanningConfig>();
   const [stripeForm] = Form.useForm<StripeConfig>();
+  const [aliyunSmsForm] = Form.useForm<AliyunSmsConfig>();
 
   const summaryMap = useMemo(
     () => new Map(summaries.map((summary) => [summary.module, summary])),
@@ -78,9 +80,11 @@ export function useIntegrationConfig() {
       if (module === 'drive') driveForm.setFieldsValue(value as DriveConfig);
       if (module === 'file-scanning') fileScanningForm.setFieldsValue(value as FileScanningConfig);
       if (module === 'stripe') stripeForm.setFieldsValue(value as StripeConfig);
+      if (module === 'aliyun-sms') aliyunSmsForm.setFieldsValue(value as AliyunSmsConfig);
     },
     [
       aiForm,
+      aliyunSmsForm,
       driveForm,
       fileScanningForm,
       larkForm,
@@ -149,6 +153,8 @@ export function useIntegrationConfig() {
         return fileScanningForm.validateFields();
       case 'stripe':
         return buildStripeConfigPayload(await stripeForm.validateFields());
+      case 'aliyun-sms':
+        return aliyunSmsForm.validateFields();
     }
   };
 
@@ -225,5 +231,6 @@ export function useIntegrationConfig() {
     driveForm,
     fileScanningForm,
     stripeForm,
+    aliyunSmsForm,
   };
 }
