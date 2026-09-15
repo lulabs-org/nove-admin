@@ -122,6 +122,17 @@ describe('SecurityPage', () => {
     expect(screen.getByText('最近 30 天登录记录')).toBeInTheDocument();
     expect(screen.getByText('Web · MacIntel')).toBeInTheDocument();
     expect(screen.getByText('邮箱密码')).toBeInTheDocument();
+    expect(screen.getByText('t***r@example.com')).toBeInTheDocument();
+    expect(screen.getByText('+86 138****8000')).toBeInTheDocument();
+    expect(screen.queryByText('tester@example.com')).not.toBeInTheDocument();
+    expect(screen.queryByText('+86 13800138000')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '查看邮箱' }));
+    expect(screen.getByText('tester@example.com')).toBeInTheDocument();
+    expect(screen.getByText('+86 138****8000')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '查看手机号' }));
+    expect(screen.getByText('+86 13800138000')).toBeInTheDocument();
   });
 
   it('uses a two-step password flow with identity verification first', async () => {

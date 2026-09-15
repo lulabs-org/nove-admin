@@ -1,6 +1,8 @@
 import {
   ClockCircleOutlined,
   DesktopOutlined,
+  EyeInvisibleOutlined,
+  EyeOutlined,
   KeyOutlined,
   MailOutlined,
   MobileOutlined,
@@ -53,6 +55,7 @@ import './SecurityPage.css';
 const { Text, Title } = Typography;
 type SecurityAction = 'password' | 'email' | 'phone';
 type VerificationMethod = 'password' | 'email_code' | 'phone_code';
+type SensitiveContactKey = 'email' | 'phone';
 
 interface SecurityFormValues {
   verificationMethod: VerificationMethod;
@@ -69,6 +72,21 @@ interface SecurityFormValues {
 function formatDateTime(value?: string | null) {
   if (!value) return '-';
   return new Date(value).toLocaleString('zh-CN', { hour12: false });
+}
+
+function maskEmail(value?: string | null) {
+  if (!value) return '未绑定';
+  const [localPart, domain] = value.split('@');
+  if (!domain) return '***';
+  const visibleLocalPart =
+    localPart.length > 1 ? `${localPart[0]}***${localPart.at(-1)}` : `${localPart[0]}***`;
+  return `${visibleLocalPart}@${domain}`;
+}
+
+function maskPhone(value?: string | null) {
+  if (!value) return '未绑定';
+  if (value.length <= 7) return `${value.slice(0, 2)}***${value.slice(-2)}`;
+  return `${value.slice(0, 3)}****${value.slice(-4)}`;
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -115,6 +133,9 @@ export function SecurityPage() {
   const [sendingIdentityCode, setSendingIdentityCode] = useState(false);
   const [sendingNewContactCode, setSendingNewContactCode] = useState(false);
   const [activityPage, setActivityPage] = useState(1);
+  const [revealedContacts, setRevealedContacts] = useState<Set<SensitiveContactKey>>(
+    () => new Set()
+  );
   const identityCountdown = useCountdown();
   const newContactCountdown = useCountdown();
   const verificationMethod = Form.useWatch('verificationMethod', form);
@@ -134,6 +155,7 @@ export function SecurityPage() {
   });
 
   const refreshSecurity = async () => {
+    setRevealedContacts(new Set());
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['account-security'] }),
       queryClient.invalidateQueries({ queryKey: ['account-security-sessions'] }),
@@ -231,6 +253,15 @@ export function SecurityPage() {
     setStep(0);
     form.resetFields();
     form.setFieldsValue({ verificationMethod: defaultMethod, countryCode: '+86' });
+  };
+
+  const toggleContactVisibility = (key: SensitiveContactKey) => {
+    setRevealedContacts((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   };
 
   const sendIdentityCode = async () => {
@@ -392,54 +423,80 @@ export function SecurityPage() {
               enabledText: '已设置',
               disabledText: '未设置',
               actionText: status?.hasPassword ? '修改密码' : '设置密码',
+              hasValue: false,
             },
             {
               key: 'email',
               icon: <MailOutlined />,
               label: '邮箱',
-              value: status?.email || '未绑定',
+              value: revealedContacts.has('email')
+                ? status?.email || '未绑定'
+                : maskEmail(status?.email),
               verified: status?.emailVerified,
               enabledText: '已验证',
               disabledText: '未验证',
               actionText: status?.email ? '换绑' : '绑定',
+              hasValue: Boolean(status?.email),
             },
             {
               key: 'phone',
               icon: <MobileOutlined />,
               label: '手机号',
-              value: status?.phone ? `${status.countryCode || ''} ${status.phone}` : '未绑定',
+              value: status?.phone
+                ? `${status.countryCode || ''} ${
+                    revealedContacts.has('phone') ? status.phone : maskPhone(status.phone)
+                  }`
+                : '未绑定',
               verified: status?.phoneVerified,
               enabledText: '已验证',
               disabledText: '未验证',
               actionText: status?.phone ? '换绑' : '绑定',
+              hasValue: Boolean(status?.phone),
             },
           ]}
-          renderItem={(item) => (
-            <List.Item
-              actions={[
-                <Button
-                  key="change"
-                  type="link"
-                  onClick={() => openAction(item.key as SecurityAction)}
-                >
-                  {item.actionText}
-                </Button>,
-              ]}
-            >
-              <List.Item.Meta
-                avatar={item.icon}
-                title={
-                  <Space>
-                    {item.label}
-                    <Tag color={item.verified ? 'success' : 'default'}>
-                      {item.verified ? item.enabledText : item.disabledText}
-                    </Tag>
-                  </Space>
-                }
-                description={item.value}
-              />
-            </List.Item>
-          )}
+          renderItem={(item) => {
+            const contactKey = item.key === 'email' || item.key === 'phone' ? item.key : undefined;
+            const isRevealed = contactKey ? revealedContacts.has(contactKey) : false;
+            return (
+              <List.Item
+                actions={[
+                  ...(contactKey && item.hasValue
+                    ? [
+                        <Button
+                          key="visibility"
+                          type="link"
+                          icon={isRevealed ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                          aria-label={`${isRevealed ? '隐藏' : '查看'}${item.label}`}
+                          onClick={() => toggleContactVisibility(contactKey)}
+                        >
+                          {isRevealed ? '隐藏' : '查看'}
+                        </Button>,
+                      ]
+                    : []),
+                  <Button
+                    key="change"
+                    type="link"
+                    onClick={() => openAction(item.key as SecurityAction)}
+                  >
+                    {item.actionText}
+                  </Button>,
+                ]}
+              >
+                <List.Item.Meta
+                  avatar={item.icon}
+                  title={
+                    <Space>
+                      {item.label}
+                      <Tag color={item.verified ? 'success' : 'default'}>
+                        {item.verified ? item.enabledText : item.disabledText}
+                      </Tag>
+                    </Space>
+                  }
+                  description={item.value}
+                />
+              </List.Item>
+            );
+          }}
         />
       </Card>
 
