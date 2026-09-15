@@ -531,6 +531,7 @@ export function SecurityPage() {
             message="设备下线后，已签发的访问令牌最多仍可能继续有效 15 分钟。"
           />
           <List<SecuritySessionDto>
+            className="security-session-list"
             loading={sessionsQuery.isLoading}
             dataSource={sessions}
             locale={{ emptyText: '暂无活跃设备' }}
