@@ -14,26 +14,13 @@
   margin: 0 0 4px;
 }
 
-.security-overview {
+.security-overview-card {
   margin-top: 16px;
-}
-
-.security-overview .ant-card {
-  height: 100%;
   border-radius: 12px;
 }
 
-.security-overview .ant-list-item {
+.security-overview-card .ant-list-item {
   padding: 9px 0;
-}
-
-.security-password-card .ant-card-body {
-  display: flex;
-  align-items: center;
-}
-
-.security-password-card .ant-list {
-  width: 100%;
 }
 
 .security-section {
