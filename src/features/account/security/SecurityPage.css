@@ -67,10 +67,32 @@
 @media (min-width: 1440px) {
   .security-dashboard {
     grid-template-columns: minmax(360px, 2fr) minmax(640px, 3fr);
+    align-items: start;
   }
 
   .security-dashboard > .ant-card {
-    height: 100%;
+    height: 380px;
+  }
+
+  .security-sessions-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .security-sessions-card > .ant-card-body {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .security-session-list {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
   }
 }
 
