@@ -14,16 +14,12 @@
   margin: 0 0 4px;
 }
 
-.security-overview {
+.security-overview-card {
   margin-top: 16px;
-}
-
-.security-overview .ant-card {
-  height: 100%;
   border-radius: 12px;
 }
 
-.security-overview .ant-list-item {
+.security-overview-card .ant-list-item {
   padding: 9px 0;
 }
 

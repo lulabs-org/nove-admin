@@ -113,21 +113,31 @@ describe('SecurityPage', () => {
     api.verifyIdentity.mockResolvedValue({ verified: true });
   });
 
-  it('renders the four functional security sections', async () => {
+  it('renders the functional security sections', async () => {
     renderPage();
 
     expect(await screen.findByRole('heading', { name: '安全设置' })).toBeInTheDocument();
-    expect(screen.getByText('账号保护')).toBeInTheDocument();
-    expect(screen.getByText('安全联系方式')).toBeInTheDocument();
+    expect(screen.getByText('账号安全')).toBeInTheDocument();
     expect(screen.getByText('登录设备')).toBeInTheDocument();
     expect(screen.getByText('最近 30 天登录记录')).toBeInTheDocument();
     expect(screen.getByText('Web · MacIntel')).toBeInTheDocument();
     expect(screen.getByText('邮箱密码')).toBeInTheDocument();
+    expect(screen.getByText('t***r@example.com')).toBeInTheDocument();
+    expect(screen.getByText('+86 138****8000')).toBeInTheDocument();
+    expect(screen.queryByText('tester@example.com')).not.toBeInTheDocument();
+    expect(screen.queryByText('+86 13800138000')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '查看邮箱' }));
+    expect(screen.getByText('tester@example.com')).toBeInTheDocument();
+    expect(screen.getByText('+86 138****8000')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '查看手机号' }));
+    expect(screen.getByText('+86 13800138000')).toBeInTheDocument();
   });
 
   it('uses a two-step password flow with identity verification first', async () => {
     renderPage();
-    await screen.findByText('账号保护');
+    await screen.findByText('账号安全');
 
     fireEvent.click(screen.getByRole('button', { name: /修改密码/ }));
     expect((await screen.findAllByText('身份确认')).length).toBeGreaterThan(0);
@@ -153,7 +163,7 @@ describe('SecurityPage', () => {
   it('stays on identity confirmation when the server rejects the password', async () => {
     api.verifyIdentity.mockRejectedValueOnce(new Error('身份验证失败'));
     renderPage();
-    await screen.findByText('账号保护');
+    await screen.findByText('账号安全');
 
     fireEvent.click(screen.getByRole('button', { name: /修改密码/ }));
     fireEvent.change(
@@ -184,7 +194,7 @@ describe('SecurityPage', () => {
     });
     api.sendIdentityCode.mockRejectedValueOnce(new Error('验证码服务暂时不可用'));
     renderPage();
-    await screen.findByText('账号保护');
+    await screen.findByText('账号安全');
 
     fireEvent.click(screen.getAllByRole('button', { name: '换绑' })[0]);
     fireEvent.click(await screen.findByRole('button', { name: '发送验证码' }));
@@ -202,7 +212,7 @@ describe('SecurityPage', () => {
       currentSessionPreserved: false,
     });
     renderPage();
-    await screen.findByText('安全联系方式');
+    await screen.findByText('账号安全');
 
     fireEvent.click(screen.getAllByRole('button', { name: '换绑' })[0]);
     fireEvent.change(

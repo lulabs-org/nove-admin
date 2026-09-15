@@ -1,8 +1,9 @@
 import {
   ClockCircleOutlined,
   DesktopOutlined,
+  EyeInvisibleOutlined,
+  EyeOutlined,
   KeyOutlined,
-  LockOutlined,
   MailOutlined,
   MobileOutlined,
   ReloadOutlined,
@@ -12,8 +13,6 @@ import {
 import Alert from 'antd/es/alert';
 import Button from 'antd/es/button';
 import Card from 'antd/es/card';
-import Col from 'antd/es/col';
-import Descriptions from 'antd/es/descriptions';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
 import List from 'antd/es/list';
@@ -21,7 +20,6 @@ import Modal from 'antd/es/modal';
 import Pagination from 'antd/es/pagination';
 import Popconfirm from 'antd/es/popconfirm';
 import Radio from 'antd/es/radio';
-import Row from 'antd/es/row';
 import Skeleton from 'antd/es/skeleton';
 import Space from 'antd/es/space';
 import Steps from 'antd/es/steps';
@@ -57,6 +55,7 @@ import './SecurityPage.css';
 const { Text, Title } = Typography;
 type SecurityAction = 'password' | 'email' | 'phone';
 type VerificationMethod = 'password' | 'email_code' | 'phone_code';
+type SensitiveContactKey = 'email' | 'phone';
 
 interface SecurityFormValues {
   verificationMethod: VerificationMethod;
@@ -73,6 +72,21 @@ interface SecurityFormValues {
 function formatDateTime(value?: string | null) {
   if (!value) return '-';
   return new Date(value).toLocaleString('zh-CN', { hour12: false });
+}
+
+function maskEmail(value?: string | null) {
+  if (!value) return '未绑定';
+  const [localPart, domain] = value.split('@');
+  if (!domain) return '***';
+  const visibleLocalPart =
+    localPart.length > 1 ? `${localPart[0]}***${localPart.at(-1)}` : `${localPart[0]}***`;
+  return `${visibleLocalPart}@${domain}`;
+}
+
+function maskPhone(value?: string | null) {
+  if (!value) return '未绑定';
+  if (value.length <= 7) return `${value.slice(0, 2)}***${value.slice(-2)}`;
+  return `${value.slice(0, 3)}****${value.slice(-4)}`;
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -119,6 +133,9 @@ export function SecurityPage() {
   const [sendingIdentityCode, setSendingIdentityCode] = useState(false);
   const [sendingNewContactCode, setSendingNewContactCode] = useState(false);
   const [activityPage, setActivityPage] = useState(1);
+  const [revealedContacts, setRevealedContacts] = useState<Set<SensitiveContactKey>>(
+    () => new Set()
+  );
   const identityCountdown = useCountdown();
   const newContactCountdown = useCountdown();
   const verificationMethod = Form.useWatch('verificationMethod', form);
@@ -138,6 +155,7 @@ export function SecurityPage() {
   });
 
   const refreshSecurity = async () => {
+    setRevealedContacts(new Set());
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['account-security'] }),
       queryClient.invalidateQueries({ queryKey: ['account-security-sessions'] }),
@@ -235,6 +253,15 @@ export function SecurityPage() {
     setStep(0);
     form.resetFields();
     form.setFieldsValue({ verificationMethod: defaultMethod, countryCode: '+86' });
+  };
+
+  const toggleContactVisibility = (key: SensitiveContactKey) => {
+    setRevealedContacts((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   };
 
   const sendIdentityCode = async () => {
@@ -376,87 +403,102 @@ export function SecurityPage() {
         />
       ) : null}
 
-      <Row gutter={[16, 16]} className="security-overview">
-        <Col xs={24} lg={12}>
-          <Card
-            title={
-              <Space>
-                <LockOutlined />
-                账号保护
-              </Space>
-            }
-          >
-            <Descriptions column={1} size="small">
-              <Descriptions.Item label="登录密码">
-                <Tag color={status?.hasPassword ? 'success' : 'warning'}>
-                  {status?.hasPassword ? '已设置' : '未设置'}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="设置时间">
-                {formatDateTime(status?.passwordSetAt)}
-              </Descriptions.Item>
-            </Descriptions>
-            <Button type="primary" icon={<KeyOutlined />} onClick={() => openAction('password')}>
-              {status?.hasPassword ? '修改密码' : '设置密码'}
-            </Button>
-          </Card>
-        </Col>
-        <Col xs={24} lg={12}>
-          <Card
-            title={
-              <Space>
-                <SafetyCertificateOutlined />
-                安全联系方式
-              </Space>
-            }
-          >
-            <List
-              dataSource={[
-                {
-                  key: 'email',
-                  icon: <MailOutlined />,
-                  label: '邮箱',
-                  value: status?.email || '未绑定',
-                  verified: status?.emailVerified,
-                },
-                {
-                  key: 'phone',
-                  icon: <MobileOutlined />,
-                  label: '手机号',
-                  value: status?.phone ? `${status.countryCode || ''} ${status.phone}` : '未绑定',
-                  verified: status?.phoneVerified,
-                },
-              ]}
-              renderItem={(item) => (
-                <List.Item
-                  actions={[
-                    <Button
-                      key="change"
-                      type="link"
-                      onClick={() => openAction(item.key as SecurityAction)}
-                    >
-                      {item.value === '未绑定' ? '绑定' : '换绑'}
-                    </Button>,
-                  ]}
-                >
-                  <List.Item.Meta
-                    avatar={item.icon}
-                    title={
-                      <Space>
-                        {item.label}
-                        <Tag color={item.verified ? 'success' : 'default'}>
-                          {item.verified ? '已验证' : '未验证'}
-                        </Tag>
-                      </Space>
-                    }
-                    description={item.value}
-                  />
-                </List.Item>
-              )}
-            />
-          </Card>
-        </Col>
-      </Row>
+      <Card
+        className="security-overview-card"
+        title={
+          <Space>
+            <SafetyCertificateOutlined />
+            账号安全
+          </Space>
+        }
+      >
+        <List
+          dataSource={[
+            {
+              key: 'password',
+              icon: <KeyOutlined />,
+              label: '登录密码',
+              value: '用于账号登录和敏感操作验证',
+              verified: status?.hasPassword,
+              enabledText: '已设置',
+              disabledText: '未设置',
+              actionText: status?.hasPassword ? '修改密码' : '设置密码',
+              hasValue: false,
+            },
+            {
+              key: 'email',
+              icon: <MailOutlined />,
+              label: '邮箱',
+              value: revealedContacts.has('email')
+                ? status?.email || '未绑定'
+                : maskEmail(status?.email),
+              verified: status?.emailVerified,
+              enabledText: '已验证',
+              disabledText: '未验证',
+              actionText: status?.email ? '换绑' : '绑定',
+              hasValue: Boolean(status?.email),
+            },
+            {
+              key: 'phone',
+              icon: <MobileOutlined />,
+              label: '手机号',
+              value: status?.phone
+                ? `${status.countryCode || ''} ${
+                    revealedContacts.has('phone') ? status.phone : maskPhone(status.phone)
+                  }`
+                : '未绑定',
+              verified: status?.phoneVerified,
+              enabledText: '已验证',
+              disabledText: '未验证',
+              actionText: status?.phone ? '换绑' : '绑定',
+              hasValue: Boolean(status?.phone),
+            },
+          ]}
+          renderItem={(item) => {
+            const contactKey = item.key === 'email' || item.key === 'phone' ? item.key : undefined;
+            const isRevealed = contactKey ? revealedContacts.has(contactKey) : false;
+            return (
+              <List.Item
+                actions={[
+                  ...(contactKey && item.hasValue
+                    ? [
+                        <Button
+                          key="visibility"
+                          type="link"
+                          icon={isRevealed ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                          aria-label={`${isRevealed ? '隐藏' : '查看'}${item.label}`}
+                          onClick={() => toggleContactVisibility(contactKey)}
+                        >
+                          {isRevealed ? '隐藏' : '查看'}
+                        </Button>,
+                      ]
+                    : []),
+                  <Button
+                    key="change"
+                    type="link"
+                    onClick={() => openAction(item.key as SecurityAction)}
+                  >
+                    {item.actionText}
+                  </Button>,
+                ]}
+              >
+                <List.Item.Meta
+                  avatar={item.icon}
+                  title={
+                    <Space>
+                      {item.label}
+                      <Tag color={item.verified ? 'success' : 'default'}>
+                        {item.verified ? item.enabledText : item.disabledText}
+                      </Tag>
+                    </Space>
+                  }
+                  description={item.value}
+                />
+              </List.Item>
+            );
+          }}
+        />
+      </Card>
 
       <Card
         className="security-section"
