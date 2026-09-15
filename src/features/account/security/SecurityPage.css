@@ -27,6 +27,15 @@
   padding: 9px 0;
 }
 
+.security-password-card .ant-card-body {
+  display: flex;
+  align-items: center;
+}
+
+.security-password-card .ant-list {
+  width: 100%;
+}
+
 .security-section {
   margin-top: 16px;
   border-radius: 12px;

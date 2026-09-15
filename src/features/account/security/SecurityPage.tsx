@@ -13,7 +13,6 @@ import Alert from 'antd/es/alert';
 import Button from 'antd/es/button';
 import Card from 'antd/es/card';
 import Col from 'antd/es/col';
-import Descriptions from 'antd/es/descriptions';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
 import List from 'antd/es/list';
@@ -379,6 +378,7 @@ export function SecurityPage() {
       <Row gutter={[16, 16]} className="security-overview">
         <Col xs={24} lg={12}>
           <Card
+            className="security-password-card"
             title={
               <Space>
                 <LockOutlined />
@@ -386,16 +386,28 @@ export function SecurityPage() {
               </Space>
             }
           >
-            <Descriptions column={1} size="small">
-              <Descriptions.Item label="登录密码">
-                <Tag color={status?.hasPassword ? 'success' : 'warning'}>
-                  {status?.hasPassword ? '已设置' : '未设置'}
-                </Tag>
-              </Descriptions.Item>
-            </Descriptions>
-            <Button type="primary" icon={<KeyOutlined />} onClick={() => openAction('password')}>
-              {status?.hasPassword ? '修改密码' : '设置密码'}
-            </Button>
+            <List>
+              <List.Item
+                actions={[
+                  <Button key="change" type="link" onClick={() => openAction('password')}>
+                    {status?.hasPassword ? '修改密码' : '设置密码'}
+                  </Button>,
+                ]}
+              >
+                <List.Item.Meta
+                  avatar={<KeyOutlined />}
+                  title={
+                    <Space>
+                      登录密码
+                      <Tag color={status?.hasPassword ? 'success' : 'warning'}>
+                        {status?.hasPassword ? '已设置' : '未设置'}
+                      </Tag>
+                    </Space>
+                  }
+                  description="用于账号登录和敏感操作验证"
+                />
+              </List.Item>
+            </List>
           </Card>
         </Col>
         <Col xs={24} lg={12}>
