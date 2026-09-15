@@ -4,6 +4,7 @@ import {
   CloudServerOutlined,
   ClusterOutlined,
   MailOutlined,
+  MessageOutlined,
   RobotOutlined,
   SecurityScanOutlined,
   ShopOutlined,
@@ -22,6 +23,12 @@ export const MODULE_META: Record<
     title: '邮件服务配置',
     description: '用于系统通知、验证码、账号找回和邮件品牌展示',
     icon: <MailOutlined />,
+  },
+  'aliyun-sms': {
+    label: '阿里云短信',
+    title: '阿里云短信配置',
+    description: '用于注册、登录、密码重置和安全通知短信',
+    icon: <MessageOutlined />,
   },
   ai: {
     label: 'AI 模型',
@@ -79,12 +86,18 @@ export const MODULE_META: Record<
   },
 };
 
-export function buildIntegrationMenu(summaryMap: Map<IntegrationModule, IntegrationSummary>) {
+export function buildIntegrationMenu(
+  summaryMap: Map<IntegrationModule, IntegrationSummary>,
+  showAliyunSms = false
+) {
   return [
     {
       type: 'group' as const,
       label: '通知服务',
-      children: [menuItem('mail', summaryMap.get('mail'))],
+      children: [
+        menuItem('mail', summaryMap.get('mail')),
+        ...(showAliyunSms ? [menuItem('aliyun-sms', summaryMap.get('aliyun-sms'))] : []),
+      ],
     },
     {
       type: 'group' as const,

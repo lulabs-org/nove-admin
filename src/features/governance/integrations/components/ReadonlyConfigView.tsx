@@ -53,6 +53,23 @@ const READONLY_SECTIONS: Record<IntegrationModule, ReadonlySection[]> = {
       ],
     },
   ],
+  'aliyun-sms': [
+    {
+      title: '访问凭据与签名',
+      fields: [
+        { key: 'accessKeyId', label: 'AccessKey ID', kind: 'secret' },
+        { key: 'accessKeySecret', label: 'AccessKey Secret', kind: 'secret' },
+        { key: 'signName', label: '短信签名', fullWidth: true },
+      ],
+    },
+    {
+      title: '模板代码',
+      fields: [
+        { key: 'verificationTemplateCode', label: '验证码模板' },
+        { key: 'securityChangeTemplateCode', label: '安全通知模板' },
+      ],
+    },
+  ],
   ai: [
     {
       title: '模型服务',

@@ -6,6 +6,7 @@ import type {
   IntegrationSummary,
   SaveIntegrationResult,
   TestIntegrationResult,
+  TestAliyunSmsInput,
 } from '../types';
 
 async function list(): Promise<IntegrationSummary[]> {
@@ -32,7 +33,7 @@ async function update<M extends IntegrationModule>(
 
 async function test<M extends IntegrationModule>(
   module: M,
-  data: IntegrationConfigMap[M]
+  data: IntegrationConfigMap[M] & Partial<TestAliyunSmsInput>
 ): Promise<TestIntegrationResult> {
   const response = await http.post<TestIntegrationResult>(
     `/admin/integrations/${module}/test`,

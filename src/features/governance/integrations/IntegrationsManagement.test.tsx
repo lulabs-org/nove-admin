@@ -5,12 +5,17 @@ import { IntegrationsManagement } from './IntegrationsManagement';
 
 const mocks = vi.hoisted(() => ({
   canWrite: true,
+  roles: ['ADMIN'],
   listConfigs: vi.fn(),
   getConfig: vi.fn(),
+  testConfig: vi.fn(),
 }));
 
 vi.mock('../../../shared/hooks/useAuth', () => ({
-  useAuth: () => ({ checkPermission: () => mocks.canWrite }),
+  useAuth: () => ({
+    checkPermission: () => mocks.canWrite,
+    user: { roles: mocks.roles },
+  }),
 }));
 
 vi.mock('./api/integrationsApi', () => ({
@@ -18,7 +23,7 @@ vi.mock('./api/integrationsApi', () => ({
     list: mocks.listConfigs,
     get: mocks.getConfig,
     update: vi.fn(),
-    test: vi.fn(),
+    test: mocks.testConfig,
     remove: vi.fn(),
   },
 }));
@@ -45,6 +50,7 @@ describe('IntegrationsManagement', () => {
 
   beforeEach(() => {
     mocks.canWrite = true;
+    mocks.roles = ['ADMIN'];
     mocks.listConfigs.mockResolvedValue(
       [
         'mail',
@@ -57,6 +63,7 @@ describe('IntegrationsManagement', () => {
         'drive',
         'file-scanning',
         'stripe',
+        'aliyun-sms',
       ].map((module) => ({
         orgId: 'org-1',
         module,
@@ -158,6 +165,13 @@ describe('IntegrationsManagement', () => {
             publishableKey: 'pk_test_123',
             webhookSecret: '********',
             currency: 'USD',
+          },
+          'aliyun-sms': {
+            accessKeyId: '********',
+            accessKeySecret: '********',
+            signName: '测试签名',
+            verificationTemplateCode: 'SMS_VERIFICATION1',
+            securityChangeTemplateCode: 'SMS_SECURITY1',
           },
         }[module],
       })
@@ -299,4 +313,22 @@ describe('IntegrationsManagement', () => {
     expect(screen.getByLabelText('ClamAV 主机')).not.toBeVisible();
     expect(screen.getByRole('button', { name: /保存配置/ })).toBeInTheDocument();
   }, 15_000);
+});
+
+it('shows Aliyun SMS only to super administrators', async () => {
+  const { unmount } = render(<IntegrationsManagement />);
+  expect(await screen.findByText('邮件服务配置')).toBeInTheDocument();
+  expect(screen.queryByText('阿里云短信')).not.toBeInTheDocument();
+  unmount();
+
+  mocks.roles = ['SUPER_ADMIN'];
+  render(<IntegrationsManagement />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByText('阿里云短信'));
+  await waitFor(() => expect(mocks.getConfig).toHaveBeenCalledWith('aliyun-sms'));
+  expect(await screen.findByText('访问凭据与签名')).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: /编辑配置/ }));
+  expect(await screen.findByLabelText('AccessKey ID')).toHaveValue('********');
+  await user.click(screen.getByRole('button', { name: /发送测试短信/ }));
+  expect(await screen.findByText(/真实发送短信并可能产生费用/)).toBeInTheDocument();
 });
