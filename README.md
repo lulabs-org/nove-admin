@@ -43,3 +43,9 @@ pnpm --dir docs dev
 - `src/shared/`：无业务归属的基础设施、Hooks、类型和工具。
 - `src/shared/lib/api/orval/`：由 Orval 生成，不手工修改。
 - `docs/`：VitePress 项目文档。
+
+---
+
+## 📄 许可
+
+本项目采用 [MIT License](./LICENSE) 开源协议。
