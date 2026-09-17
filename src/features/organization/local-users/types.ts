@@ -18,6 +18,9 @@ export interface AdminUser {
   id: string;
   username: string | null;
   email: string | null;
+  displayName?: string | null;
+  fullName?: string | null;
+  avatar?: string | null;
   countryCode: string | null;
   phone: string | null;
   active: boolean;
