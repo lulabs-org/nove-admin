@@ -18,6 +18,16 @@ describe('getUserIdentityDisplay', () => {
     ).toEqual({ primary: '杨仕明', secondary: '@yangshiming' });
   });
 
+  it('uses the flat display name returned by the list endpoint', () => {
+    expect(
+      getUserIdentityDisplay({
+        id: 'user-1',
+        username: 'yangshiming',
+        displayName: '杨仕明',
+      })
+    ).toEqual({ primary: '杨仕明', secondary: '@yangshiming' });
+  });
+
   it('uses the user id as secondary context when there is no username', () => {
     expect(
       getUserIdentityDisplay({

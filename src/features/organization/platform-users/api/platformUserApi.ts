@@ -15,8 +15,8 @@ import type {
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type PlatformUser = PlatformUserDto;
-export type PlatformUserDetail = PlatformUserWithProfileDto;
+export type PlatformUser = PlatformUserDto & { avatarUrl?: string | null };
+export type PlatformUserDetail = PlatformUserWithProfileDto & { avatarUrl?: string | null };
 export type UpdatePlatformUser = Omit<UpdatePlatformUserDto, 'localUserId'> & {
   localUserId?: string | null;
 };

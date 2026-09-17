@@ -1,4 +1,3 @@
-import Avatar from 'antd/es/avatar';
 import Button from 'antd/es/button';
 import Drawer from 'antd/es/drawer';
 import Form from 'antd/es/form';
@@ -26,6 +25,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useState } from 'react';
+import { PersonAvatar } from '../components/PersonAvatar';
 import {
   platformUserApi,
   type PlatformUser,
@@ -246,8 +246,13 @@ export function PlatformUserManagement() {
       width: 160,
       render: (_: unknown, record: PlatformUser) => (
         <button className="platform-user-name-cell" onClick={() => openDetail(record)}>
-          <Avatar size={28} icon={<UserOutlined />} />
-          <span>{record.displayName ?? '—'}</span>
+          <PersonAvatar
+            size={32}
+            seed={record.id}
+            src={record.avatarUrl}
+            name={record.displayName}
+          />
+          <span className="platform-user-name-text">{record.displayName ?? '—'}</span>
         </button>
       ),
     },
@@ -551,7 +556,7 @@ function LocalUserOptionContent({ user }: { user: LocalUserOption }) {
 
   return (
     <div className="platform-user-local-option">
-      <Avatar size={32} src={user.profile?.avatar} icon={<UserOutlined />} />
+      <PersonAvatar size={32} seed={user.id} src={user.profile?.avatar} name={primaryLabel} />
       <div className="platform-user-local-option-content">
         <Text strong ellipsis>
           {primaryLabel}
@@ -587,7 +592,7 @@ function DetailPanel({ detail, loading }: { detail: PlatformUserDetail | null; l
     <div className="platform-user-detail">
       {/* Header */}
       <div className="platform-user-detail-header">
-        <Avatar size={52} icon={<UserOutlined />} />
+        <PersonAvatar size={52} seed={detail.id} src={detail.avatarUrl} name={detail.displayName} />
         <div className="platform-user-detail-title">
           <Title level={5}>{detail.displayName ?? '—'}</Title>
           <Tag color={platformInfo.color}>{platformInfo.label}</Tag>
@@ -624,7 +629,12 @@ function DetailPanel({ detail, loading }: { detail: PlatformUserDetail | null; l
             关联系统账号
           </div>
           <div className="platform-user-linked-card">
-            <Avatar size={40} src={detail.user.profile?.avatar} icon={<UserOutlined />} />
+            <PersonAvatar
+              size={40}
+              seed={detail.user.id ?? detail.id}
+              src={detail.user.profile?.avatar}
+              name={detail.user.profile?.displayName ?? detail.user.username}
+            />
             <div className="platform-user-linked-info">
               <Text strong>{detail.user.profile?.displayName ?? detail.user.username ?? '—'}</Text>
               <Text type="secondary" style={{ fontSize: 12 }}>

@@ -57,7 +57,7 @@
   flex: 0 0 auto;
 }
 
-.platform-user-name-cell span {
+.platform-user-name-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
