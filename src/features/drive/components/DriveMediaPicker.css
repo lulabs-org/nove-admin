@@ -7,22 +7,34 @@
 
 .project-cover-preview {
   display: grid;
-  width: 96px;
-  height: 64px;
+  width: 160px;
+  height: 100px;
   flex: none;
   place-items: center;
   overflow: hidden;
   color: #94a3b8;
   font-size: 24px;
-  background: #f8fafc;
-  border: 1px dashed #cbd5e1;
-  border-radius: 8px;
+  background:
+    linear-gradient(45deg, #f8fafc 25%, transparent 25%),
+    linear-gradient(-45deg, #f8fafc 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #f8fafc 75%),
+    linear-gradient(-45deg, transparent 75%, #f8fafc 75%), #fff;
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0;
+  background-size: 16px 16px;
+  border: 1px solid #dbe3ee;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 8%);
 }
 
 .project-cover-preview img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: 100px;
+  display: block;
+  object-fit: contain;
 }
 
 .project-cover-help {
