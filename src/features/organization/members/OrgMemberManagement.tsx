@@ -1242,6 +1242,13 @@ export function OrgMemberManagement() {
   const renderMemberToolbar = () => (
     <div className="org-toolbar">
       <Space className="org-toolbar-filters" size="small">
+        <Search
+          allowClear
+          placeholder="请输入姓名、邮箱、手机号、工号或用户 ID"
+          style={{ width: 280 }}
+          onSearch={(value) => handleFilterChange('keyword', value.trim())}
+          disabled={!currentOrgId}
+        />
         {activeTab !== 'left' && (
           <Select
             value={filters.status as MemberStatus | undefined}
@@ -1442,7 +1449,7 @@ export function OrgMemberManagement() {
                   <Search
                     allowClear
                     prefix={<SearchOutlined />}
-                    placeholder="请输入姓名、邮箱、手机号或用户 ID"
+                    placeholder="搜索部门"
                     value={deptKeyword}
                     onChange={(event) => setDeptKeyword(event.target.value)}
                   />
