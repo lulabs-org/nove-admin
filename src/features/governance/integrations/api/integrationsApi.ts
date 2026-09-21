@@ -47,10 +47,24 @@ async function remove(module: IntegrationModule): Promise<SaveIntegrationResult>
   return response.data;
 }
 
+async function uploadMailBrandLogo(file: Blob): Promise<{ url: string }> {
+  const data = new FormData();
+  data.append('file', file);
+  const response = await http.put<{ url: string }>('/admin/integrations/mail/brand-logo', data);
+  return response.data;
+}
+
+async function removeMailBrandLogo(): Promise<{ url: null }> {
+  const response = await http.delete<{ url: null }>('/admin/integrations/mail/brand-logo');
+  return response.data;
+}
+
 export const integrationsApi = {
   list,
   get,
   update,
   test,
   remove,
+  uploadMailBrandLogo,
+  removeMailBrandLogo,
 };
