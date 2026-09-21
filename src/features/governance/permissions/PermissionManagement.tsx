@@ -84,7 +84,6 @@ interface PermissionFormValues {
 
 interface DataRuleFormValues {
   name?: string;
-  code?: string;
   description?: string;
   resource?: string;
   condition?: string;
@@ -310,7 +309,6 @@ export function PermissionManagement() {
 
       const createPayload: CreateDataPermissionRule = {
         ...basePayload,
-        code: values.code?.trim() || '',
       };
       return permissionManagementApi.createDataRule(createPayload);
     },
@@ -396,7 +394,6 @@ export function PermissionManagement() {
     setEditingDataRule(null);
     dataRuleForm.setFieldsValue({
       name: '',
-      code: '',
       description: '',
       resource: '',
       condition: '{\n  \n}',
@@ -410,7 +407,6 @@ export function PermissionManagement() {
     setEditingDataRule(rule);
     dataRuleForm.setFieldsValue({
       name: rule.name,
-      code: rule.code,
       description: displayNullableText(rule.description),
       resource: rule.resource,
       condition: rule.condition,
@@ -964,13 +960,16 @@ export function PermissionManagement() {
           >
             <Input placeholder="请输入规则名称" />
           </Form.Item>
-          <Form.Item
-            label="规则编码"
-            name="code"
-            rules={[{ required: dataRuleModalMode === 'create', message: '请输入规则编码' }]}
-          >
-            <Input disabled={dataRuleModalMode === 'edit'} placeholder="例如 dept_only" />
-          </Form.Item>
+          {dataRuleModalMode === 'edit' && editingDataRule ? (
+            <Form.Item
+              label="规则编码（系统生成）"
+              tooltip="该编码用于系统内部引用，创建后不可修改"
+            >
+              <Text code copyable>
+                {editingDataRule.code}
+              </Text>
+            </Form.Item>
+          ) : null}
           <Form.Item
             label="资源标识"
             name="resource"
