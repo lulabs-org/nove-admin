@@ -2,7 +2,7 @@ import Tag from 'antd/es/tag';
 import type { ReactNode } from 'react';
 import type { IntegrationConfigMap, IntegrationModule } from '../types';
 
-type ReadonlyFieldKind = 'boolean' | 'color' | 'provider' | 'secret' | 'text';
+type ReadonlyFieldKind = 'boolean' | 'color' | 'image' | 'provider' | 'secret' | 'text';
 
 interface ReadonlyField {
   key: string;
@@ -47,8 +47,7 @@ const READONLY_SECTIONS: Record<IntegrationModule, ReadonlySection[]> = {
       fields: [
         { key: 'brandName', label: '品牌名称' },
         { key: 'brandPrimaryColor', label: '主题色', kind: 'color' },
-        { key: 'brandLogoUrl', label: 'Logo URL', fullWidth: true },
-        { key: 'brandPublicBaseUrl', label: '公开访问地址', fullWidth: true },
+        { key: 'brandLogoUrl', label: '邮件 Logo', kind: 'image', fullWidth: true },
         { key: 'brandFooterText', label: '页脚文字', fullWidth: true },
       ],
     },
@@ -280,6 +279,9 @@ function renderValue(field: ReadonlyField, value: unknown): ReactNode {
         <span>{color}</span>
       </span>
     );
+  }
+  if (field.kind === 'image') {
+    return <img className="integrations-readonly-logo" src={String(value)} alt={field.label} />;
   }
 
   return String(value);

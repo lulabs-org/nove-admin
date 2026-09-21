@@ -89,7 +89,14 @@ export function IntegrationsManagement() {
         >
           {isEditing ? (
             <>
-              {activeModule === 'mail' && <MailFields form={mailForm} />}
+              {activeModule === 'mail' && (
+                <MailFields
+                  form={mailForm}
+                  onBrandLogoChanged={() =>
+                    Promise.all([loadConfig('mail'), loadSummaries()]).then(() => undefined)
+                  }
+                />
+              )}
               {activeModule === 'ai' && <AiFields form={aiForm} />}
               {activeModule === 'tencent-meeting' && <TencentMeetingFields form={tencentForm} />}
               {activeModule === 'lark' && <LarkFields form={larkForm} />}

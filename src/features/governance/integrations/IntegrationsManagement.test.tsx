@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   listConfigs: vi.fn(),
   getConfig: vi.fn(),
   testConfig: vi.fn(),
+  uploadMailBrandLogo: vi.fn(),
+  removeMailBrandLogo: vi.fn(),
 }));
 
 vi.mock('../../../shared/hooks/useAuth', () => ({
@@ -25,6 +27,8 @@ vi.mock('./api/integrationsApi', () => ({
     update: vi.fn(),
     test: mocks.testConfig,
     remove: vi.fn(),
+    uploadMailBrandLogo: mocks.uploadMailBrandLogo,
+    removeMailBrandLogo: mocks.removeMailBrandLogo,
   },
 }));
 
@@ -51,6 +55,10 @@ describe('IntegrationsManagement', () => {
   beforeEach(() => {
     mocks.canWrite = true;
     mocks.roles = ['ADMIN'];
+    mocks.uploadMailBrandLogo.mockResolvedValue({
+      url: 'https://cdn.example.com/mail-brand-logos/org-1/new.webp',
+    });
+    mocks.removeMailBrandLogo.mockResolvedValue({ url: null });
     mocks.listConfigs.mockResolvedValue(
       [
         'mail',
@@ -215,6 +223,24 @@ describe('IntegrationsManagement', () => {
 
     await userEvent.click(screen.getByLabelText('查看配置说明'));
     expect(await screen.findByText('飞书长连接')).toBeInTheDocument();
+  }, 15_000);
+
+  it('uploads a local mail brand logo without exposing URL fields', async () => {
+    const user = userEvent.setup();
+    render(<IntegrationsManagement />);
+    await screen.findByText('邮件服务配置');
+    await user.click(screen.getByRole('button', { name: /编辑配置/ }));
+
+    expect(await screen.findByText('上传 Logo')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Logo URL')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('公开访问地址')).not.toBeInTheDocument();
+
+    const input = document.querySelector('input[type="file"]');
+    expect(input).not.toBeNull();
+    const file = new File(['logo'], 'logo.png', { type: 'image/png' });
+    await user.upload(input as HTMLInputElement, file);
+
+    await waitFor(() => expect(mocks.uploadMailBrandLogo).toHaveBeenCalledWith(file));
   }, 15_000);
 
   it('renders a content-only detail view without edit controls for read-only users', async () => {
