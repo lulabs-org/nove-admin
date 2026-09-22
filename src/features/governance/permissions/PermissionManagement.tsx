@@ -20,6 +20,7 @@ import {
   DatabaseOutlined,
   DeleteOutlined,
   EditOutlined,
+  EyeOutlined,
   PlusOutlined,
   ReloadOutlined,
   SafetyCertificateOutlined,
@@ -29,6 +30,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Perm } from '../../../app/guards/Perm';
 import { PERMISSIONS } from '../../../shared/utils/permissions';
+import { DataRuleBuilder } from './components/DataRuleBuilder';
+import { DataRulePreviewModal } from './components/DataRulePreviewModal';
+import { SYSTEM_RESOURCES, explainCondition } from './components/dataRuleConstants';
 import {
   permissionManagementApi,
   type CreateDataPermissionRule,
@@ -175,6 +179,8 @@ export function PermissionManagement() {
 
   const [permissionForm] = Form.useForm<PermissionFormValues>();
   const [dataRuleForm] = Form.useForm<DataRuleFormValues>();
+  const [previewRule, setPreviewRule] = useState<DataPermissionRule | null>(null);
+  const selectedResource = Form.useWatch('resource', dataRuleForm);
 
   const permissionTreeQuery = useQuery({
     queryKey: ['permission-management-tree'],
@@ -395,7 +401,7 @@ export function PermissionManagement() {
     dataRuleForm.setFieldsValue({
       name: '',
       description: '',
-      resource: '',
+      resource: 'order',
       condition: '{\n  \n}',
       active: true,
     });
@@ -547,14 +553,33 @@ export function PermissionManagement() {
       dataIndex: 'resource',
       key: 'resource',
       width: 130,
-      render: (resource: string) => <Tag>{resource}</Tag>,
+      render: (resource: string) => <Tag color="cyan">{resource}</Tag>,
     },
     {
-      title: '条件',
+      title: '权限条件 / 业务释义',
       dataIndex: 'condition',
       key: 'condition',
-      ellipsis: true,
-      render: (condition: string) => <span className="permission-condition">{condition}</span>,
+      width: 320,
+      render: (condition: string, record: DataPermissionRule) => {
+        const explanation = explainCondition(condition, record.resource);
+        return (
+          <Tooltip
+            title={
+              <div style={{ maxWidth: 400 }}>
+                <div style={{ fontWeight: 600, marginBottom: 4 }}>条件 JSON:</div>
+                <pre style={{ margin: 0, fontSize: 11, whiteSpace: 'pre-wrap' }}>{condition}</pre>
+              </div>
+            }
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Text strong style={{ fontSize: 13, color: '#1677ff' }}>
+                {explanation}
+              </Text>
+              <span className="permission-condition">{condition}</span>
+            </div>
+          </Tooltip>
+        );
+      },
     },
     {
       title: '状态',
@@ -575,10 +600,18 @@ export function PermissionManagement() {
     {
       title: '操作',
       key: 'action',
-      width: 150,
+      width: 200,
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
+          <Button
+            type="link"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => setPreviewRule(record)}
+          >
+            预览
+          </Button>
           <Perm permission={PERMISSIONS.PERMISSION.UPDATE}>
             <Button
               type="link"
@@ -948,7 +981,7 @@ export function PermissionManagement() {
         confirmLoading={saveDataRuleMutation.isPending}
         okText="保存"
         cancelText="取消"
-        width={680}
+        width={860}
         destroyOnHidden
       >
         <Form form={dataRuleForm} layout="vertical">
@@ -958,7 +991,7 @@ export function PermissionManagement() {
             name="name"
             rules={[{ required: true, message: '请输入规则名称' }]}
           >
-            <Input placeholder="请输入规则名称" />
+            <Input placeholder="请输入规则名称（例如 订单仅本人负责）" />
           </Form.Item>
           {dataRuleModalMode === 'edit' && editingDataRule ? (
             <Form.Item
@@ -970,18 +1003,29 @@ export function PermissionManagement() {
               </Text>
             </Form.Item>
           ) : null}
+
           <Form.Item
-            label="资源标识"
+            label="关联资源"
             name="resource"
-            rules={[{ required: true, message: '请输入资源标识' }]}
+            rules={[{ required: true, message: '请选择或输入资源标识' }]}
+            tooltip="请选择系统预置资源（如 order 订单）或直接输入自定义资源名称"
           >
-            <Input placeholder="例如 user" />
+            <Select
+              placeholder="选择或输入资源标识（例如 order、user、project）"
+              showSearch
+              allowClear
+              options={SYSTEM_RESOURCES.map((r) => ({
+                label: `${r.label} - ${r.description}`,
+                value: r.resource,
+              }))}
+            />
           </Form.Item>
+
           <Form.Item
-            label="权限条件"
+            label="权限条件与规则配置"
             name="condition"
             rules={[
-              { required: true, message: '请输入权限条件' },
+              { required: true, message: '请配置权限条件' },
               {
                 validator: (_, value: string | undefined) => {
                   if (!value) return Promise.resolve();
@@ -995,20 +1039,23 @@ export function PermissionManagement() {
               },
             ]}
           >
-            <TextArea
-              rows={6}
-              className="permission-code"
-              placeholder='例如 {"departmentId":"${user.departmentId}"}'
-            />
+            <DataRuleBuilder resource={selectedResource} />
           </Form.Item>
+
           <Form.Item label="启用状态" name="active" valuePropName="checked">
             <Switch checkedChildren="启用" unCheckedChildren="停用" />
           </Form.Item>
           <Form.Item label="规则说明" name="description">
-            <TextArea rows={3} placeholder="请输入规则说明" />
+            <TextArea rows={2} placeholder="请输入规则说明（选填）" />
           </Form.Item>
         </Form>
       </Modal>
+
+      <DataRulePreviewModal
+        open={Boolean(previewRule)}
+        onClose={() => setPreviewRule(null)}
+        rule={previewRule}
+      />
     </div>
   );
 }
