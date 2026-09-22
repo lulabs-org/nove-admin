@@ -244,6 +244,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
   padding-bottom: 10px;
   border-bottom: 1px dashed #d9d9d9;
 }
@@ -257,17 +258,25 @@
   gap: 4px;
 }
 
-.data-rule-preset-tag {
-  cursor: pointer;
-  padding: 2px 8px;
-  border-radius: 4px;
-  user-select: none;
-  transition: all 0.2s ease;
+.data-rule-template-select {
+  width: min(300px, 100%);
 }
 
-.data-rule-preset-tag:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+.data-rule-template-option {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.4;
+  padding: 2px 0;
+}
+
+.data-rule-template-description {
+  color: #8c8c8c;
+  font-size: 12px;
+  white-space: normal;
+}
+
+.data-rule-template-hint {
+  font-size: 12px;
 }
 
 .data-rule-mode-switch {
