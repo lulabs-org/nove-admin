@@ -367,3 +367,32 @@
     gap: 12px;
   }
 }
+
+.org-role-data-rules-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 520px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.org-role-data-rule-card {
+  padding: 12px 14px;
+  border-radius: 6px;
+  border: 1px solid #e5e6eb;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.org-role-data-rule-card:hover {
+  border-color: #1677ff;
+  background: #fafcff;
+}
+
+.org-role-data-rule-card.is-selected {
+  border-color: #1677ff;
+  background: #f0f7ff;
+  box-shadow: 0 1px 3px rgba(22, 119, 255, 0.12);
+}
