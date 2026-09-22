@@ -185,5 +185,12 @@ describe('dataRuleConstants', () => {
         expect(() => JSON.parse(t.condition)).not.toThrow();
       }
     });
+
+    it('exposes public-pool access only as an explicit order template', () => {
+      const template = PRESET_TEMPLATES.find((item) => item.name === '公海未认领订单');
+
+      expect(template).toMatchObject({ resource: 'order' });
+      expect(JSON.parse(template?.condition || '{}')).toEqual({ currentOwnerId: null });
+    });
   });
 });

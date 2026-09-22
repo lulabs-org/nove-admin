@@ -1,4 +1,5 @@
 import Button from 'antd/es/button';
+import Alert from 'antd/es/alert';
 import Empty from 'antd/es/empty';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
@@ -829,6 +830,13 @@ export function PermissionManagement() {
 
   const renderDataRules = () => (
     <>
+      <Alert
+        type="warning"
+        showIcon
+        style={{ marginBottom: 12 }}
+        message="数据规则创建后不会自动生效"
+        description="请前往「组织架构 → 角色管理 → 配置权限 → 数据规则」将规则分配给角色。普通用户未绑定订单数据规则时默认看不到任何订单；公海订单也必须显式授权。"
+      />
       {renderDataRuleToolbar()}
       <Table
         columns={dataRuleColumns}

@@ -239,6 +239,13 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
     badgeColor: 'cyan',
   },
   {
+    name: '公海未认领订单',
+    description: '允许访问尚未分配负责人的订单；需要显式分配给角色后才会生效',
+    resource: 'order',
+    condition: JSON.stringify({ currentOwnerId: null }, null, 2),
+    badgeColor: 'geekblue',
+  },
+  {
     name: '本部门数据',
     description: '仅能访问当前用户所属直属部门的数据',
     condition: JSON.stringify({ departmentId: '${user.departmentId}' }, null, 2),
