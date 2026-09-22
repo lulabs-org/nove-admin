@@ -61,11 +61,12 @@ export interface OperatorDefinition {
 }
 
 export interface PresetTemplate {
+  id: string;
   name: string;
   description: string;
+  category: string;
   resource?: string;
   condition: string;
-  badgeColor?: string;
 }
 
 export interface VisualRuleItem {
@@ -262,52 +263,118 @@ export const OPERATORS: OperatorDefinition[] = [
 
 export const PRESET_TEMPLATES: PresetTemplate[] = [
   {
+    id: 'all',
     name: '全量开放 (无限制)',
     description: '允许访问此资源下的所有数据行',
+    category: '通用',
     condition: '{\n  \n}',
-    badgeColor: 'blue',
   },
   {
+    id: 'order-owner',
     name: '仅本人负责',
-    description: '只能访问由当前操作人员负责的数据',
+    description: '只能访问由当前操作人员负责的订单',
+    category: '订单归属',
+    resource: 'order',
     condition: JSON.stringify({ currentOwnerId: '${user.id}' }, null, 2),
-    badgeColor: 'green',
   },
   {
-    name: '仅本人购买/创建',
-    description: '只能访问当前操作人购买或创建的数据',
+    id: 'order-purchaser',
+    name: '仅本人购买的订单',
+    description: '只能访问当前操作人购买的订单',
+    category: '订单归属',
+    resource: 'order',
     condition: JSON.stringify({ purchaserId: '${user.id}' }, null, 2),
-    badgeColor: 'cyan',
   },
   {
+    id: 'order-public-pool',
     name: '公海未认领订单',
     description: '允许访问尚未分配负责人的订单；需要显式分配给角色后才会生效',
+    category: '订单归属',
     resource: 'order',
     condition: JSON.stringify({ currentOwnerId: null }, null, 2),
-    badgeColor: 'geekblue',
   },
   {
-    name: '本部门数据',
-    description: '仅能访问当前用户所属直属部门的数据',
-    condition: JSON.stringify({ departmentId: '${user.departmentId}' }, null, 2),
-    resource: 'user',
-    badgeColor: 'orange',
-  },
-  {
-    name: '本部门及下级部门',
-    description: '允许访问当前部门及其下属所有子部门的数据',
-    condition: JSON.stringify({ departmentId: { $in: '${user.departmentIds}' } }, null, 2),
-    resource: 'user',
-    badgeColor: 'purple',
-  },
-  {
+    id: 'order-amount-limit',
     name: '金额限额 (<= 10万元)',
     description: '仅能访问金额在 100,000 元及以下的订单（条件值为分）',
+    category: '交易条件',
     resource: 'order',
     condition: JSON.stringify({ amount: { $lte: 10000000 } }, null, 2),
-    badgeColor: 'magenta',
+  },
+  {
+    id: 'user-self',
+    name: '仅本人账号',
+    description: '匹配当前登录用户的账号记录',
+    category: '人员范围',
+    resource: 'user',
+    condition: JSON.stringify({ id: '${user.id}' }, null, 2),
+  },
+  {
+    id: 'user-department',
+    name: '本部门数据',
+    description: '仅能访问当前用户所属直属部门的数据',
+    category: '人员范围',
+    condition: JSON.stringify({ departmentId: '${user.departmentId}' }, null, 2),
+    resource: 'user',
+  },
+  {
+    id: 'user-department-tree',
+    name: '本部门及下级部门',
+    description: '允许访问当前部门及其下属所有子部门的数据',
+    category: '人员范围',
+    condition: JSON.stringify({ departmentId: { $in: '${user.departmentIds}' } }, null, 2),
+    resource: 'user',
+  },
+  {
+    id: 'project-owner',
+    name: '仅本人负责的项目',
+    description: '匹配当前登录用户负责的项目',
+    category: '项目归属',
+    resource: 'project',
+    condition: JSON.stringify({ ownerId: '${user.id}' }, null, 2),
+  },
+  {
+    id: 'project-department',
+    name: '本部门项目',
+    description: '匹配当前用户所属部门的项目',
+    category: '项目归属',
+    resource: 'project',
+    condition: JSON.stringify({ departmentId: '${user.departmentId}' }, null, 2),
+  },
+  {
+    id: 'product-creator',
+    name: '仅本人创建的商品',
+    description: '匹配当前登录用户创建的商品或服务',
+    category: '商品归属',
+    resource: 'product',
+    condition: JSON.stringify({ creatorId: '${user.id}' }, null, 2),
+  },
+  {
+    id: 'minute-creator',
+    name: '仅本人发起的纪要',
+    description: '匹配当前登录用户发起的会议纪要',
+    category: '纪要归属',
+    resource: 'minute',
+    condition: JSON.stringify({ creatorId: '${user.id}' }, null, 2),
+  },
+  {
+    id: 'minute-department',
+    name: '本部门纪要',
+    description: '匹配当前用户所属部门的会议纪要',
+    category: '纪要归属',
+    resource: 'minute',
+    condition: JSON.stringify({ departmentId: '${user.departmentId}' }, null, 2),
   },
 ];
+
+export function getPresetTemplatesForResource(resource?: string): PresetTemplate[] {
+  if (!resource) return [];
+  const normalized = resource.trim().toLowerCase();
+  return [
+    ...PRESET_TEMPLATES.filter((template) => template.resource === normalized),
+    ...PRESET_TEMPLATES.filter((template) => !template.resource),
+  ];
+}
 
 export function getResourceFields(resourceName?: string): ResourceField[] {
   if (!resourceName) return [];

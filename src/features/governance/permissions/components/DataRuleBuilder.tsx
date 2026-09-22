@@ -23,13 +23,13 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import {
   CONTEXT_VARIABLES,
   OPERATORS,
-  PRESET_TEMPLATES,
   MAX_CONDITION_DEPTH,
   MAX_CONDITION_NODES,
   conditionToVisualRules,
   createEmptyConditionGroup,
   explainCondition,
   getResourceFields,
+  getPresetTemplatesForResource,
   validateConditionJson,
   visualRulesToCondition,
   type VisualConditionGroup,
@@ -76,6 +76,25 @@ export function DataRuleBuilder({ value = '{\n  \n}', onChange, resource }: Data
   }, [value, resource]);
 
   const resourceFields = useMemo(() => getResourceFields(resource), [resource]);
+  const presetTemplates = useMemo(() => getPresetTemplatesForResource(resource), [resource]);
+  const presetOptions = useMemo(
+    () =>
+      [...new Set(presetTemplates.map((template) => template.category))].map((category) => ({
+        label: category,
+        options: presetTemplates
+          .filter((template) => template.category === category)
+          .map((template) => ({
+            value: template.id,
+            label: (
+              <span className="data-rule-template-option">
+                <span>{template.name}</span>
+                <span className="data-rule-template-description">{template.description}</span>
+              </span>
+            ),
+          })),
+      })),
+    [presetTemplates]
+  );
 
   const handleApplyTemplate = (condition: string) => {
     lastEmittedValue.current = condition;
@@ -440,24 +459,24 @@ export function DataRuleBuilder({ value = '{\n  \n}', onChange, resource }: Data
     <div className="data-rule-builder-shell">
       {/* 预设模板工具栏 */}
       <div className="data-rule-template-bar">
-        <Space size="small" wrap align="center">
-          <span className="data-rule-template-label">
-            <ThunderboltOutlined /> 常用规则模板：
-          </span>
-          {PRESET_TEMPLATES.filter(
-            (template) => !template.resource || template.resource === resource
-          ).map((tmpl) => (
-            <Tooltip key={tmpl.name} title={tmpl.description}>
-              <Tag
-                color={tmpl.badgeColor || 'default'}
-                className="data-rule-preset-tag"
-                onClick={() => handleApplyTemplate(tmpl.condition)}
-              >
-                {tmpl.name}
-              </Tag>
-            </Tooltip>
-          ))}
-        </Space>
+        <span className="data-rule-template-label">
+          <ThunderboltOutlined /> 规则模板
+        </span>
+        <Select
+          aria-label="选择规则模板"
+          className="data-rule-template-select"
+          placeholder={resource ? '按资源选择模板' : '请先选择关联资源'}
+          disabled={!resource}
+          value={undefined}
+          options={presetOptions}
+          onChange={(templateId: string) => {
+            const template = presetTemplates.find((item) => item.id === templateId);
+            if (template) handleApplyTemplate(template.condition);
+          }}
+        />
+        <Text type="secondary" className="data-rule-template-hint">
+          选择后替换当前条件
+        </Text>
       </div>
 
       {/* 模式切换器 */}

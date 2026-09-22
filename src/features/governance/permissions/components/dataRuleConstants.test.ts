@@ -9,6 +9,7 @@ import {
   getResourceFields,
   SYSTEM_RESOURCES,
   PRESET_TEMPLATES,
+  getPresetTemplatesForResource,
 } from './dataRuleConstants';
 
 describe('dataRuleConstants', () => {
@@ -276,7 +277,26 @@ describe('dataRuleConstants', () => {
     it('all preset templates have valid JSON conditions', () => {
       for (const t of PRESET_TEMPLATES) {
         expect(() => JSON.parse(t.condition)).not.toThrow();
+        expect(validateConditionJson(t.condition, t.resource)).toBeNull();
       }
+    });
+
+    it('offers only matching resource templates plus the common option', () => {
+      for (const resource of SYSTEM_RESOURCES) {
+        const templates = getPresetTemplatesForResource(resource.resource);
+        expect(templates.some((template) => template.resource === resource.resource)).toBe(true);
+        expect(
+          templates.every(
+            (template) => !template.resource || template.resource === resource.resource
+          )
+        ).toBe(true);
+        for (const template of templates.filter((item) => item.resource)) {
+          const fields = getResourceFields(resource.resource).map((field) => field.name);
+          const condition = JSON.parse(template.condition) as Record<string, unknown>;
+          expect(Object.keys(condition).every((key) => fields.includes(key))).toBe(true);
+        }
+      }
+      expect(getPresetTemplatesForResource()).toEqual([]);
     });
 
     it('exposes public-pool access only as an explicit order template', () => {

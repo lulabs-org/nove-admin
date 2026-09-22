@@ -79,4 +79,26 @@ describe('DataRuleBuilder', () => {
     const validJson = onChange.mock.lastCall?.[0] as string;
     expect(validateConditionJson(validJson, 'order')).toBeNull();
   });
+
+  it('shows resource-specific grouped templates and applies the selected condition', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <DataRuleBuilder value="{}" resource="order" onChange={onChange} />
+    );
+
+    await user.click(screen.getByRole('combobox', { name: '选择规则模板' }));
+    expect(screen.getByText('订单归属')).toBeInTheDocument();
+    expect(screen.getByText('交易条件')).toBeInTheDocument();
+    expect(screen.queryByText('本部门项目')).not.toBeInTheDocument();
+    await user.click(screen.getByText('仅本人负责'));
+    expect(onChange).toHaveBeenLastCalledWith(
+      JSON.stringify({ currentOwnerId: '${user.id}' }, null, 2)
+    );
+
+    rerender(<DataRuleBuilder value="{}" resource="project" onChange={onChange} />);
+    await user.click(screen.getByRole('combobox', { name: '选择规则模板' }));
+    expect(screen.getByText('项目归属')).toBeInTheDocument();
+    expect(screen.getByText('本部门项目')).toBeInTheDocument();
+  });
 });
