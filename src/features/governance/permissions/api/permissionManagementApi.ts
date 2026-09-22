@@ -28,7 +28,7 @@ export type CreatePermission = CreatePermissionDto;
 export type UpdatePermission = UpdatePermissionDto;
 export type DataPermissionRule = DataPermissionRuleDto;
 export type DataPermissionRuleListParams = DataPermRuleControllerFindAllParams;
-export type CreateDataPermissionRule = CreateDataPermissionRuleDto;
+export type CreateDataPermissionRule = Omit<CreateDataPermissionRuleDto, 'code'>;
 export type UpdateDataPermissionRule = UpdateDataPermissionRuleDto;
 
 export interface PermissionListResult {
@@ -87,7 +87,9 @@ export const permissionManagementApi = {
   },
 
   createDataRule(data: CreateDataPermissionRule): Promise<DataPermissionRule> {
-    return dataPermRuleControllerCreate(data);
+    // The API now owns rule-code generation. The cast keeps this adapter
+    // compatible with clients generated from the previous required-code schema.
+    return dataPermRuleControllerCreate(data as CreateDataPermissionRuleDto);
   },
 
   updateDataRule(ruleId: string, data: UpdateDataPermissionRule): Promise<DataPermissionRule> {

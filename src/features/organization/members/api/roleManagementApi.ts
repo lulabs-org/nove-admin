@@ -14,6 +14,9 @@ import type {
   UpdateRoleDto,
 } from '../../../../shared/lib/api/orval/business/schemas';
 
+import type { DataPermissionRule } from '../../../governance/permissions/api/permissionManagementApi';
+import { mutator } from '../../../../shared/lib/api/mutator';
+
 export type Role = RoleDto;
 export type RoleListParams = RoleControllerFindAllParams;
 export type CreateRole = CreateRoleDto;
@@ -58,5 +61,20 @@ export const roleManagementApi = {
 
   bindMember(orgId: string, data: CreateRoleBinding) {
     return roleControllerCreateRoleBinding(orgId, data);
+  },
+
+  getRoleDataRules(roleId: string): Promise<DataPermissionRule[]> {
+    return mutator<DataPermissionRule[]>({
+      url: `/admin/roles/${roleId}/data-rules`,
+      method: 'GET',
+    });
+  },
+
+  setRoleDataRules(roleId: string, ruleIds: string[]): Promise<DataPermissionRule[]> {
+    return mutator<DataPermissionRule[]>({
+      url: `/admin/roles/${roleId}/data-rules`,
+      method: 'PUT',
+      data: { ruleIds },
+    });
   },
 };

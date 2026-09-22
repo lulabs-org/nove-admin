@@ -27,6 +27,8 @@ vi.mock('./api/roleManagementApi', () => ({
     update: vi.fn(),
     delete: vi.fn(),
     bindMember: vi.fn(),
+    getRoleDataRules: vi.fn().mockResolvedValue([]),
+    setRoleDataRules: vi.fn().mockResolvedValue([]),
   },
 }));
 
@@ -35,7 +37,10 @@ vi.mock('./api/orgMemberApi', () => ({
 }));
 
 vi.mock('../../governance/permissions/api/permissionManagementApi', () => ({
-  permissionManagementApi: { permissionTree: apiMocks.permissionTree },
+  permissionManagementApi: {
+    permissionTree: apiMocks.permissionTree,
+    listDataRules: vi.fn().mockResolvedValue({ data: [], total: 0 }),
+  },
 }));
 
 describe('RoleManagement', () => {

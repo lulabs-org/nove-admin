@@ -1,6 +1,7 @@
 import Alert from 'antd/es/alert';
 import Avatar from 'antd/es/avatar';
 import Button from 'antd/es/button';
+import Card from 'antd/es/card';
 import Checkbox from 'antd/es/checkbox';
 import Dropdown from 'antd/es/dropdown';
 import Empty from 'antd/es/empty';
@@ -13,6 +14,7 @@ import Select from 'antd/es/select';
 import Space from 'antd/es/space';
 import Switch from 'antd/es/switch';
 import Table from 'antd/es/table';
+import Tabs from 'antd/es/tabs';
 import Tag from 'antd/es/tag';
 import Tooltip from 'antd/es/tooltip';
 import Typography from 'antd/es/typography';
@@ -47,6 +49,7 @@ import {
   permissionManagementApi,
   type PermissionItem,
 } from '../../governance/permissions/api/permissionManagementApi';
+import { explainCondition } from '../../governance/permissions/components/dataRuleConstants';
 import './RoleManagement.css';
 
 const { TextArea } = Input;
@@ -212,6 +215,16 @@ export function RoleManagement() {
   const [permissionResource, setPermissionResource] = useState('all');
   const [showSelectedPermissions, setShowSelectedPermissions] = useState(false);
   const [permissionCheckedKeys, setPermissionCheckedKeys] = useState<string[]>([]);
+  const [activePermissionTab, setActivePermissionTab] = useState<'functional' | 'dataRules'>(
+    'functional'
+  );
+  const [selectedDataRuleIds, setSelectedDataRuleIds] = useState<string[]>([]);
+
+  const dataRulesQuery = useQuery({
+    queryKey: ['role-management-all-data-rules'],
+    queryFn: () => permissionManagementApi.listDataRules({ page: 1, pageSize: 100 }),
+    enabled: permissionModalOpen,
+  });
 
   const [roleForm] = Form.useForm<RoleFormValues>();
   const [addMemberForm] = Form.useForm<AddMemberFormValues>();
@@ -434,10 +447,22 @@ export function RoleManagement() {
   };
 
   const updateRolePermissionsMutation = useMutation({
-    mutationFn: ({ roleId, permissionIds }: { roleId: string; permissionIds: string[] }) =>
-      roleManagementApi.update(roleId, { permissionIds }),
+    mutationFn: async ({
+      roleId,
+      permissionIds,
+      dataRuleIds,
+    }: {
+      roleId: string;
+      permissionIds: string[];
+      dataRuleIds: string[];
+    }) => {
+      await Promise.all([
+        roleManagementApi.update(roleId, { permissionIds }),
+        roleManagementApi.setRoleDataRules(roleId, dataRuleIds),
+      ]);
+    },
     onSuccess: async () => {
-      message.success('角色权限已更新');
+      message.success('角色权限与数据规则已更新');
       setPermissionModalOpen(false);
       setPermissionKeyword('');
       await queryClient.invalidateQueries({ queryKey: ['role-management-roles'] });
@@ -479,6 +504,15 @@ export function RoleManagement() {
     setPermissionKeyword('');
     setPermissionResource('all');
     setShowSelectedPermissions(false);
+    setActivePermissionTab('functional');
+    roleManagementApi
+      .getRoleDataRules(selectedRole.id)
+      .then((rules) => {
+        setSelectedDataRuleIds(rules.map((r) => r.id));
+      })
+      .catch(() => {
+        setSelectedDataRuleIds([]);
+      });
     setPermissionModalOpen(true);
   };
 
@@ -499,6 +533,7 @@ export function RoleManagement() {
     updateRolePermissionsMutation.mutate({
       roleId: selectedRole.id,
       permissionIds: permissionCheckedKeys,
+      dataRuleIds: selectedDataRuleIds,
     });
   };
 
@@ -1019,104 +1054,205 @@ export function RoleManagement() {
         confirmLoading={updateRolePermissionsMutation.isPending}
         destroyOnHidden
       >
-        <div className="org-role-permission-modal">
-          <div className="org-role-permission-toolbar">
-            <Input
-              allowClear
-              prefix={<SearchOutlined />}
-              placeholder="搜索权限名称、编码或资源"
-              value={permissionKeyword}
-              onChange={(event) => setPermissionKeyword(event.target.value)}
-            />
-            <Space size="small">
-              <Button
-                onClick={() => {
-                  setPermissionCheckedKeys((current) =>
-                    Array.from(new Set([...current, ...visiblePermissions.map((item) => item.id)]))
-                  );
-                }}
-                disabled={!visiblePermissions.length}
-              >
-                选择当前结果
-              </Button>
-              <Button
-                onClick={() => {
-                  const visibleIds = new Set(visiblePermissions.map((item) => item.id));
-                  setPermissionCheckedKeys((current) =>
-                    current.filter((id) => !visibleIds.has(id))
-                  );
-                }}
-                disabled={!visiblePermissions.some((item) => checkedPermissionSet.has(item.id))}
-              >
-                清除当前结果
-              </Button>
-            </Space>
-          </div>
-          <div className="org-role-permission-summary">
-            <Text type="secondary">
-              已选择 {permissionCheckedKeys.length} / {flatPermissions.length} 项权限
-            </Text>
-            <Button
-              type={showSelectedPermissions ? 'primary' : 'text'}
-              size="small"
-              onClick={() => setShowSelectedPermissions((current) => !current)}
-            >
-              {showSelectedPermissions ? '查看全部' : '仅看已选'}
-            </Button>
-          </div>
-          <div className="org-role-permission-browser">
-            <aside className="org-role-permission-groups" aria-label="权限分类">
-              <button
-                type="button"
-                className={`org-role-permission-group${permissionResource === 'all' ? ' is-active' : ''}`}
-                onClick={() => setPermissionResource('all')}
-              >
-                <span>
-                  <FolderOutlined /> 全部权限
-                </span>
-                <span>{flatPermissions.length}</span>
-              </button>
-              {permissionResourceGroups.map((group) => {
-                const selectedCount = group.permissions.filter((permission) =>
-                  checkedPermissionSet.has(permission.id)
-                ).length;
-                return (
-                  <button
-                    type="button"
-                    key={group.resource}
-                    className={`org-role-permission-group${permissionResource === group.resource ? ' is-active' : ''}`}
-                    onClick={() => setPermissionResource(group.resource)}
-                  >
-                    <span>{group.label}</span>
-                    <span>
-                      {selectedCount ? `${selectedCount}/` : ''}
-                      {group.permissions.length}
-                    </span>
-                  </button>
-                );
-              })}
-            </aside>
-            <div className="org-role-permission-list">
-              <div className="org-role-permission-list-header">
-                <Text strong>
-                  {permissionResource === 'all'
-                    ? '全部权限'
-                    : permissionResourceGroups.find(
-                        (group) => group.resource === permissionResource
-                      )?.label || permissionResource}
-                </Text>
-                <Text type="secondary">{visiblePermissions.length} 项</Text>
-              </div>
-              <div className="org-role-permission-tree">
-                {permissionTreeQuery.isLoading ? (
-                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="权限加载中" />
-                ) : (
-                  renderPermissions(visiblePermissions)
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <Tabs
+          activeKey={activePermissionTab}
+          onChange={(key) => setActivePermissionTab(key as 'functional' | 'dataRules')}
+          items={[
+            {
+              key: 'functional',
+              label: `功能权限 (${permissionCheckedKeys.length})`,
+              children: (
+                <div className="org-role-permission-modal">
+                  <div className="org-role-permission-toolbar">
+                    <Input
+                      allowClear
+                      prefix={<SearchOutlined />}
+                      placeholder="搜索权限名称、编码或资源"
+                      value={permissionKeyword}
+                      onChange={(event) => setPermissionKeyword(event.target.value)}
+                    />
+                    <Space size="small">
+                      <Button
+                        onClick={() => {
+                          setPermissionCheckedKeys((current) =>
+                            Array.from(
+                              new Set([...current, ...visiblePermissions.map((item) => item.id)])
+                            )
+                          );
+                        }}
+                        disabled={!visiblePermissions.length}
+                      >
+                        选择当前结果
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          const visibleIds = new Set(visiblePermissions.map((item) => item.id));
+                          setPermissionCheckedKeys((current) =>
+                            current.filter((id) => !visibleIds.has(id))
+                          );
+                        }}
+                        disabled={
+                          !visiblePermissions.some((item) => checkedPermissionSet.has(item.id))
+                        }
+                      >
+                        清除当前结果
+                      </Button>
+                    </Space>
+                  </div>
+                  <div className="org-role-permission-summary">
+                    <Text type="secondary">
+                      已选择 {permissionCheckedKeys.length} / {flatPermissions.length} 项权限
+                    </Text>
+                    <Button
+                      type={showSelectedPermissions ? 'primary' : 'text'}
+                      size="small"
+                      onClick={() => setShowSelectedPermissions((current) => !current)}
+                    >
+                      {showSelectedPermissions ? '查看全部' : '仅看已选'}
+                    </Button>
+                  </div>
+                  <div className="org-role-permission-browser">
+                    <aside className="org-role-permission-groups" aria-label="权限分类">
+                      <button
+                        type="button"
+                        className={`org-role-permission-group${permissionResource === 'all' ? ' is-active' : ''}`}
+                        onClick={() => setPermissionResource('all')}
+                      >
+                        <span>
+                          <FolderOutlined /> 全部权限
+                        </span>
+                        <span>{flatPermissions.length}</span>
+                      </button>
+                      {permissionResourceGroups.map((group) => {
+                        const selectedCount = group.permissions.filter((permission) =>
+                          checkedPermissionSet.has(permission.id)
+                        ).length;
+                        return (
+                          <button
+                            type="button"
+                            key={group.resource}
+                            className={`org-role-permission-group${permissionResource === group.resource ? ' is-active' : ''}`}
+                            onClick={() => setPermissionResource(group.resource)}
+                          >
+                            <span>{group.label}</span>
+                            <span>
+                              {selectedCount ? `${selectedCount}/` : ''}
+                              {group.permissions.length}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </aside>
+                    <div className="org-role-permission-list">
+                      <div className="org-role-permission-list-header">
+                        <Text strong>
+                          {permissionResource === 'all'
+                            ? '全部权限'
+                            : permissionResourceGroups.find(
+                                (group) => group.resource === permissionResource
+                              )?.label || permissionResource}
+                        </Text>
+                        <Text type="secondary">{visiblePermissions.length} 项</Text>
+                      </div>
+                      <div className="org-role-permission-tree">
+                        {permissionTreeQuery.isLoading ? (
+                          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="权限加载中" />
+                        ) : (
+                          renderPermissions(visiblePermissions)
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              key: 'dataRules',
+              label: `数据规则 (${selectedDataRuleIds.length})`,
+              children: (
+                <div className="org-role-data-rules-pane">
+                  <Alert
+                    type="info"
+                    showIcon
+                    style={{ marginBottom: 12 }}
+                    message="为该角色分配生效的数据规则。登录后，系统会自动合并该用户拥有的所有数据规则，并通过 CASL 引擎在数据库查询时动态执行数据隔离。"
+                  />
+                  {dataRulesQuery.isLoading ? (
+                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="规则加载中..." />
+                  ) : !dataRulesQuery.data?.data?.length ? (
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description="系统暂无数据规则，请前往「治理中心 - 权限管理 - 数据规则」新建规则"
+                    />
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {Array.from(
+                        dataRulesQuery.data.data.reduce((acc, rule) => {
+                          const res = rule.resource || 'other';
+                          acc.set(res, [...(acc.get(res) || []), rule]);
+                          return acc;
+                        }, new Map<string, typeof dataRulesQuery.data.data>())
+                      ).map(([resource, rules]) => (
+                        <Card
+                          key={resource}
+                          size="small"
+                          title={
+                            <Space>
+                              <Tag color="cyan">{resource.toUpperCase()}</Tag>
+                              <Text strong>{resource} 资源规则</Text>
+                            </Space>
+                          }
+                        >
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {rules.map((rule) => {
+                              const isChecked = selectedDataRuleIds.includes(rule.id);
+                              const explanation = explainCondition(rule.condition, rule.resource);
+                              return (
+                                <div
+                                  key={rule.id}
+                                  className={`org-role-data-rule-card${isChecked ? ' is-selected' : ''}`}
+                                  onClick={() => {
+                                    setSelectedDataRuleIds((prev) =>
+                                      isChecked
+                                        ? prev.filter((id) => id !== rule.id)
+                                        : [...prev, rule.id]
+                                    );
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                    }}
+                                  >
+                                    <Space>
+                                      <Checkbox checked={isChecked} />
+                                      <Text strong>{rule.name}</Text>
+                                      <span className="permission-code">{rule.code}</span>
+                                    </Space>
+                                    <Tag color={rule.active ? 'success' : 'default'}>
+                                      {rule.active ? '启用' : '停用'}
+                                    </Tag>
+                                  </div>
+                                  <div style={{ marginTop: 4, paddingLeft: 24 }}>
+                                    <Text style={{ fontSize: 13, color: '#1677ff' }}>
+                                      业务释义：{explanation}
+                                    </Text>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ),
+            },
+          ]}
+        />
       </Modal>
     </div>
   );

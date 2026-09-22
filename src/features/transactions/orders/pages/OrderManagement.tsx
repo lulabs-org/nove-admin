@@ -34,6 +34,7 @@ import {
   type TableQueryParams,
 } from '../../../../shared/hooks/useTableQuery';
 import { PERMISSIONS } from '../../../../shared/utils/permissions';
+import { useOrderAbility } from '../hooks/useOrderAbility';
 import { orderApi } from '../api/orderApi';
 import { OrderBenefitModal } from '../components/OrderBenefitModal';
 import { OrderChannelSelect } from '../components/OrderChannelSelect';
@@ -191,6 +192,7 @@ export function OrderManagement() {
   const [benefitModalOrder, setBenefitModalOrder] = useState<Order | null>(null);
   const [resyncingId, setResyncingId] = useState<string | null>(null);
   const [form] = Form.useForm<OrderFormValues>();
+  const { checkOrderEdit, checkBenefitAdjustment, checkOrderDelete } = useOrderAbility();
 
   const {
     data: orderList,
@@ -477,63 +479,73 @@ export function OrderManagement() {
       key: 'action',
       fixed: 'right',
       width: 120,
-      render: (_: unknown, record) => (
-        <Space size="small">
-          <Perm permission={PERMISSIONS.ORDER.UPDATE}>
-            <Tooltip title="权益调整 (冻结 / 解冻 / 延期)">
-              <Button
-                type="link"
-                size="small"
-                icon={<ClockCircleOutlined />}
-                onClick={() => {
-                  setBenefitModalOrder(record);
-                  setBenefitModalOpen(true);
-                }}
-              />
-            </Tooltip>
-          </Perm>
-          {record.paymentProvider === 'STRIPE' && record.externalId && (
-            <Tooltip title="从 Stripe 重新拉取最新状态">
-              <Button
-                type="link"
-                size="small"
-                icon={<SyncOutlined spin={resyncingId === record.externalId} />}
-                onClick={() => void handleStripeResync(record.externalId!)}
-                disabled={resyncingId === record.externalId}
-              />
-            </Tooltip>
-          )}
-          <Perm permission={PERMISSIONS.ORDER.UPDATE}>
-            <Tooltip title="编辑订单">
-              <Button
-                type="link"
-                size="small"
-                icon={<EditOutlined />}
-                onClick={() => handleEdit(record)}
-              />
-            </Tooltip>
-          </Perm>
-          <Perm permission={PERMISSIONS.ORDER.DELETE}>
-            <Popconfirm
-              title="确定要删除此订单吗？"
-              description="删除后订单会进入软删除状态"
-              okText="确定"
-              cancelText="取消"
-              onConfirm={() => deleteMutation.mutate(record.id)}
-            >
-              <Tooltip title="删除订单">
+      render: (_: unknown, record: Order) => {
+        const editCheck = checkOrderEdit(record);
+        const benefitCheck = checkBenefitAdjustment(record);
+        const deleteCheck = checkOrderDelete(record);
+
+        return (
+          <Space size="small">
+            <Perm permission={PERMISSIONS.ORDER.UPDATE}>
+              <Tooltip title={benefitCheck.reason || '权益调整 (冻结 / 解冻 / 延期)'}>
                 <Button
                   type="link"
                   size="small"
-                  danger
-                  icon={<DeleteOutlined />}
-                  loading={deleteMutation.isPending}
+                  disabled={!benefitCheck.allowed}
+                  icon={<ClockCircleOutlined />}
+                  onClick={() => {
+                    setBenefitModalOrder(record);
+                    setBenefitModalOpen(true);
+                  }}
                 />
               </Tooltip>
-            </Popconfirm>
-          </Perm>
-        </Space>
-      ),
+            </Perm>
+            {record.paymentProvider === 'STRIPE' && record.externalId && (
+              <Tooltip title="从 Stripe 重新拉取最新状态">
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<SyncOutlined spin={resyncingId === record.externalId} />}
+                  onClick={() => void handleStripeResync(record.externalId!)}
+                  disabled={resyncingId === record.externalId}
+                />
+              </Tooltip>
+            )}
+            <Perm permission={PERMISSIONS.ORDER.UPDATE}>
+              <Tooltip title={editCheck.reason || '编辑订单'}>
+                <Button
+                  type="link"
+                  size="small"
+                  disabled={!editCheck.allowed}
+                  icon={<EditOutlined />}
+                  onClick={() => handleEdit(record)}
+                />
+              </Tooltip>
+            </Perm>
+            {deleteCheck.allowed && (
+              <Perm permission={PERMISSIONS.ORDER.DELETE}>
+                <Popconfirm
+                  title="确定要删除此订单吗？"
+                  description="删除后订单会进入软删除状态"
+                  okText="确定"
+                  cancelText="取消"
+                  onConfirm={() => deleteMutation.mutate(record.id)}
+                >
+                  <Tooltip title="删除订单">
+                    <Button
+                      type="link"
+                      size="small"
+                      danger
+                      icon={<DeleteOutlined />}
+                      loading={deleteMutation.isPending}
+                    />
+                  </Tooltip>
+                </Popconfirm>
+              </Perm>
+            )}
+          </Space>
+        );
+      },
     },
   ];
 
