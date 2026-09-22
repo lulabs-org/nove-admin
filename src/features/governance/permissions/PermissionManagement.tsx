@@ -1005,6 +1005,7 @@ export function PermissionManagement() {
           <Form.Item
             label="规则名称"
             name="name"
+            className="data-rule-name-field"
             rules={[{ required: true, message: '请输入规则名称' }]}
           >
             <Input placeholder="请输入规则名称（例如 订单仅本人负责）" />
