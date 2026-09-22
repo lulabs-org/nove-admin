@@ -33,7 +33,11 @@ import { Perm } from '../../../app/guards/Perm';
 import { PERMISSIONS } from '../../../shared/utils/permissions';
 import { DataRuleBuilder } from './components/DataRuleBuilder';
 import { DataRulePreviewModal } from './components/DataRulePreviewModal';
-import { SYSTEM_RESOURCES, explainCondition } from './components/dataRuleConstants';
+import {
+  SYSTEM_RESOURCES,
+  explainCondition,
+  validateConditionJson,
+} from './components/dataRuleConstants';
 import {
   permissionManagementApi,
   type CreateDataPermissionRule,
@@ -1036,17 +1040,17 @@ export function PermissionManagement() {
           <Form.Item
             label="权限条件与规则配置"
             name="condition"
+            dependencies={['resource']}
             rules={[
               { required: true, message: '请配置权限条件' },
               {
                 validator: (_, value: string | undefined) => {
                   if (!value) return Promise.resolve();
-                  try {
-                    JSON.parse(value);
-                    return Promise.resolve();
-                  } catch {
-                    return Promise.reject(new Error('请输入有效的 JSON 条件'));
-                  }
+                  const error = validateConditionJson(
+                    value,
+                    dataRuleForm.getFieldValue('resource') as string | undefined
+                  );
+                  return error ? Promise.reject(new Error(error)) : Promise.resolve();
                 },
               },
             ]}
