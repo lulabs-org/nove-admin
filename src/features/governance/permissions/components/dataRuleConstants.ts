@@ -1,4 +1,35 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+type JsonPrimitive = string | number | boolean | null;
+export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
+type JsonObject = { [key: string]: JsonValue };
+
+function isJsonValue(value: unknown): value is JsonValue {
+  if (
+    value === null ||
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  ) {
+    return true;
+  }
+  if (Array.isArray(value)) {
+    return value.every(isJsonValue);
+  }
+  return isJsonObject(value);
+}
+
+function isJsonObject(value: unknown): value is JsonObject {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.values(value as Record<string, unknown>).every(isJsonValue)
+  );
+}
+
+function stringifyJsonValue(value: JsonValue): string {
+  return typeof value === 'string' ? value : JSON.stringify(value);
+}
+
 export interface ResourceField {
   name: string;
   label: string;
@@ -309,7 +340,11 @@ export function conditionToVisualRules(conditionJson?: string): VisualConditionG
     return null;
   }
 
-  const obj = parsed as Record<string, any>;
+  if (!isJsonObject(parsed)) {
+    return null;
+  }
+
+  const obj = parsed;
   const keys = Object.keys(obj);
 
   if (keys.length === 0) {
@@ -318,11 +353,12 @@ export function conditionToVisualRules(conditionJson?: string): VisualConditionG
 
   // Check if top-level is $or or OR
   if (keys.length === 1 && (keys[0] === '$or' || keys[0] === 'OR') && Array.isArray(obj[keys[0]])) {
-    const list = obj[keys[0]] as any[];
+    const list = obj[keys[0]];
+    if (!Array.isArray(list)) return null;
     const rules: VisualRuleItem[] = [];
     for (let i = 0; i < list.length; i++) {
       const item = list[i];
-      if (typeof item !== 'object' || item === null) return null;
+      if (!isJsonObject(item)) return null;
       const subKeys = Object.keys(item);
       if (subKeys.length !== 1) return null;
       const field = subKeys[0];
@@ -339,11 +375,12 @@ export function conditionToVisualRules(conditionJson?: string): VisualConditionG
     (keys[0] === '$and' || keys[0] === 'AND') &&
     Array.isArray(obj[keys[0]])
   ) {
-    const list = obj[keys[0]] as any[];
+    const list = obj[keys[0]];
+    if (!Array.isArray(list)) return null;
     const rules: VisualRuleItem[] = [];
     for (let i = 0; i < list.length; i++) {
       const item = list[i];
-      if (typeof item !== 'object' || item === null) return null;
+      if (!isJsonObject(item)) return null;
       const subKeys = Object.keys(item);
       if (subKeys.length !== 1) return null;
       const field = subKeys[0];
@@ -370,12 +407,16 @@ export function conditionToVisualRules(conditionJson?: string): VisualConditionG
   return { combinator: 'AND', rules };
 }
 
-function parseSingleFieldCondition(field: string, val: any, id: string): VisualRuleItem | null {
+function parseSingleFieldCondition(
+  field: string,
+  val: JsonValue,
+  id: string
+): VisualRuleItem | null {
   if (val === null) {
     return { id, field, operator: 'isNull', valueType: 'constant', value: '' };
   }
 
-  if (typeof val === 'object' && !Array.isArray(val)) {
+  if (isJsonObject(val)) {
     const opKeys = Object.keys(val);
     if (opKeys.length !== 1) return null;
     const op = opKeys[0];
@@ -388,7 +429,7 @@ function parseSingleFieldCondition(field: string, val: any, id: string): VisualR
     const matchedOp = OPERATORS.find((o) => o.key === op || o.key === `$${op}`);
     const actualOp = matchedOp ? matchedOp.key : op;
 
-    const valStr = typeof innerVal === 'string' ? innerVal : JSON.stringify(innerVal);
+    const valStr = stringifyJsonValue(innerVal);
     const isVariable = CONTEXT_VARIABLES.some((v) => v.key === valStr);
 
     return {
@@ -401,7 +442,7 @@ function parseSingleFieldCondition(field: string, val: any, id: string): VisualR
   }
 
   // Primitive direct equality
-  const valStr = typeof val === 'string' ? val : JSON.stringify(val);
+  const valStr = stringifyJsonValue(val);
   const isVariable = CONTEXT_VARIABLES.some((v) => v.key === valStr);
 
   return {
@@ -422,8 +463,8 @@ export function visualRulesToCondition(group: VisualConditionGroup): string {
     return '{\n  \n}';
   }
 
-  const buildSingleField = (r: VisualRuleItem): any => {
-    let finalVal: any = r.value;
+  const buildSingleField = (r: VisualRuleItem): JsonValue => {
+    let finalVal: JsonValue = r.value;
     if (r.operator === 'isNull') {
       return null;
     }
@@ -441,7 +482,10 @@ export function visualRulesToCondition(group: VisualConditionGroup): string {
         // Try JSON parse if user typed array or object
         try {
           if (finalVal.startsWith('[') || finalVal.startsWith('{')) {
-            finalVal = JSON.parse(finalVal);
+            const parsedValue: unknown = JSON.parse(finalVal);
+            if (isJsonValue(parsedValue)) {
+              finalVal = parsedValue;
+            }
           }
         } catch {
           // Keep as string
@@ -462,7 +506,7 @@ export function visualRulesToCondition(group: VisualConditionGroup): string {
   }
 
   // AND combinator: merge fields
-  const result: Record<string, any> = {};
+  const result: JsonObject = {};
   for (const r of validRules) {
     result[r.field] = buildSingleField(r);
   }
@@ -478,14 +522,14 @@ export function explainCondition(conditionJson?: string, resourceName?: string):
     return '全量开放：允许访问该资源下的所有数据';
   }
 
-  let parsed: any;
+  let parsed: unknown;
   try {
-    parsed = JSON.parse(conditionJson);
+    parsed = JSON.parse(conditionJson) as unknown;
   } catch {
     return '规则格式无效 (非标准 JSON)';
   }
 
-  if (typeof parsed !== 'object' || parsed === null) {
+  if (!isJsonObject(parsed)) {
     return '全量开放';
   }
 
@@ -494,9 +538,9 @@ export function explainCondition(conditionJson?: string, resourceName?: string):
     return '全量开放：允许访问该资源下的所有数据';
   }
 
-  const explainValue = (val: any): string => {
+  const explainValue = (val: JsonValue): string => {
     if (val === null) return '空 (null)';
-    const str = typeof val === 'string' ? val : JSON.stringify(val);
+    const str = stringifyJsonValue(val);
     const variable = CONTEXT_VARIABLES.find((v) => v.key === str);
     if (variable) {
       return variable.label;
@@ -504,12 +548,12 @@ export function explainCondition(conditionJson?: string, resourceName?: string):
     return `"${str}"`;
   };
 
-  const explainFieldRule = (field: string, val: any): string => {
+  const explainFieldRule = (field: string, val: JsonValue): string => {
     const fieldLabel = getFieldLabel(field, resourceName);
     if (val === null) {
       return `【${fieldLabel}】为空`;
     }
-    if (typeof val === 'object' && !Array.isArray(val)) {
+    if (isJsonObject(val)) {
       const subKeys = Object.keys(val);
       if (subKeys.length === 1) {
         const op = subKeys[0];
@@ -525,8 +569,10 @@ export function explainCondition(conditionJson?: string, resourceName?: string):
   };
 
   if ((keys[0] === '$or' || keys[0] === 'OR') && Array.isArray(parsed[keys[0]])) {
-    const list = parsed[keys[0]] as any[];
+    const list = parsed[keys[0]];
+    if (!Array.isArray(list)) return '规则格式无效';
     const parts = list.map((item) => {
+      if (!isJsonObject(item)) return JSON.stringify(item);
       const itemKeys = Object.keys(item);
       if (itemKeys.length === 1) {
         return explainFieldRule(itemKeys[0], item[itemKeys[0]]);
@@ -537,8 +583,10 @@ export function explainCondition(conditionJson?: string, resourceName?: string):
   }
 
   if ((keys[0] === '$and' || keys[0] === 'AND') && Array.isArray(parsed[keys[0]])) {
-    const list = parsed[keys[0]] as any[];
+    const list = parsed[keys[0]];
+    if (!Array.isArray(list)) return '规则格式无效';
     const parts = list.map((item) => {
+      if (!isJsonObject(item)) return JSON.stringify(item);
       const itemKeys = Object.keys(item);
       if (itemKeys.length === 1) {
         return explainFieldRule(itemKeys[0], item[itemKeys[0]]);
@@ -557,27 +605,31 @@ export function explainCondition(conditionJson?: string, resourceName?: string):
  */
 export function simulateCondition(
   conditionJson: string,
-  mockContext: Record<string, any> = {
+  mockContext: Record<string, JsonValue> = {
     '${user.id}': 'usr_demo_888',
     '${user.departmentId}': 'dept_sales_01',
     '${user.departmentIds}': ['dept_sales_01', 'dept_sales_north'],
     '${user.roles}': ['SALES_REPRESENTATIVE'],
     '${user.companyId}': 'org_enterprise_01',
   }
-): Record<string, any> {
+): JsonValue {
   if (!conditionJson || !conditionJson.trim()) {
     return {};
   }
 
-  let parsed: any;
+  let parsed: unknown;
   try {
-    parsed = JSON.parse(conditionJson);
+    parsed = JSON.parse(conditionJson) as unknown;
   } catch {
     return { _error: 'Invalid JSON' };
   }
 
-  const replaceVariables = (val: any): any => {
-    if (val === null || val === undefined) return val;
+  if (!isJsonValue(parsed)) {
+    return { _error: 'Unsupported JSON value' };
+  }
+
+  const replaceVariables = (val: JsonValue): JsonValue => {
+    if (val === null) return val;
     if (typeof val === 'string') {
       if (mockContext[val] !== undefined) {
         return mockContext[val];
@@ -587,8 +639,8 @@ export function simulateCondition(
     if (Array.isArray(val)) {
       return val.map(replaceVariables);
     }
-    if (typeof val === 'object') {
-      const out: Record<string, any> = {};
+    if (isJsonObject(val)) {
+      const out: JsonObject = {};
       for (const [k, v] of Object.entries(val)) {
         out[k] = replaceVariables(v);
       }
