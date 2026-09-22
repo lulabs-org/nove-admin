@@ -281,6 +281,21 @@
   gap: 12px;
 }
 
+.data-rule-condition-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.data-rule-condition-group.is-nested {
+  padding: 12px;
+  border: 1px solid #bed4ff;
+  border-left: 3px solid #1677ff;
+  border-radius: 8px;
+  background: #f7faff;
+}
+
 .data-rule-combinator-bar {
   display: flex;
   justify-content: space-between;
@@ -289,6 +304,8 @@
   background: #ffffff;
   border-radius: 6px;
   border: 1px solid #e5e6eb;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .data-rule-combinator-label {
