@@ -1,5 +1,4 @@
 import Button from 'antd/es/button';
-import Alert from 'antd/es/alert';
 import Empty from 'antd/es/empty';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
@@ -23,6 +22,7 @@ import {
   EditOutlined,
   EyeOutlined,
   PlusOutlined,
+  QuestionCircleOutlined,
   ReloadOutlined,
   SafetyCertificateOutlined,
   SearchOutlined,
@@ -830,13 +830,6 @@ export function PermissionManagement() {
 
   const renderDataRules = () => (
     <>
-      <Alert
-        type="warning"
-        showIcon
-        style={{ marginBottom: 12 }}
-        message="数据规则创建后不会自动生效"
-        description="请前往「组织架构 → 角色管理 → 配置权限 → 数据规则」将规则分配给角色。普通用户未绑定订单数据规则时默认看不到任何订单；公海订单也必须显式授权。"
-      />
       {renderDataRuleToolbar()}
       <Table
         columns={dataRuleColumns}
@@ -879,7 +872,18 @@ export function PermissionManagement() {
         }
         items={[
           { key: 'permissions', label: '权限项', children: renderPermissions() },
-          { key: 'dataRules', label: '数据规则', children: renderDataRules() },
+          {
+            key: 'dataRules',
+            label: (
+              <Space size={4}>
+                <span>数据规则</span>
+                <Tooltip title="数据规则创建后不会自动生效。请前往「组织架构 → 角色管理 → 配置权限 → 数据规则」将规则分配给角色。普通用户未绑定订单数据规则时默认看不到任何订单；公海订单也必须显式授权。">
+                  <QuestionCircleOutlined aria-label="数据规则生效说明" />
+                </Tooltip>
+              </Space>
+            ),
+            children: renderDataRules(),
+          },
         ]}
       />
 
