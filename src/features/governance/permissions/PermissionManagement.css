@@ -196,6 +196,11 @@
   font-weight: 600;
 }
 
+.data-rule-name-field {
+  width: 100%;
+  max-width: 400px;
+}
+
 @media (max-width: 1080px) {
   .permission-content-shell {
     grid-template-columns: 1fr;
