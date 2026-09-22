@@ -69,16 +69,27 @@ export interface PresetTemplate {
 }
 
 export interface VisualRuleItem {
+  kind: 'rule';
   id: string;
   field: string;
   operator: string;
   valueType: 'variable' | 'constant';
   value: string;
+  originalValue?: JsonValue;
 }
 
 export interface VisualConditionGroup {
+  kind: 'group';
+  id: string;
   combinator: 'AND' | 'OR';
-  rules: VisualRuleItem[];
+  children: Array<VisualConditionGroup | VisualRuleItem>;
+}
+
+export const MAX_CONDITION_DEPTH = 5;
+export const MAX_CONDITION_NODES = 100;
+
+export function createEmptyConditionGroup(): VisualConditionGroup {
+  return { kind: 'group', id: 'root', combinator: 'AND', children: [] };
 }
 
 export const SYSTEM_RESOURCES: ResourceDefinition[] = [
@@ -99,26 +110,25 @@ export const SYSTEM_RESOURCES: ResourceDefinition[] = [
         type: 'userRef',
         description: '发起下单或购买的企业/个人客户 ID',
       },
-      {
-        name: 'departmentId',
-        label: '部门 ID',
-        type: 'deptRef',
-        description: '订单归属的业务部门',
-      },
-      { name: 'supplierId', label: '供货商 ID', type: 'string', description: '供应商或履约方 ID' },
+      { name: 'productId', label: '产品 ID', type: 'string' },
       {
         name: 'status',
         label: '订单状态',
         type: 'enum',
         options: [
-          { label: '待支付 (PENDING_PAYMENT)', value: 'PENDING_PAYMENT' },
+          { label: '待支付 (UNPAID)', value: 'UNPAID' },
           { label: '已支付 (PAID)', value: 'PAID' },
           { label: '已完成 (COMPLETED)', value: 'COMPLETED' },
           { label: '已取消 (CANCELLED)', value: 'CANCELLED' },
           { label: '已冻结 (FROZEN)', value: 'FROZEN' },
         ],
       },
-      { name: 'amount', label: '订单金额', type: 'number', description: '订单总金额 (以元为单位)' },
+      {
+        name: 'amount',
+        label: '订单金额',
+        type: 'number',
+        description: '订单金额（最小货币单位：分）',
+      },
       { name: 'currency', label: '币种', type: 'string', description: '货币类型如 CNY、USD' },
     ],
   },
@@ -280,18 +290,21 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
     name: '本部门数据',
     description: '仅能访问当前用户所属直属部门的数据',
     condition: JSON.stringify({ departmentId: '${user.departmentId}' }, null, 2),
+    resource: 'user',
     badgeColor: 'orange',
   },
   {
     name: '本部门及下级部门',
     description: '允许访问当前部门及其下属所有子部门的数据',
     condition: JSON.stringify({ departmentId: { $in: '${user.departmentIds}' } }, null, 2),
+    resource: 'user',
     badgeColor: 'purple',
   },
   {
-    name: '金额限额 (<= 10万)',
-    description: '仅能访问金额在 100,000 元及以下的订单',
-    condition: JSON.stringify({ amount: { $lte: 100000 } }, null, 2),
+    name: '金额限额 (<= 10万元)',
+    description: '仅能访问金额在 100,000 元及以下的订单（条件值为分）',
+    resource: 'order',
+    condition: JSON.stringify({ amount: { $lte: 10000000 } }, null, 2),
     badgeColor: 'magenta',
   },
 ];
@@ -320,198 +333,288 @@ export function getOperatorLabel(opKey: string): string {
   return found ? found.label : opKey;
 }
 
-/**
- * Parses a condition JSON string into visual rule rows.
- * Returns null if the JSON is too deeply nested or cannot be mapped cleanly.
- */
-export function conditionToVisualRules(conditionJson?: string): VisualConditionGroup | null {
-  if (!conditionJson || !conditionJson.trim()) {
-    return { combinator: 'AND', rules: [] };
+type VisualConditionNode = VisualConditionGroup | VisualRuleItem;
+
+function parseFieldCondition(
+  field: string,
+  value: JsonValue,
+  id: string
+): VisualConditionNode | null {
+  if (value === null) {
+    return { kind: 'rule', id, field, operator: 'isNull', valueType: 'constant', value: '' };
   }
 
+  const makeRule = (operator: string, innerValue: JsonValue, ruleId: string): VisualRuleItem => {
+    const text = stringifyJsonValue(innerValue);
+    return {
+      kind: 'rule',
+      id: ruleId,
+      field,
+      operator,
+      valueType: CONTEXT_VARIABLES.some((variable) => variable.key === text)
+        ? 'variable'
+        : 'constant',
+      value: text,
+      originalValue: innerValue,
+    };
+  };
+
+  if (!isJsonObject(value)) return makeRule('$eq', value, id);
+
+  const operators = Object.entries(value);
+  if (operators.length === 0) return null;
+  const rules: VisualRuleItem[] = [];
+  for (const [operator, innerValue] of operators) {
+    const alias =
+      operator === 'equals'
+        ? '$eq'
+        : operator === 'not'
+          ? '$ne'
+          : operator === 'notIn'
+            ? '$nin'
+            : operator;
+    const matched = OPERATORS.find((item) => item.key === alias || item.key === `$${alias}`);
+    if (!matched || isJsonObject(innerValue)) return null;
+    if (matched.key === '$ne' && innerValue === null) {
+      rules.push({
+        kind: 'rule',
+        id: `${id}_${rules.length}`,
+        field,
+        operator: 'isNotNull',
+        valueType: 'constant',
+        value: '',
+      });
+    } else {
+      rules.push(makeRule(matched.key, innerValue, `${id}_${rules.length}`));
+    }
+  }
+  return rules.length === 1 ? rules[0] : { kind: 'group', id, combinator: 'AND', children: rules };
+}
+
+function parseConditionNode(
+  value: JsonValue,
+  id: string,
+  depth: number,
+  count: { value: number }
+): VisualConditionNode | null {
+  if (!isJsonObject(value) || depth > MAX_CONDITION_DEPTH || ++count.value > MAX_CONDITION_NODES)
+    return null;
+  const children: VisualConditionNode[] = [];
+  for (const [key, entry] of Object.entries(value)) {
+    if (key === '$and' || key === 'AND' || key === '$or' || key === 'OR') {
+      if (!Array.isArray(entry) || entry.length === 0) return null;
+      const groupChildren: VisualConditionNode[] = [];
+      for (let index = 0; index < entry.length; index++) {
+        const child = parseConditionNode(
+          entry[index],
+          `${id}_${children.length}_${index}`,
+          depth + 1,
+          count
+        );
+        if (!child) return null;
+        groupChildren.push(child);
+      }
+      children.push({
+        kind: 'group',
+        id: `${id}_${children.length}`,
+        combinator: key.toLowerCase().includes('or') ? 'OR' : 'AND',
+        children: groupChildren,
+      });
+    } else {
+      if (!key.trim() || key.startsWith('$')) return null;
+      const child = parseFieldCondition(key, entry, `${id}_${children.length}`);
+      if (!child) return null;
+      children.push(child);
+    }
+  }
+  if (children.length === 1) return children[0];
+  return { kind: 'group', id, combinator: 'AND', children };
+}
+
+/** Returns null when the source cannot be edited visually without changing its meaning. */
+export function conditionToVisualRules(conditionJson?: string): VisualConditionGroup | null {
+  if (!conditionJson || !conditionJson.trim()) return createEmptyConditionGroup();
   let parsed: unknown;
   try {
-    parsed = JSON.parse(conditionJson);
+    parsed = JSON.parse(conditionJson) as unknown;
   } catch {
     return null;
   }
-
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    return null;
-  }
-
-  if (!isJsonObject(parsed)) {
-    return null;
-  }
-
-  const obj = parsed;
-  const keys = Object.keys(obj);
-
-  if (keys.length === 0) {
-    return { combinator: 'AND', rules: [] };
-  }
-
-  // Check if top-level is $or or OR
-  if (keys.length === 1 && (keys[0] === '$or' || keys[0] === 'OR') && Array.isArray(obj[keys[0]])) {
-    const list = obj[keys[0]];
-    if (!Array.isArray(list)) return null;
-    const rules: VisualRuleItem[] = [];
-    for (let i = 0; i < list.length; i++) {
-      const item = list[i];
-      if (!isJsonObject(item)) return null;
-      const subKeys = Object.keys(item);
-      if (subKeys.length !== 1) return null;
-      const field = subKeys[0];
-      const parsedRule = parseSingleFieldCondition(field, item[field], `rule_or_${i}`);
-      if (!parsedRule) return null;
-      rules.push(parsedRule);
-    }
-    return { combinator: 'OR', rules };
-  }
-
-  // Check if top-level is $and or AND
-  if (
-    keys.length === 1 &&
-    (keys[0] === '$and' || keys[0] === 'AND') &&
-    Array.isArray(obj[keys[0]])
-  ) {
-    const list = obj[keys[0]];
-    if (!Array.isArray(list)) return null;
-    const rules: VisualRuleItem[] = [];
-    for (let i = 0; i < list.length; i++) {
-      const item = list[i];
-      if (!isJsonObject(item)) return null;
-      const subKeys = Object.keys(item);
-      if (subKeys.length !== 1) return null;
-      const field = subKeys[0];
-      const parsedRule = parseSingleFieldCondition(field, item[field], `rule_and_${i}`);
-      if (!parsedRule) return null;
-      rules.push(parsedRule);
-    }
-    return { combinator: 'AND', rules };
-  }
-
-  // Top level standard object: { field1: val1, field2: { $lte: 100 } }
-  const rules: VisualRuleItem[] = [];
-  let index = 0;
-  for (const field of keys) {
-    if (field.startsWith('$')) {
-      return null;
-    }
-    const val = obj[field];
-    const parsedRule = parseSingleFieldCondition(field, val, `rule_${index++}`);
-    if (!parsedRule) return null;
-    rules.push(parsedRule);
-  }
-
-  return { combinator: 'AND', rules };
+  if (!isJsonObject(parsed)) return null;
+  const node = parseConditionNode(parsed, 'root', 1, { value: 0 });
+  if (!node) return null;
+  return node.kind === 'group'
+    ? { ...node, id: 'root' }
+    : { ...createEmptyConditionGroup(), children: [node] };
 }
 
-function parseSingleFieldCondition(
-  field: string,
-  val: JsonValue,
-  id: string
-): VisualRuleItem | null {
-  if (val === null) {
-    return { id, field, operator: 'isNull', valueType: 'constant', value: '' };
+function ruleValue(rule: VisualRuleItem): JsonValue {
+  if (rule.originalValue !== undefined && stringifyJsonValue(rule.originalValue) === rule.value) {
+    return rule.originalValue;
   }
-
-  if (isJsonObject(val)) {
-    const opKeys = Object.keys(val);
-    if (opKeys.length !== 1) return null;
-    const op = opKeys[0];
-    const innerVal = val[op];
-
-    if (op === '$ne' && innerVal === null) {
-      return { id, field, operator: 'isNotNull', valueType: 'constant', value: '' };
+  if (rule.valueType === 'variable') return rule.value;
+  if (rule.value === 'true') return true;
+  if (rule.value === 'false') return false;
+  if (rule.value !== '' && !Number.isNaN(Number(rule.value))) return Number(rule.value);
+  if (rule.value.startsWith('[')) {
+    try {
+      const parsed: unknown = JSON.parse(rule.value);
+      if (isJsonValue(parsed)) return parsed;
+    } catch {
+      // A non-JSON value remains a literal string.
     }
-
-    const matchedOp = OPERATORS.find((o) => o.key === op || o.key === `$${op}`);
-    const actualOp = matchedOp ? matchedOp.key : op;
-
-    const valStr = stringifyJsonValue(innerVal);
-    const isVariable = CONTEXT_VARIABLES.some((v) => v.key === valStr);
-
-    return {
-      id,
-      field,
-      operator: actualOp,
-      valueType: isVariable ? 'variable' : 'constant',
-      value: valStr,
-    };
   }
-
-  // Primitive direct equality
-  const valStr = stringifyJsonValue(val);
-  const isVariable = CONTEXT_VARIABLES.some((v) => v.key === valStr);
-
-  return {
-    id,
-    field,
-    operator: '$eq',
-    valueType: isVariable ? 'variable' : 'constant',
-    value: valStr,
-  };
+  return rule.value;
 }
 
-/**
- * Converts visual rule rows into formatted condition JSON.
- */
+function serializeConditionNode(node: VisualConditionNode, root = false): JsonObject {
+  if (node.kind === 'rule') {
+    const value = ruleValue(node);
+    if (node.operator === 'isNull') return { [node.field]: null };
+    if (node.operator === 'isNotNull') return { [node.field]: { $ne: null } };
+    return { [node.field]: node.operator === '$eq' ? value : { [node.operator]: value } };
+  }
+  const children = node.children.map((child) => serializeConditionNode(child));
+  if (node.combinator === 'OR') return { $or: children };
+  if (children.length === 0) return { $and: [] };
+  if (children.length === 1) {
+    return root && node.children[0].kind === 'rule' ? children[0] : { $and: children };
+  }
+  const allFields = children.every(
+    (child) => Object.keys(child).length === 1 && !Object.keys(child)[0].startsWith('$')
+  );
+  const distinctFields =
+    new Set(children.map((child) => Object.keys(child)[0])).size === children.length;
+  if (allFields && distinctFields) return Object.assign({}, ...children) as JsonObject;
+  return { $and: children };
+}
+
 export function visualRulesToCondition(group: VisualConditionGroup): string {
-  const validRules = group.rules.filter((r) => r.field && r.field.trim());
-  if (validRules.length === 0) {
-    return '{\n  \n}';
+  if (group.children.length === 0) return '{}';
+  return JSON.stringify(serializeConditionNode(group, true), null, 2);
+}
+
+const ORDER_FILTER_FIELDS = new Set([
+  'id',
+  'orderCode',
+  'orderNumber',
+  'externalId',
+  'productId',
+  'productName',
+  'purchaserId',
+  'channelId',
+  'email',
+  'phone',
+  'phoneCode',
+  'currentOwnerId',
+  'financialCloserId',
+  'financialClosedAt',
+  'settledAt',
+  'amount',
+  'currency',
+  'amountCny',
+  'fxRateToCny',
+  'fxLockedAt',
+  'status',
+  'paidAt',
+  'cancelledAt',
+  'completedAt',
+  'durationDays',
+  'benefitStart',
+  'benefitEnd',
+  'frozenDays',
+  'frozenAt',
+  'paymentProvider',
+  'providerTradeNo',
+  'createdAt',
+  'updatedAt',
+  'deletedAt',
+]);
+
+const FILTER_OPERATORS = new Set([
+  'eq',
+  'ne',
+  'in',
+  'nin',
+  'gt',
+  'gte',
+  'lt',
+  'lte',
+  'equals',
+  'not',
+  'notIn',
+]);
+
+/** Validates the persisted rule shape, including nested groups and order scalar fields. */
+export function validateConditionJson(conditionJson: string, resource?: string): string | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(conditionJson) as unknown;
+  } catch {
+    return '请输入有效的 JSON 条件';
   }
+  if (!isJsonObject(parsed)) return '规则条件必须是 JSON 对象';
 
-  const buildSingleField = (r: VisualRuleItem): JsonValue => {
-    let finalVal: JsonValue = r.value;
-    if (r.operator === 'isNull') {
-      return null;
-    }
-    if (r.operator === 'isNotNull') {
-      return { $ne: null };
-    }
-
-    if (r.valueType === 'constant') {
-      // Try to parse number or boolean if applicable
-      if (finalVal === 'true') finalVal = true;
-      else if (finalVal === 'false') finalVal = false;
-      else if (finalVal !== '' && !Number.isNaN(Number(finalVal))) {
-        finalVal = Number(finalVal);
-      } else {
-        // Try JSON parse if user typed array or object
-        try {
-          if (finalVal.startsWith('[') || finalVal.startsWith('{')) {
-            const parsedValue: unknown = JSON.parse(finalVal);
-            if (isJsonValue(parsedValue)) {
-              finalVal = parsedValue;
-            }
+  let nodes = 0;
+  const check = (obj: JsonObject, depth: number, root: boolean): string | null => {
+    if (depth > MAX_CONDITION_DEPTH) return `条件组最多嵌套 ${MAX_CONDITION_DEPTH} 层`;
+    if (!root && Object.keys(obj).length === 0) return '子条件不能为空';
+    const seenLogicalKeys = new Set<string>();
+    for (const [key, value] of Object.entries(obj)) {
+      if (++nodes > MAX_CONDITION_NODES) return `条件最多包含 ${MAX_CONDITION_NODES} 个节点`;
+      if (key === '$and' || key === 'AND' || key === '$or' || key === 'OR') {
+        const canonical = key.toLowerCase().includes('or') ? 'OR' : 'AND';
+        if (seenLogicalKeys.has(canonical)) return `重复的 ${canonical} 条件组`;
+        seenLogicalKeys.add(canonical);
+        if (!Array.isArray(value) || value.length === 0) return 'AND / OR 条件组至少需要一个条件';
+        for (const child of value) {
+          if (!isJsonObject(child)) return '条件组内必须是 JSON 对象';
+          const error = check(child, depth + 1, false);
+          if (error) return error;
+        }
+        continue;
+      }
+      if (
+        !key.trim() ||
+        key.startsWith('$') ||
+        ['__proto__', 'constructor', 'prototype'].includes(key)
+      ) {
+        return `不支持的条件字段：${key}`;
+      }
+      if (resource?.toLowerCase() === 'order' && !ORDER_FILTER_FIELDS.has(key)) {
+        return `订单不存在可过滤字段：${key}`;
+      }
+      if (Array.isArray(value)) return `字段 ${key} 不能直接使用数组，请使用 $in`;
+      if (!isJsonObject(value)) continue;
+      const operators = Object.entries(value);
+      if (operators.length === 0) return `字段 ${key} 的操作符不能为空`;
+      const seenOperators = new Set<string>();
+      for (const [operator, operand] of operators) {
+        const normalized = operator.startsWith('$') ? operator.slice(1) : operator;
+        if (!FILTER_OPERATORS.has(normalized)) return `不支持的操作符：${operator}`;
+        const canonical =
+          normalized === 'eq'
+            ? 'equals'
+            : normalized === 'ne'
+              ? 'not'
+              : normalized === 'nin'
+                ? 'notIn'
+                : normalized;
+        if (seenOperators.has(canonical)) return `字段 ${key} 存在重复操作符：${operator}`;
+        seenOperators.add(canonical);
+        if (normalized === 'in' || normalized === 'nin' || normalized === 'notIn') {
+          const arrayVariable = operand === '${user.departmentIds}' || operand === '${user.roles}';
+          if ((!Array.isArray(operand) || operand.length === 0) && !arrayVariable) {
+            return `${operator} 需要非空数组或数组变量`;
           }
-        } catch {
-          // Keep as string
+        } else if (Array.isArray(operand) || isJsonObject(operand)) {
+          return `${operator} 需要单个值`;
         }
       }
     }
-
-    if (r.operator === '$eq') {
-      return finalVal;
-    }
-
-    return { [r.operator]: finalVal };
+    return null;
   };
-
-  if (group.combinator === 'OR') {
-    const orList = validRules.map((r) => ({ [r.field]: buildSingleField(r) }));
-    return JSON.stringify({ $or: orList }, null, 2);
-  }
-
-  // AND combinator: merge fields
-  const result: JsonObject = {};
-  for (const r of validRules) {
-    result[r.field] = buildSingleField(r);
-  }
-
-  return JSON.stringify(result, null, 2);
+  return check(parsed, 1, true);
 }
 
 /**
@@ -521,83 +624,28 @@ export function explainCondition(conditionJson?: string, resourceName?: string):
   if (!conditionJson || !conditionJson.trim()) {
     return '全量开放：允许访问该资源下的所有数据';
   }
+  const error = validateConditionJson(conditionJson, resourceName);
+  if (error) return `规则暂不完整：${error}`;
+  const root = conditionToVisualRules(conditionJson);
+  if (!root) return '规则包含不支持的条件，请在 JSON 源码中检查';
+  if (root.children.length === 0) return '全量开放：允许访问该资源下的所有数据';
 
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(conditionJson) as unknown;
-  } catch {
-    return '规则格式无效 (非标准 JSON)';
-  }
-
-  if (!isJsonObject(parsed)) {
-    return '全量开放';
-  }
-
-  const keys = Object.keys(parsed);
-  if (keys.length === 0) {
-    return '全量开放：允许访问该资源下的所有数据';
-  }
-
-  const explainValue = (val: JsonValue): string => {
-    if (val === null) return '空 (null)';
-    const str = stringifyJsonValue(val);
-    const variable = CONTEXT_VARIABLES.find((v) => v.key === str);
-    if (variable) {
-      return variable.label;
+  const explainNode = (node: VisualConditionNode): string => {
+    if (node.kind === 'group') {
+      const connector = node.combinator === 'AND' ? ' 且 ' : ' 或 ';
+      return `（${node.children.map(explainNode).join(connector)}）`;
     }
-    return `"${str}"`;
+    const field = getFieldLabel(node.field, resourceName);
+    if (node.operator === 'isNull') return `【${field}】为空`;
+    if (node.operator === 'isNotNull') return `【${field}】不为空`;
+    const variable = CONTEXT_VARIABLES.find((item) => item.key === node.value);
+    const value = variable?.label ?? `"${node.value}"`;
+    return `【${field}】${getOperatorLabel(node.operator)} ${value}`;
   };
 
-  const explainFieldRule = (field: string, val: JsonValue): string => {
-    const fieldLabel = getFieldLabel(field, resourceName);
-    if (val === null) {
-      return `【${fieldLabel}】为空`;
-    }
-    if (isJsonObject(val)) {
-      const subKeys = Object.keys(val);
-      if (subKeys.length === 1) {
-        const op = subKeys[0];
-        const innerVal = val[op];
-        if (op === '$ne' && innerVal === null) {
-          return `【${fieldLabel}】不为空`;
-        }
-        const opName = getOperatorLabel(op);
-        return `【${fieldLabel}】${opName} ${explainValue(innerVal)}`;
-      }
-    }
-    return `【${fieldLabel}】等于 ${explainValue(val)}`;
-  };
-
-  if ((keys[0] === '$or' || keys[0] === 'OR') && Array.isArray(parsed[keys[0]])) {
-    const list = parsed[keys[0]];
-    if (!Array.isArray(list)) return '规则格式无效';
-    const parts = list.map((item) => {
-      if (!isJsonObject(item)) return JSON.stringify(item);
-      const itemKeys = Object.keys(item);
-      if (itemKeys.length === 1) {
-        return explainFieldRule(itemKeys[0], item[itemKeys[0]]);
-      }
-      return JSON.stringify(item);
-    });
-    return `满足以下任一条件：${parts.join(' 或 ')}`;
-  }
-
-  if ((keys[0] === '$and' || keys[0] === 'AND') && Array.isArray(parsed[keys[0]])) {
-    const list = parsed[keys[0]];
-    if (!Array.isArray(list)) return '规则格式无效';
-    const parts = list.map((item) => {
-      if (!isJsonObject(item)) return JSON.stringify(item);
-      const itemKeys = Object.keys(item);
-      if (itemKeys.length === 1) {
-        return explainFieldRule(itemKeys[0], item[itemKeys[0]]);
-      }
-      return JSON.stringify(item);
-    });
-    return `必须同时满足：${parts.join(' 且 ')}`;
-  }
-
-  const parts = keys.map((key) => explainFieldRule(key, parsed[key]));
-  return `限制条件：${parts.join(' 且 ')}`;
+  const connector = root.combinator === 'AND' ? ' 且 ' : ' 或 ';
+  const prefix = root.combinator === 'AND' ? '必须同时满足：' : '满足以下任一条件：';
+  return `${prefix}${root.children.map(explainNode).join(connector)}`;
 }
 
 /**

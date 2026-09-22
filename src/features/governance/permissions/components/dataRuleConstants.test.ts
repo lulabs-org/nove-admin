@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   conditionToVisualRules,
+  createEmptyConditionGroup,
   visualRulesToCondition,
+  validateConditionJson,
   explainCondition,
   simulateCondition,
   getResourceFields,
@@ -19,8 +21,8 @@ describe('dataRuleConstants', () => {
 
   describe('conditionToVisualRules', () => {
     it('handles empty or blank conditions as empty rules', () => {
-      expect(conditionToVisualRules('')).toEqual({ combinator: 'AND', rules: [] });
-      expect(conditionToVisualRules('{}')).toEqual({ combinator: 'AND', rules: [] });
+      expect(conditionToVisualRules('')).toEqual(createEmptyConditionGroup());
+      expect(conditionToVisualRules('{}')).toEqual(createEmptyConditionGroup());
     });
 
     it('parses single direct equality with context variable', () => {
@@ -28,11 +30,14 @@ describe('dataRuleConstants', () => {
       const res = conditionToVisualRules(json);
       expect(res).not.toBeNull();
       expect(res?.combinator).toBe('AND');
-      expect(res?.rules).toHaveLength(1);
-      expect(res?.rules[0].field).toBe('currentOwnerId');
-      expect(res?.rules[0].operator).toBe('$eq');
-      expect(res?.rules[0].valueType).toBe('variable');
-      expect(res?.rules[0].value).toBe('${user.id}');
+      expect(res?.children).toHaveLength(1);
+      expect(res?.children[0]).toMatchObject({
+        kind: 'rule',
+        field: 'currentOwnerId',
+        operator: '$eq',
+        valueType: 'variable',
+        value: '${user.id}',
+      });
     });
 
     it('parses operator conditions like $lte or $in', () => {
@@ -42,15 +47,17 @@ describe('dataRuleConstants', () => {
       });
       const res = conditionToVisualRules(json);
       expect(res).not.toBeNull();
-      expect(res?.rules).toHaveLength(2);
+      expect(res?.children).toHaveLength(2);
 
-      const deptRule = res?.rules.find((r) => r.field === 'departmentId');
-      expect(deptRule?.operator).toBe('$in');
-      expect(deptRule?.valueType).toBe('variable');
+      const deptRule = res?.children.find(
+        (node) => node.kind === 'rule' && node.field === 'departmentId'
+      );
+      expect(deptRule).toMatchObject({ operator: '$in', valueType: 'variable' });
 
-      const amountRule = res?.rules.find((r) => r.field === 'amount');
-      expect(amountRule?.operator).toBe('$lte');
-      expect(amountRule?.value).toBe('5000');
+      const amountRule = res?.children.find(
+        (node) => node.kind === 'rule' && node.field === 'amount'
+      );
+      expect(amountRule).toMatchObject({ operator: '$lte', value: '5000' });
     });
 
     it('parses $or top-level grouping', () => {
@@ -60,23 +67,75 @@ describe('dataRuleConstants', () => {
       const res = conditionToVisualRules(json);
       expect(res).not.toBeNull();
       expect(res?.combinator).toBe('OR');
-      expect(res?.rules).toHaveLength(2);
-      expect(res?.rules[0].field).toBe('currentOwnerId');
-      expect(res?.rules[1].field).toBe('purchaserId');
+      expect(res?.children).toHaveLength(2);
+      expect(res?.children[0]).toMatchObject({ kind: 'rule', field: 'currentOwnerId' });
+      expect(res?.children[1]).toMatchObject({ kind: 'rule', field: 'purchaserId' });
     });
 
-    it('returns null for invalid JSON or unsupported deeply nested objects', () => {
+    it('parses nested AND/OR groups and preserves the rule on serialization', () => {
+      const original = {
+        $and: [
+          { $or: [{ currentOwnerId: '${user.id}' }, { purchaserId: '${user.id}' }] },
+          { status: 'PAID' },
+        ],
+      };
+      const visual = conditionToVisualRules(JSON.stringify(original));
+      expect(visual?.combinator).toBe('AND');
+      expect(visual?.children[0]).toMatchObject({ kind: 'group', combinator: 'OR' });
+      expect(JSON.parse(visualRulesToCondition(visual!))).toEqual(original);
+    });
+
+    it('preserves duplicate field filters and string constants across round trips', () => {
+      const original = {
+        $and: [{ amount: { $gte: 100 } }, { amount: { $lte: 500 } }, { orderCode: '00123' }],
+      };
+      const visual = conditionToVisualRules(JSON.stringify(original));
+      expect(JSON.parse(visualRulesToCondition(visual!))).toEqual(original);
+    });
+
+    it('keeps a single nested group after switching through JSON', () => {
+      const visual = {
+        kind: 'group' as const,
+        id: 'root',
+        combinator: 'AND' as const,
+        children: [
+          {
+            kind: 'group' as const,
+            id: 'group-1',
+            combinator: 'OR' as const,
+            children: [
+              {
+                kind: 'rule' as const,
+                id: 'rule-1',
+                field: 'currentOwnerId',
+                operator: '$eq',
+                valueType: 'variable' as const,
+                value: '${user.id}',
+              },
+            ],
+          },
+        ],
+      };
+      const parsed = conditionToVisualRules(visualRulesToCondition(visual));
+      expect(parsed?.children[0]).toMatchObject({ kind: 'group', combinator: 'OR' });
+    });
+
+    it('returns null for invalid JSON or unsupported operators', () => {
       expect(conditionToVisualRules('not a json')).toBeNull();
       expect(conditionToVisualRules(JSON.stringify([1, 2, 3]))).toBeNull();
+      expect(conditionToVisualRules('{"$or":[{"status":{"$regex":"PAID"}}]}')).toBeNull();
     });
   });
 
   describe('visualRulesToCondition', () => {
     it('serializes AND rules into standard JSON', () => {
       const json = visualRulesToCondition({
+        kind: 'group',
+        id: 'root',
         combinator: 'AND',
-        rules: [
+        children: [
           {
+            kind: 'rule',
             id: '1',
             field: 'currentOwnerId',
             operator: '$eq',
@@ -84,6 +143,7 @@ describe('dataRuleConstants', () => {
             value: '${user.id}',
           },
           {
+            kind: 'rule',
             id: '2',
             field: 'amount',
             operator: '$lte',
@@ -101,9 +161,12 @@ describe('dataRuleConstants', () => {
 
     it('serializes OR rules into $or array', () => {
       const json = visualRulesToCondition({
+        kind: 'group',
+        id: 'root',
         combinator: 'OR',
-        rules: [
+        children: [
           {
+            kind: 'rule',
             id: '1',
             field: 'currentOwnerId',
             operator: '$eq',
@@ -111,6 +174,7 @@ describe('dataRuleConstants', () => {
             value: '${user.id}',
           },
           {
+            kind: 'rule',
             id: '2',
             field: 'purchaserId',
             operator: '$eq',
@@ -126,7 +190,36 @@ describe('dataRuleConstants', () => {
     });
 
     it('returns empty json for blank rules', () => {
-      expect(visualRulesToCondition({ combinator: 'AND', rules: [] })).toBe('{\n  \n}');
+      expect(visualRulesToCondition(createEmptyConditionGroup())).toBe('{}');
+    });
+  });
+
+  describe('validateConditionJson', () => {
+    it('accepts nested order filters and explicit full access', () => {
+      expect(validateConditionJson('{}', 'order')).toBeNull();
+      expect(
+        validateConditionJson(
+          '{"$and":[{"$or":[{"currentOwnerId":"${user.id}"},{"purchaserId":"${user.id}"}]},{"status":"PAID"}]}',
+          'order'
+        )
+      ).toBeNull();
+    });
+
+    it('rejects empty groups, unsupported operators, unknown order fields and excessive depth', () => {
+      expect(validateConditionJson('{"$or":[]}', 'order')).toContain('至少需要');
+      expect(validateConditionJson('{"$and":[{}]}', 'order')).toContain('不能为空');
+      expect(validateConditionJson('{"status":{"$regex":"PAID"}}', 'order')).toContain('操作符');
+      expect(validateConditionJson('{"departmentId":"dept-1"}', 'order')).toContain('不存在');
+      expect(
+        validateConditionJson('{"$or":[{"status":"PAID"}],"OR":[{"status":"UNPAID"}]}', 'order')
+      ).toContain('重复');
+      expect(validateConditionJson('{"status":{"$ne":"PAID","not":"UNPAID"}}', 'order')).toContain(
+        '重复'
+      );
+      const nested = {
+        $and: [{ $or: [{ $and: [{ $or: [{ $and: [{ currentOwnerId: 'usr-1' }] }] }] }] }],
+      };
+      expect(validateConditionJson(JSON.stringify(nested), 'order')).toContain('最多嵌套');
     });
   });
 
