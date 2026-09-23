@@ -15,7 +15,7 @@ import {
 } from '@ant-design/icons';
 import { useMemo, useState } from 'react';
 import type { DataPermissionRule } from '../api/permissionManagementApi';
-import { explainCondition, simulateCondition } from './dataRuleConstants';
+import { explainCondition, getActionMeta, simulateCondition } from './dataRuleConstants';
 import './DataRulePreviewModal.css';
 
 const { Text } = Typography;
@@ -98,7 +98,10 @@ export function DataRulePreviewModal({ open, onClose, rule }: DataRulePreviewMod
           <Descriptions.Item label="资源标识">
             <Tag color="cyan">{rule.resource}</Tag>
           </Descriptions.Item>
-          <Descriptions.Item label="状态">
+          <Descriptions.Item label="操作类型">
+            <Tag color={getActionMeta(rule.action).color}>{getActionMeta(rule.action).label}</Tag>
+          </Descriptions.Item>
+          <Descriptions.Item label="状态" span={2}>
             <Tag color={rule.active ? 'success' : 'default'}>
               {rule.active ? '启用中' : '已停用'}
             </Tag>

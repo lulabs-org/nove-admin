@@ -49,7 +49,10 @@ import {
   permissionManagementApi,
   type PermissionItem,
 } from '../../governance/permissions/api/permissionManagementApi';
-import { explainCondition } from '../../governance/permissions/components/dataRuleConstants';
+import {
+  explainCondition,
+  getActionMeta,
+} from '../../governance/permissions/components/dataRuleConstants';
 import './RoleManagement.css';
 
 const { TextArea } = Input;
@@ -1229,6 +1232,10 @@ export function RoleManagement() {
                                     <Space>
                                       <Checkbox checked={isChecked} />
                                       <Text strong>{rule.name}</Text>
+                                      {(() => {
+                                        const actionMeta = getActionMeta(rule.action);
+                                        return <Tag color={actionMeta.color}>{actionMeta.key}</Tag>;
+                                      })()}
                                       <span className="permission-code">{rule.code}</span>
                                     </Space>
                                     <Tag color={rule.active ? 'success' : 'default'}>
