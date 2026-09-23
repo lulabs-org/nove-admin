@@ -30,7 +30,7 @@ import {
 } from '../../api/permissionManagementApi';
 import type { DataRuleFilters, DataRuleModalMode } from '../../types';
 import { formatDateTime, toQueryParams } from '../../utils';
-import { explainCondition, getActionMeta, SYSTEM_ACTIONS } from '../dataRuleConstants';
+import { getActionMeta, SYSTEM_ACTIONS } from '../dataRuleConstants';
 import { DataRulePreviewModal } from '../DataRulePreviewModal';
 import { DataRuleFormModal } from './DataRuleFormModal';
 
@@ -140,30 +140,22 @@ export function DataRuleTab({ onTotalChange }: DataRuleTabProps) {
       },
     },
     {
-      title: '权限条件 / 业务释义',
+      title: '权限条件 (JSON)',
       dataIndex: 'condition',
       key: 'condition',
       width: 320,
-      render: (condition: string, record: DataPermissionRule) => {
-        const explanation = explainCondition(condition, record.resource);
-        return (
-          <Tooltip
-            title={
-              <div style={{ maxWidth: 400 }}>
-                <div style={{ fontWeight: 600, marginBottom: 4 }}>条件 JSON:</div>
-                <pre style={{ margin: 0, fontSize: 11, whiteSpace: 'pre-wrap' }}>{condition}</pre>
-              </div>
-            }
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Text strong style={{ fontSize: 13, color: '#1677ff' }}>
-                {explanation}
-              </Text>
-              <span className="permission-condition">{condition}</span>
+      render: (condition: string) => (
+        <Tooltip
+          title={
+            <div style={{ maxWidth: 400 }}>
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>条件 JSON:</div>
+              <pre style={{ margin: 0, fontSize: 11, whiteSpace: 'pre-wrap' }}>{condition}</pre>
             </div>
-          </Tooltip>
-        );
-      },
+          }
+        >
+          <span className="permission-condition">{condition}</span>
+        </Tooltip>
+      ),
     },
     {
       title: '状态',

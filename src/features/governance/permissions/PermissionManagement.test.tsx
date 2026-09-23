@@ -162,5 +162,9 @@ describe('PermissionManagement', () => {
     // Verify data rule item appears
     expect(await screen.findByText('仅查看本人负责订单')).toBeInTheDocument();
     expect(screen.getByText('order_owner_only')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: '权限条件 (JSON)' })).toBeInTheDocument();
+    const conditionCell = screen.getByText('{"assigneeId": "${userId}"}').closest('td');
+    expect(conditionCell).toHaveTextContent('{"assigneeId": "${userId}"}');
+    expect(conditionCell?.textContent).toBe('{"assigneeId": "${userId}"}');
   });
 });
