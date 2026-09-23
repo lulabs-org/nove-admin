@@ -196,13 +196,42 @@
   gap: 8px;
 }
 
-.data-rule-variable-tag {
-  cursor: pointer;
-  user-select: none;
+.data-rule-variable-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.data-rule-variable-tag:hover {
-  opacity: 0.85;
+.data-rule-variable-select {
+  width: 240px;
+}
+
+.data-rule-variable-popup {
+  width: min(340px, calc(100vw - 32px)) !important;
+  max-width: calc(100vw - 32px);
+}
+
+.data-rule-variable-option {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.4;
+  padding: 2px 0;
+}
+
+.data-rule-variable-description {
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .data-rule-variable-control {
+    width: 100%;
+  }
+
+  .data-rule-variable-select {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .data-rule-json-editor {

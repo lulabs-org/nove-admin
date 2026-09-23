@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { DataRuleBuilder } from './DataRuleBuilder';
@@ -150,5 +150,55 @@ describe('DataRuleBuilder', () => {
     );
     expect(screen.getByRole('status')).toHaveTextContent('重复条件');
     expect(screen.getByRole('status')).toHaveTextContent('产品 ID');
+  });
+
+  it('inserts a chosen variable inside existing JSON quotes at the caret', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const value = '{"currentOwnerId": ""}';
+    render(<DataRuleBuilder value={value} resource="order" onChange={onChange} />);
+    await user.click(screen.getByText('JSON 源码'));
+    const editor = screen.getByPlaceholderText('例如 {"departmentId": "${user.departmentId}"}');
+    expect(screen.getByRole('combobox', { name: '插入上下文变量' })).toBeDisabled();
+    await user.click(editor);
+    const position = value.lastIndexOf('"');
+    (editor as HTMLTextAreaElement).setSelectionRange(position, position);
+    fireEvent.select(editor);
+    expect(screen.getByRole('combobox', { name: '插入上下文变量' })).not.toBeDisabled();
+
+    await user.click(screen.getByRole('combobox', { name: '插入上下文变量' }));
+    await user.click(screen.getByText('当前登录用户 ID'));
+    await act(async () => {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    });
+
+    expect(onChange).toHaveBeenLastCalledWith('{"currentOwnerId": "${user.id}"}');
+    expect(editor).toHaveValue('{"currentOwnerId": "${user.id}"}');
+    expect((editor as HTMLTextAreaElement).selectionStart).toBe(
+      '{"currentOwnerId": "${user.id}'.length
+    );
+  });
+
+  it('adds quotes when inserting a variable outside a JSON string', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const value = '{"currentOwnerId": }';
+    render(<DataRuleBuilder value={value} resource="order" onChange={onChange} />);
+    const editor = screen.getByPlaceholderText('例如 {"departmentId": "${user.departmentId}"}');
+    await user.click(editor);
+    const position = value.indexOf('}');
+    (editor as HTMLTextAreaElement).setSelectionRange(position, position);
+    fireEvent.select(editor);
+
+    await user.click(screen.getByRole('combobox', { name: '插入上下文变量' }));
+    await user.click(screen.getByText('当前登录用户 ID'));
+    await act(async () => {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    });
+
+    expect(onChange).toHaveBeenLastCalledWith('{"currentOwnerId": "${user.id}"}');
+    expect((editor as HTMLTextAreaElement).selectionStart).toBe(
+      '{"currentOwnerId": "${user.id}"'.length
+    );
   });
 });

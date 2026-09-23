@@ -3,6 +3,7 @@ import Alert from 'antd/es/alert';
 import Button from 'antd/es/button';
 import Empty from 'antd/es/empty';
 import Input from 'antd/es/input';
+import type { TextAreaRef } from 'antd/es/input/TextArea';
 import Radio from 'antd/es/radio';
 import Segmented from 'antd/es/segmented';
 import Select from 'antd/es/select';
@@ -39,6 +40,7 @@ import {
   type VisualRuleItem,
 } from './dataRuleConstants';
 import './DataRuleBuilder.css';
+import { insertJsonVariable, type TextSelection } from './jsonVariableInsertion';
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -55,8 +57,11 @@ export function DataRuleBuilder({ value = '{\n  \n}', onChange, resource }: Data
   );
   const [jsonText, setJsonText] = useState(value);
   const [jsonError, setJsonError] = useState<string | null>(null);
+  const [hasJsonCaret, setHasJsonCaret] = useState(false);
   const lastEmittedValue = useRef<string | null>(null);
   const nodeCounter = useRef(0);
+  const jsonEditorRef = useRef<TextAreaRef>(null);
+  const jsonSelection = useRef<TextSelection | null>(null);
 
   const [visualGroup, setVisualGroup] = useState<VisualConditionGroup>(() => {
     return conditionToVisualRules(value) || createEmptyConditionGroup();
@@ -68,6 +73,8 @@ export function DataRuleBuilder({ value = '{\n  \n}', onChange, resource }: Data
       setJsonError(validateConditionJson(value, resource));
       return;
     }
+    jsonSelection.current = null;
+    setHasJsonCaret(false);
     setJsonText(value);
     const parsed = conditionToVisualRules(value);
     if (parsed) {
@@ -219,6 +226,8 @@ export function DataRuleBuilder({ value = '{\n  \n}', onChange, resource }: Data
     try {
       const obj = JSON.parse(jsonText);
       const formatted = JSON.stringify(obj, null, 2);
+      jsonSelection.current = null;
+      setHasJsonCaret(false);
       setJsonText(formatted);
       setJsonError(validateConditionJson(formatted, resource));
       lastEmittedValue.current = formatted;
@@ -229,9 +238,16 @@ export function DataRuleBuilder({ value = '{\n  \n}', onChange, resource }: Data
   };
 
   const handleInsertVariable = (varKey: string) => {
-    if (mode === 'json') {
-      void navigator.clipboard.writeText(`"${varKey}"`);
-    }
+    const selection = jsonSelection.current;
+    if (!selection) return;
+    const inserted = insertJsonVariable(jsonText, selection, varKey);
+    handleJsonChange(inserted.text);
+    jsonSelection.current = { start: inserted.cursor, end: inserted.cursor };
+    requestAnimationFrame(() => {
+      const editor = jsonEditorRef.current?.resizableTextArea?.textArea;
+      editor?.focus();
+      editor?.setSelectionRange(inserted.cursor, inserted.cursor);
+    });
   };
 
   const summaryTree = useMemo(() => {
@@ -466,28 +482,58 @@ export function DataRuleBuilder({ value = '{\n  \n}', onChange, resource }: Data
   const renderJsonEditor = () => (
     <div className="data-rule-json-container">
       <div className="data-rule-json-toolbar">
-        <Space size="small" wrap>
-          <Text type="secondary">快捷插入变量：</Text>
-          {CONTEXT_VARIABLES.map((v) => (
-            <Tag
-              key={v.key}
-              title="点击复制变量，可粘贴到 JSON 字符串值中"
-              color="processing"
-              className="data-rule-variable-tag"
-              onClick={() => handleInsertVariable(v.key)}
-            >
-              {v.key} ({v.label})
-            </Tag>
-          ))}
-        </Space>
+        <div className="data-rule-variable-control">
+          <Text type="secondary">插入变量</Text>
+          <Select
+            aria-label="插入上下文变量"
+            className="data-rule-variable-select"
+            placeholder={hasJsonCaret ? '选择上下文变量' : '先在 JSON 中定位光标'}
+            disabled={!hasJsonCaret}
+            value={undefined}
+            popupMatchSelectWidth={false}
+            classNames={{ popup: { root: 'data-rule-variable-popup' } }}
+            options={CONTEXT_VARIABLES.map((variable) => ({
+              value: variable.key,
+              label: (
+                <span className="data-rule-variable-option">
+                  <span>{variable.label}</span>
+                  <span className="data-rule-variable-description">{variable.key}</span>
+                </span>
+              ),
+            }))}
+            onChange={handleInsertVariable}
+          />
+        </div>
         <Button size="small" icon={<FormatPainterOutlined />} onClick={handleFormatJson}>
           格式化 JSON
         </Button>
       </div>
       <TextArea
+        ref={jsonEditorRef}
         rows={8}
         value={jsonText}
-        onChange={(e) => handleJsonChange(e.target.value)}
+        onFocus={(event) => {
+          jsonSelection.current = {
+            start: event.currentTarget.selectionStart,
+            end: event.currentTarget.selectionEnd,
+          };
+          setHasJsonCaret(true);
+        }}
+        onChange={(event) => {
+          jsonSelection.current = {
+            start: event.currentTarget.selectionStart,
+            end: event.currentTarget.selectionEnd,
+          };
+          setHasJsonCaret(true);
+          handleJsonChange(event.target.value);
+        }}
+        onSelect={(event) => {
+          jsonSelection.current = {
+            start: event.currentTarget.selectionStart,
+            end: event.currentTarget.selectionEnd,
+          };
+          setHasJsonCaret(true);
+        }}
         className="permission-code data-rule-json-editor"
         placeholder='例如 {"departmentId": "${user.departmentId}"}'
       />
@@ -530,6 +576,9 @@ export function DataRuleBuilder({ value = '{\n  \n}', onChange, resource }: Data
                 const parsed = conditionToVisualRules(jsonText);
                 if (!parsed) return;
                 setVisualGroup(parsed);
+              } else {
+                jsonSelection.current = null;
+                setHasJsonCaret(false);
               }
               setMode(nextMode as 'visual' | 'json');
             }}
