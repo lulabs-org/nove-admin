@@ -38,6 +38,7 @@ import {
   type VisualConditionGroup,
   type VisualRuleItem,
 } from './dataRuleConstants';
+import './DataRuleBuilder.css';
 
 const { Text } = Typography;
 const { TextArea } = Input;
