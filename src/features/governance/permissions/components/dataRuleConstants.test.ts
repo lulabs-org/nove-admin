@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   conditionToVisualRules,
   createEmptyConditionGroup,
+  describeRuleBriefly,
+  getConditionWarnings,
   visualRulesToCondition,
   validateConditionJson,
   explainCondition,
@@ -248,6 +250,40 @@ describe('dataRuleConstants', () => {
       expect(explanation).toContain('满足以下任一条件');
       expect(explanation).toContain('负责人 ID');
       expect(explanation).toContain('购买者 ID');
+    });
+  });
+
+  describe('compact condition summary', () => {
+    it('uses short labels without technical field identifiers', () => {
+      const group = conditionToVisualRules('{"currentOwnerId":"${user.id}"}');
+      const rule = group?.children[0];
+      expect(rule?.kind).toBe('rule');
+      if (rule?.kind === 'rule') {
+        expect(describeRuleBriefly(rule, 'order')).toBe('负责人是当前登录用户');
+      }
+    });
+
+    it('advises on duplicates within one group and incompatible variables', () => {
+      const group = conditionToVisualRules(
+        JSON.stringify({
+          $and: [
+            { currentOwnerId: '${user.id}' },
+            { currentOwnerId: '${user.id}' },
+            { productId: '${user.id}' },
+          ],
+        })
+      );
+      expect(group).not.toBeNull();
+      const warnings = getConditionWarnings(group!, 'order');
+      expect(warnings).toContain('同一条件组存在重复条件，建议合并。');
+      expect(warnings).toContain('产品 ID 与所选上下文变量可能不匹配，请核对。');
+    });
+
+    it('does not flag matching owner and department variables', () => {
+      const group = conditionToVisualRules(
+        JSON.stringify({ departmentId: { $in: '${user.departmentIds}' } })
+      );
+      expect(getConditionWarnings(group!, 'user')).toEqual([]);
     });
   });
 
