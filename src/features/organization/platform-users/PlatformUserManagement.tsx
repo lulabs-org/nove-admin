@@ -51,7 +51,6 @@ const PLATFORM_LABELS: Record<Platform, { label: string; color: string }> = {
   TEAMS: { label: 'Teams', color: '#464eb8' },
   WEBEX: { label: 'Webex', color: '#00bceb' },
   VOOV: { label: 'VooV Meeting', color: '#00a4ff' },
-  WECOM: { label: '企业微信', color: '#2d79d6' },
   OTHER: { label: '其他', color: '#8f959e' },
 };
 
