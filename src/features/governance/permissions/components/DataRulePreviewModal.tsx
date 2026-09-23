@@ -16,6 +16,7 @@ import {
 import { useMemo, useState } from 'react';
 import type { DataPermissionRule } from '../api/permissionManagementApi';
 import { explainCondition, simulateCondition } from './dataRuleConstants';
+import './DataRulePreviewModal.css';
 
 const { Text } = Typography;
 
