@@ -513,6 +513,8 @@ export function DataRuleBuilder({ value = '{\n  \n}', onChange, resource }: Data
             disabled={!resource}
             value={undefined}
             options={presetOptions}
+            popupMatchSelectWidth={false}
+            classNames={{ popup: { root: 'data-rule-template-popup' } }}
             onChange={(templateId: string) => {
               const template = presetTemplates.find((item) => item.id === templateId);
               if (template) handleApplyTemplate(template.condition);
