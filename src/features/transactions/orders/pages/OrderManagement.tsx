@@ -42,6 +42,7 @@ import { OrderProductSelect } from '../components/OrderProductSelect';
 import { ORDER_STATUS_OPTIONS } from '../components/orderStatusOptions';
 import { stripeOrderSyncApi } from '../api/stripeOrderSyncApi';
 import { OrderUserSelect } from '../components/OrderUserSelect';
+import { toNullableOrderOwnerId } from '../components/orderOwnerValue';
 import type {
   CreateOrder,
   Currency,
@@ -156,7 +157,7 @@ function buildPayload(values: OrderFormValues): CreateOrder {
     email: cleanString(values.email),
     phone: cleanString(values.phone),
     phoneCode: cleanString(values.phoneCode),
-    currentOwnerId: cleanString(values.currentOwnerId),
+    currentOwnerId: toNullableOrderOwnerId(values.currentOwnerId),
     financialCloserId: cleanString(values.financialCloserId),
     financialClosedAt: toIso(values.financialClosedAt),
     amount: values.amount ?? 0,

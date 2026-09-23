@@ -119,7 +119,7 @@ export interface CreateOrder {
   email?: string;
   phone?: string;
   phoneCode?: string;
-  currentOwnerId?: string;
+  currentOwnerId?: string | null;
   financialCloserId?: string;
   financialClosedAt?: string;
   amount: number;
