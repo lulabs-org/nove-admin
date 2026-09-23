@@ -309,7 +309,12 @@
 
 .data-rule-template-select {
   width: 260px;
-  max-width: 100%;
+  flex: 0 0 260px;
+}
+
+.data-rule-template-popup {
+  width: min(380px, calc(100vw - 32px)) !important;
+  max-width: calc(100vw - 32px);
 }
 
 .data-rule-template-option {
@@ -339,7 +344,8 @@
   }
 
   .data-rule-template-select {
-    flex: 1;
+    width: auto;
+    flex: 1 1 auto;
   }
 }
 
