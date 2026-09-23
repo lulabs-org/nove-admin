@@ -13,11 +13,12 @@ import Typography from 'antd/es/typography';
 import {
   CodeOutlined,
   DeleteOutlined,
+  DownOutlined,
   FormatPainterOutlined,
-  InfoCircleOutlined,
   PartitionOutlined,
   PlusOutlined,
   ThunderboltOutlined,
+  WarningOutlined,
 } from '@ant-design/icons';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
@@ -27,7 +28,8 @@ import {
   MAX_CONDITION_NODES,
   conditionToVisualRules,
   createEmptyConditionGroup,
-  explainCondition,
+  describeRuleBriefly,
+  getConditionWarnings,
   getResourceFields,
   getPresetTemplatesForResource,
   validateConditionJson,
@@ -230,9 +232,45 @@ export function DataRuleBuilder({ value = '{\n  \n}', onChange, resource }: Data
     }
   };
 
-  const explanation = useMemo(() => {
-    return explainCondition(jsonText, resource);
+  const summaryTree = useMemo(() => {
+    if (validateConditionJson(jsonText, resource)) return null;
+    return conditionToVisualRules(jsonText);
   }, [jsonText, resource]);
+  const conditionWarnings = useMemo(
+    () => (summaryTree ? getConditionWarnings(summaryTree, resource) : []),
+    [summaryTree, resource]
+  );
+
+  const renderSummaryNode = (node: VisualConditionGroup | VisualRuleItem): ReactNode => {
+    if (node.kind === 'rule') {
+      return <li key={node.id}>{describeRuleBriefly(node, resource)}</li>;
+    }
+    return (
+      <li key={node.id}>
+        <span className="data-rule-summary-group-label">
+          {node.combinator === 'AND' ? '同时满足' : '满足任一项'}
+        </span>
+        <ul>{node.children.map(renderSummaryNode)}</ul>
+      </li>
+    );
+  };
+
+  const summaryLabel = (() => {
+    if (!summaryTree) return '规则暂不可预览，请检查条件';
+    if (summaryTree.children.length === 0) return '匹配此资源的全部数据';
+    if (summaryTree.children.length === 1 && summaryTree.children[0].kind === 'rule') {
+      return describeRuleBriefly(summaryTree.children[0], resource);
+    }
+    const rules = summaryTree.children.filter((child) => child.kind === 'rule').length;
+    const groups = summaryTree.children.length - rules;
+    const parts = [rules ? `${rules} 项条件` : '', groups ? `${groups} 个条件组` : ''].filter(
+      Boolean
+    );
+    return `${summaryTree.combinator === 'AND' ? '同时满足' : '满足任一项'}：${parts.join('、')}`;
+  })();
+  const canExpandSummary = Boolean(
+    summaryTree && (summaryTree.children.length > 1 || summaryTree.children[0]?.kind === 'group')
+  );
 
   const countNodes = (group: VisualConditionGroup): number =>
     1 +
@@ -520,21 +558,32 @@ export function DataRuleBuilder({ value = '{\n  \n}', onChange, resource }: Data
         {mode === 'visual' ? renderVisualBuilder() : renderJsonEditor()}
       </div>
 
-      {/* 实时自然语言释义 Alert */}
-      <div className="data-rule-explanation-box">
-        <Alert
-          type="info"
-          showIcon
-          icon={<InfoCircleOutlined />}
-          title={
-            <div className="data-rule-explanation-content">
-              <Text strong>规则自然语言释义：</Text>
-              <Text type="secondary" className="data-rule-explanation-text">
-                {explanation}
-              </Text>
-            </div>
-          }
-        />
+      <div className="data-rule-summary-box">
+        {canExpandSummary && summaryTree ? (
+          <details className="data-rule-summary-details">
+            <summary>
+              <span>
+                <Text strong>规则摘要</Text>
+                <Text type="secondary">{summaryLabel}</Text>
+              </span>
+              <DownOutlined className="data-rule-summary-chevron" />
+            </summary>
+            <ul className="data-rule-summary-tree">
+              {summaryTree.children.map(renderSummaryNode)}
+            </ul>
+          </details>
+        ) : (
+          <div className="data-rule-summary-static">
+            <Text strong>规则摘要</Text>
+            <Text type="secondary">{summaryLabel}</Text>
+          </div>
+        )}
+        {conditionWarnings.length > 0 && (
+          <div className="data-rule-summary-warnings" role="status">
+            <WarningOutlined />
+            <span>{conditionWarnings.join(' ')}</span>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -715,6 +715,73 @@ export function explainCondition(conditionJson?: string, resourceName?: string):
   return `${prefix}${root.children.map(explainNode).join(connector)}`;
 }
 
+/** Short labels for the editor's structured, expandable rule summary. */
+export function describeRuleBriefly(rule: VisualRuleItem, resource?: string): string {
+  const field = getResourceFields(resource).find((item) => item.name === rule.field);
+  const fieldLabel = (field?.label ?? rule.field).replace(/\s*ID$/, '');
+  if (rule.operator === 'isNull') return `${fieldLabel}为空`;
+  if (rule.operator === 'isNotNull') return `${fieldLabel}不为空`;
+
+  const operators: Record<string, string> = {
+    $eq: '是',
+    $ne: '不是',
+    $in: '属于',
+    $nin: '不属于',
+    $gt: '大于',
+    $gte: '不少于',
+    $lt: '小于',
+    $lte: '不超过',
+  };
+  const variables: Record<string, string> = {
+    '${user.id}': '当前登录用户',
+    '${user.departmentId}': '当前用户所属部门',
+    '${user.departmentIds}': '当前部门及下级部门',
+    '${user.roles}': '当前用户的角色',
+    '${user.companyId}': '当前企业',
+  };
+  const enumLabel = field?.options?.find((option) => option.value === rule.value)?.label;
+  const value = variables[rule.value] ?? enumLabel ?? rule.value;
+  return `${fieldLabel}${operators[rule.operator] ?? getOperatorLabel(rule.operator)}${value}`;
+}
+
+/** Advisory only: never prevents saving a rule. */
+export function getConditionWarnings(group: VisualConditionGroup, resource?: string): string[] {
+  const warnings = new Set<string>();
+  const fields = getResourceFields(resource);
+  const visit = (current: VisualConditionGroup) => {
+    const signatures = new Set<string>();
+    for (const child of current.children) {
+      if (child.kind === 'group') {
+        visit(child);
+        continue;
+      }
+      const signature = JSON.stringify([child.field, child.operator, child.valueType, child.value]);
+      if (signatures.has(signature)) {
+        warnings.add('同一条件组存在重复条件，建议合并。');
+      }
+      signatures.add(signature);
+
+      if (child.valueType !== 'variable') continue;
+      const field = fields.find((item) => item.name === child.field);
+      if (!field) continue;
+      const isUserId = child.value === '${user.id}';
+      const isDepartment =
+        child.value === '${user.departmentId}' || child.value === '${user.departmentIds}';
+      const isArray = child.value === '${user.departmentIds}' || child.value === '${user.roles}';
+      if (
+        (isUserId && field.type !== 'userRef') ||
+        (isDepartment && field.type !== 'deptRef') ||
+        (isArray && child.operator !== '$in' && child.operator !== '$nin') ||
+        ['number', 'boolean', 'enum'].includes(field.type)
+      ) {
+        warnings.add(`${field.label} 与所选上下文变量可能不匹配，请核对。`);
+      }
+    }
+  };
+  visit(group);
+  return [...warnings];
+}
+
 /**
  * Simulates how context variables inside conditionJson will be substituted into a concrete query object.
  */
