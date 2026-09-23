@@ -261,13 +261,20 @@
   border: 1px solid #ebedf0;
 }
 
-.data-rule-template-bar {
+.data-rule-editor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #d9d9d9;
+}
+
+.data-rule-template-control {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
-  padding-bottom: 10px;
-  border-bottom: 1px dashed #d9d9d9;
+  min-width: 0;
 }
 
 .data-rule-template-label {
@@ -277,10 +284,32 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
+}
+
+.data-rule-template-help {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #86909c;
+  cursor: help;
+}
+
+.data-rule-template-help:hover {
+  color: #1677ff;
+}
+
+.data-rule-template-help:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid #1677ff;
+  outline-offset: 2px;
 }
 
 .data-rule-template-select {
-  width: min(300px, 100%);
+  width: 260px;
+  max-width: 100%;
 }
 
 .data-rule-template-option {
@@ -296,13 +325,22 @@
   white-space: normal;
 }
 
-.data-rule-template-hint {
-  font-size: 12px;
-}
-
 .data-rule-mode-switch {
   display: flex;
   justify-content: flex-end;
+  flex: none;
+}
+
+@media (max-width: 760px) {
+  .data-rule-editor-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .data-rule-template-select {
+    flex: 1;
+  }
 }
 
 .data-rule-visual-container {

@@ -102,6 +102,21 @@ describe('DataRuleBuilder', () => {
     expect(screen.getByText('本部门项目')).toBeInTheDocument();
   });
 
+  it('aligns the template action with the editor mode and explains replacement on demand', async () => {
+    const user = userEvent.setup();
+    render(<DataRuleBuilder value="{}" resource="order" />);
+
+    const toolbar = screen
+      .getByRole('combobox', { name: '选择规则模板' })
+      .closest('.data-rule-editor-toolbar');
+    expect(toolbar).toContainElement(screen.getByText('可视化构建'));
+    expect(toolbar).toContainElement(screen.getByText('JSON 源码'));
+    expect(screen.queryByText('选择后替换当前条件')).not.toBeInTheDocument();
+
+    await user.hover(screen.getByRole('button', { name: '模板使用说明' }));
+    expect(await screen.findByText('选择模板会替换当前规则条件')).toBeInTheDocument();
+  });
+
   it('keeps the compact rule summary collapsed until requested', async () => {
     const user = userEvent.setup();
     const value = JSON.stringify({
