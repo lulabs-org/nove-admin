@@ -17,6 +17,7 @@ import {
   FormatPainterOutlined,
   PartitionOutlined,
   PlusOutlined,
+  QuestionCircleOutlined,
   ThunderboltOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
@@ -495,62 +496,63 @@ export function DataRuleBuilder({ value = '{\n  \n}', onChange, resource }: Data
 
   return (
     <div className="data-rule-builder-shell">
-      {/* 预设模板工具栏 */}
-      <div className="data-rule-template-bar">
-        <span className="data-rule-template-label">
-          <ThunderboltOutlined /> 规则模板
-        </span>
-        <Select
-          aria-label="选择规则模板"
-          className="data-rule-template-select"
-          placeholder={resource ? '按资源选择模板' : '请先选择关联资源'}
-          disabled={!resource}
-          value={undefined}
-          options={presetOptions}
-          onChange={(templateId: string) => {
-            const template = presetTemplates.find((item) => item.id === templateId);
-            if (template) handleApplyTemplate(template.condition);
-          }}
-        />
-        <Text type="secondary" className="data-rule-template-hint">
-          选择后替换当前条件
-        </Text>
-      </div>
-
-      {/* 模式切换器 */}
-      <div className="data-rule-mode-switch">
-        <Segmented
-          value={mode}
-          onChange={(nextMode) => {
-            if (nextMode === 'visual') {
-              const parsed = conditionToVisualRules(jsonText);
-              if (!parsed) return;
-              setVisualGroup(parsed);
-            }
-            setMode(nextMode as 'visual' | 'json');
-          }}
-          options={[
-            {
-              label: (
-                <Space size="small">
-                  <PartitionOutlined />
-                  <span>可视化构建</span>
-                </Space>
-              ),
-              value: 'visual',
-              disabled: mode === 'json' && conditionToVisualRules(jsonText) === null,
-            },
-            {
-              label: (
-                <Space size="small">
-                  <CodeOutlined />
-                  <span>JSON 源码</span>
-                </Space>
-              ),
-              value: 'json',
-            },
-          ]}
-        />
+      <div className="data-rule-editor-toolbar">
+        <div className="data-rule-template-control">
+          <span className="data-rule-template-label">
+            <ThunderboltOutlined /> 规则模板
+            <Tooltip title="选择模板会替换当前规则条件">
+              <button type="button" className="data-rule-template-help" aria-label="模板使用说明">
+                <QuestionCircleOutlined />
+              </button>
+            </Tooltip>
+          </span>
+          <Select
+            aria-label="选择规则模板"
+            className="data-rule-template-select"
+            placeholder={resource ? '按资源选择模板' : '请先选择关联资源'}
+            disabled={!resource}
+            value={undefined}
+            options={presetOptions}
+            onChange={(templateId: string) => {
+              const template = presetTemplates.find((item) => item.id === templateId);
+              if (template) handleApplyTemplate(template.condition);
+            }}
+          />
+        </div>
+        <div className="data-rule-mode-switch">
+          <Segmented
+            value={mode}
+            onChange={(nextMode) => {
+              if (nextMode === 'visual') {
+                const parsed = conditionToVisualRules(jsonText);
+                if (!parsed) return;
+                setVisualGroup(parsed);
+              }
+              setMode(nextMode as 'visual' | 'json');
+            }}
+            options={[
+              {
+                label: (
+                  <Space size="small">
+                    <PartitionOutlined />
+                    <span>可视化构建</span>
+                  </Space>
+                ),
+                value: 'visual',
+                disabled: mode === 'json' && conditionToVisualRules(jsonText) === null,
+              },
+              {
+                label: (
+                  <Space size="small">
+                    <CodeOutlined />
+                    <span>JSON 源码</span>
+                  </Space>
+                ),
+                value: 'json',
+              },
+            ]}
+          />
+        </div>
       </div>
 
       {/* 内容区域 */}
