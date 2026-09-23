@@ -101,4 +101,38 @@ describe('DataRuleBuilder', () => {
     expect(screen.getByText('项目归属')).toBeInTheDocument();
     expect(screen.getByText('本部门项目')).toBeInTheDocument();
   });
+
+  it('keeps the compact rule summary collapsed until requested', async () => {
+    const user = userEvent.setup();
+    const value = JSON.stringify({
+      $and: [
+        { currentOwnerId: '${user.id}' },
+        { $or: [{ purchaserId: '${user.id}' }, { status: 'PAID' }] },
+      ],
+    });
+    render(<DataRuleBuilder value={value} resource="order" />);
+
+    expect(screen.getByText('同时满足：1 项条件、1 个条件组')).toBeInTheDocument();
+    expect(screen.getByText('规则摘要').closest('details')).not.toHaveAttribute('open');
+    await user.click(screen.getByText('规则摘要'));
+    expect(screen.getByText('规则摘要').closest('details')).toHaveAttribute('open');
+    expect(screen.getByText('负责人是当前登录用户')).toBeInTheDocument();
+    expect(screen.getByText('满足任一项')).toBeInTheDocument();
+  });
+
+  it('shows a compact full-access summary and advisory warnings', () => {
+    const { rerender } = render(<DataRuleBuilder value="{}" resource="order" />);
+    expect(screen.getByText('匹配此资源的全部数据')).toBeInTheDocument();
+    rerender(<DataRuleBuilder value='{"currentOwnerId":"${user.id}"}' resource="order" />);
+    expect(screen.getByText('负责人是当前登录用户')).toBeInTheDocument();
+    expect(screen.getByText('规则摘要').closest('details')).toBeNull();
+    rerender(
+      <DataRuleBuilder
+        value={JSON.stringify({ $and: [{ productId: '${user.id}' }, { productId: '${user.id}' }] })}
+        resource="order"
+      />
+    );
+    expect(screen.getByRole('status')).toHaveTextContent('重复条件');
+    expect(screen.getByRole('status')).toHaveTextContent('产品 ID');
+  });
 });
