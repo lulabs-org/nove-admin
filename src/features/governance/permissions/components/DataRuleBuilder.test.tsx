@@ -88,6 +88,7 @@ describe('DataRuleBuilder', () => {
     );
 
     await user.click(screen.getByRole('combobox', { name: '选择规则模板' }));
+    expect(document.querySelector('.data-rule-template-popup')).toBeInTheDocument();
     expect(screen.getByText('订单归属')).toBeInTheDocument();
     expect(screen.getByText('交易条件')).toBeInTheDocument();
     expect(screen.queryByText('本部门项目')).not.toBeInTheDocument();
