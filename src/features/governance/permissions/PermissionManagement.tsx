@@ -186,6 +186,9 @@ export function PermissionManagement() {
   const [dataRuleForm] = Form.useForm<DataRuleFormValues>();
   const [previewRule, setPreviewRule] = useState<DataPermissionRule | null>(null);
   const selectedResource = Form.useWatch('resource', dataRuleForm);
+  const selectedResourceDefinition = SYSTEM_RESOURCES.find(
+    (resource) => resource.resource === selectedResource
+  );
 
   const permissionTreeQuery = useQuery({
     queryKey: ['permission-management-tree'],
@@ -1002,14 +1005,41 @@ export function PermissionManagement() {
       >
         <Form form={dataRuleForm} layout="vertical">
           <div className="permission-form-section">规则信息</div>
-          <Form.Item
-            label="规则名称"
-            name="name"
-            className="data-rule-name-field"
-            rules={[{ required: true, message: '请输入规则名称' }]}
-          >
-            <Input placeholder="请输入规则名称（例如 订单仅本人负责）" />
-          </Form.Item>
+          <div className="data-rule-info-row">
+            <Form.Item
+              label="规则名称"
+              name="name"
+              className="data-rule-name-field"
+              rules={[{ required: true, message: '请输入规则名称' }]}
+            >
+              <Input placeholder="例如：订单仅本人负责" />
+            </Form.Item>
+            <div
+              className="data-rule-resource-field"
+              title={
+                selectedResourceDefinition
+                  ? `${selectedResourceDefinition.label} - ${selectedResourceDefinition.description}`
+                  : selectedResource
+              }
+            >
+              <Form.Item
+                label="关联资源"
+                name="resource"
+                rules={[{ required: true, message: '请选择或输入资源标识' }]}
+                tooltip="请选择系统预置资源（如 order 订单）或直接输入自定义资源名称"
+              >
+                <Select
+                  placeholder="选择或输入资源标识（例如 order、user、project）"
+                  showSearch
+                  allowClear
+                  options={SYSTEM_RESOURCES.map((r) => ({
+                    label: `${r.label} - ${r.description}`,
+                    value: r.resource,
+                  }))}
+                />
+              </Form.Item>
+            </div>
+          </div>
           {dataRuleModalMode === 'edit' && editingDataRule ? (
             <Form.Item
               label="规则编码（系统生成）"
@@ -1020,23 +1050,6 @@ export function PermissionManagement() {
               </Text>
             </Form.Item>
           ) : null}
-
-          <Form.Item
-            label="关联资源"
-            name="resource"
-            rules={[{ required: true, message: '请选择或输入资源标识' }]}
-            tooltip="请选择系统预置资源（如 order 订单）或直接输入自定义资源名称"
-          >
-            <Select
-              placeholder="选择或输入资源标识（例如 order、user、project）"
-              showSearch
-              allowClear
-              options={SYSTEM_RESOURCES.map((r) => ({
-                label: `${r.label} - ${r.description}`,
-                value: r.resource,
-              }))}
-            />
-          </Form.Item>
 
           <Form.Item
             label="权限条件与规则配置"
