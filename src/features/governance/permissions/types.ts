@@ -20,6 +20,7 @@ export interface DataRuleFilters {
   name?: string;
   code?: string;
   resource?: string;
+  action?: string;
   active?: boolean;
 }
 
@@ -41,6 +42,7 @@ export interface DataRuleFormValues {
   name?: string;
   description?: string;
   resource?: string;
+  action?: string;
   condition?: string;
   active?: boolean;
 }

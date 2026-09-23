@@ -30,7 +30,7 @@ import {
 } from '../../api/permissionManagementApi';
 import type { DataRuleFilters, DataRuleModalMode } from '../../types';
 import { formatDateTime, toQueryParams } from '../../utils';
-import { explainCondition } from '../dataRuleConstants';
+import { explainCondition, getActionMeta, SYSTEM_ACTIONS } from '../dataRuleConstants';
 import { DataRulePreviewModal } from '../DataRulePreviewModal';
 import { DataRuleFormModal } from './DataRuleFormModal';
 
@@ -124,6 +124,20 @@ export function DataRuleTab({ onTotalChange }: DataRuleTabProps) {
       key: 'resource',
       width: 130,
       render: (resource: string) => <Tag color="cyan">{resource}</Tag>,
+    },
+    {
+      title: '操作类型',
+      dataIndex: 'action',
+      key: 'action',
+      width: 120,
+      render: (action?: string) => {
+        const meta = getActionMeta(action);
+        return (
+          <Tooltip title={meta.description}>
+            <Tag color={meta.color}>{meta.key}</Tag>
+          </Tooltip>
+        );
+      },
     },
     {
       title: '权限条件 / 业务释义',
@@ -234,6 +248,24 @@ export function DataRuleTab({ onTotalChange }: DataRuleTabProps) {
             placeholder="资源标识"
             value={dataRuleFilters.resource}
             onChange={(event) => handleFilterChange('resource', event.target.value)}
+          />
+          <Select
+            allowClear
+            style={{ width: 140 }}
+            placeholder="操作类型"
+            value={dataRuleFilters.action}
+            onChange={(value) => handleFilterChange('action', value)}
+            options={SYSTEM_ACTIONS.map((a) => ({
+              label: (
+                <span>
+                  <Tag color={a.color} style={{ marginRight: 4 }}>
+                    {a.key}
+                  </Tag>
+                  {a.label}
+                </span>
+              ),
+              value: a.key,
+            }))}
           />
           <Select
             allowClear

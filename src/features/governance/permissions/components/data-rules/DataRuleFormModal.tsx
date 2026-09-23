@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
+import AutoComplete from 'antd/es/auto-complete';
 import Form from 'antd/es/form';
 import Input from 'antd/es/input';
 import message from 'antd/es/message';
 import Modal from 'antd/es/modal';
 import Select from 'antd/es/select';
 import Switch from 'antd/es/switch';
+import Tag from 'antd/es/tag';
 import Typography from 'antd/es/typography';
 import { useMutation } from '@tanstack/react-query';
 import {
@@ -16,7 +18,7 @@ import {
 import type { DataRuleFormValues, DataRuleModalMode } from '../../types';
 import { displayNullableText } from '../../utils';
 import { DataRuleBuilder } from '../DataRuleBuilder';
-import { SYSTEM_RESOURCES, validateConditionJson } from '../dataRuleConstants';
+import { SYSTEM_ACTIONS, SYSTEM_RESOURCES, validateConditionJson } from '../dataRuleConstants';
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -49,6 +51,7 @@ export function DataRuleFormModal({
           name: editingDataRule.name,
           description: displayNullableText(editingDataRule.description),
           resource: editingDataRule.resource,
+          action: editingDataRule.action || '*',
           condition: editingDataRule.condition,
           active: editingDataRule.active,
         });
@@ -57,6 +60,7 @@ export function DataRuleFormModal({
           name: '',
           description: '',
           resource: 'order',
+          action: '*',
           condition: '{\n  \n}',
           active: true,
         });
@@ -70,6 +74,7 @@ export function DataRuleFormModal({
         name: values.name?.trim() || '',
         description: values.description?.trim() || undefined,
         resource: values.resource?.trim() || '',
+        action: values.action?.trim() || '*',
         condition: values.condition?.trim() || '',
         active: values.active ?? true,
       };
@@ -147,6 +152,37 @@ export function DataRuleFormModal({
                 options={SYSTEM_RESOURCES.map((r) => ({
                   label: `${r.label} - ${r.description}`,
                   value: r.resource,
+                }))}
+              />
+            </Form.Item>
+          </div>
+          <div className="data-rule-action-field">
+            <Form.Item
+              label="操作类型"
+              name="action"
+              rules={[{ required: true, message: '请选择或输入操作类型' }]}
+              tooltip="指定规则生效的操作类型（如全部 *、查看 read、修改 update、删除 delete 等），支持直接输入自定义操作"
+            >
+              <AutoComplete
+                placeholder="选择或输入操作类型，默认 *"
+                options={SYSTEM_ACTIONS.map((a) => ({
+                  label: (
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <span>
+                        <Tag color={a.color} style={{ marginRight: 6 }}>
+                          {a.key}
+                        </Tag>
+                        {a.label}
+                      </span>
+                    </div>
+                  ),
+                  value: a.key,
                 }))}
               />
             </Form.Item>

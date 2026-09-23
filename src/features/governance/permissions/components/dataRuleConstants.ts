@@ -53,6 +53,13 @@ export interface ContextVariable {
   example: string;
 }
 
+export interface ActionDefinition {
+  key: string;
+  label: string;
+  description: string;
+  color: string;
+}
+
 export interface OperatorDefinition {
   key: string;
   label: string;
@@ -247,6 +254,57 @@ export const CONTEXT_VARIABLES: ContextVariable[] = [
     example: 'org_main',
   },
 ];
+
+export const SYSTEM_ACTIONS: ActionDefinition[] = [
+  {
+    key: '*',
+    label: '全部操作 (*)',
+    description: '适用于对该资源的所有操作（通配符）',
+    color: 'purple',
+  },
+  {
+    key: 'read',
+    label: '查看/查询 (read)',
+    description: '数据查询、列表浏览与详情查看',
+    color: 'blue',
+  },
+  {
+    key: 'create',
+    label: '创建/新增 (create)',
+    description: '新增业务数据记录',
+    color: 'green',
+  },
+  {
+    key: 'update',
+    label: '编辑/修改 (update)',
+    description: '修改/编辑已有数据记录',
+    color: 'orange',
+  },
+  {
+    key: 'delete',
+    label: '删除 (delete)',
+    description: '删除数据记录',
+    color: 'red',
+  },
+  {
+    key: 'export',
+    label: '导出 (export)',
+    description: '批量导出数据报表',
+    color: 'cyan',
+  },
+];
+
+export function getActionMeta(actionKey?: string): ActionDefinition {
+  const normalized = actionKey?.trim() || '*';
+  const found = SYSTEM_ACTIONS.find((item) => item.key === normalized);
+  if (found) return found;
+  return {
+    key: normalized,
+    label: normalized,
+    description: `自定义操作: ${normalized}`,
+    color: 'default',
+  };
+}
 
 export const OPERATORS: OperatorDefinition[] = [
   { key: '$eq', label: '等于 (=)', symbol: '=' },
