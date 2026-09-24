@@ -1242,19 +1242,21 @@ export function OrgMemberManagement() {
   const renderMemberToolbar = () => (
     <div className="org-toolbar">
       <Space className="org-toolbar-filters" size="small" wrap>
-        <Search
-          allowClear
-          prefix={<SearchOutlined />}
-          placeholder="搜索部门、姓名、邮箱、手机号"
-          style={{ width: 280 }}
-          value={unifiedKeyword}
-          onChange={(e) => setUnifiedKeyword(e.target.value)}
-          onSearch={(keyword) => {
-            const trimmed = keyword.trim() || undefined;
-            handleFilterChange('keyword', trimmed);
-          }}
-          disabled={!currentOrgId}
-        />
+        {(!canReadDepartments || activeTab === 'left') && (
+          <Search
+            allowClear
+            prefix={<SearchOutlined />}
+            placeholder="搜索部门、姓名、邮箱、手机号"
+            style={{ width: 280 }}
+            value={unifiedKeyword}
+            onChange={(e) => setUnifiedKeyword(e.target.value)}
+            onSearch={(keyword) => {
+              const trimmed = keyword.trim() || undefined;
+              handleFilterChange('keyword', trimmed);
+            }}
+            disabled={!currentOrgId}
+          />
+        )}
         {activeTab !== 'left' && (
           <Select
             value={filters.status as MemberStatus | undefined}
@@ -1451,10 +1453,19 @@ export function OrgMemberManagement() {
             </Tooltip>
             {!treePaneCollapsed && (
               <>
-                <div className="org-tree-pane-topbar">
-                  <Text type="secondary" style={{ padding: '0 12px', fontSize: 12 }}>
-                    使用上方搜索框可同时搜索部门和成员
-                  </Text>
+                <div className="org-tree-pane-topbar" style={{ padding: '12px 12px 0' }}>
+                  <Search
+                    allowClear
+                    prefix={<SearchOutlined />}
+                    placeholder="搜索部门、姓名、邮箱、手机号"
+                    value={unifiedKeyword}
+                    onChange={(e) => setUnifiedKeyword(e.target.value)}
+                    onSearch={(keyword) => {
+                      const trimmed = keyword.trim() || undefined;
+                      handleFilterChange('keyword', trimmed);
+                    }}
+                    disabled={!currentOrgId}
+                  />
                 </div>
                 <div className="org-tree-list">
                   <div className={`org-dept-node ${!selectedDeptId ? 'is-active' : ''}`}>
