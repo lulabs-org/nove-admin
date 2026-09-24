@@ -252,7 +252,7 @@ export function OrgMemberManagement() {
   const canReadRoles = checkPermission(PERMISSIONS.ROLE.READ);
   const [activeTab, setActiveTab] = useState<OrgMemberTab>('members');
   const [selectedDeptId, setSelectedDeptId] = useState<string | undefined>();
-  const [deptKeyword, setDeptKeyword] = useState('');
+  const [unifiedKeyword, setUnifiedKeyword] = useState('');
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
   const [filters, setFilters] = useState<TableQueryParams>({
     page: 1,
@@ -342,8 +342,8 @@ export function OrgMemberManagement() {
     [allDepartments]
   );
   const filteredDepartmentTree = useMemo(
-    () => filterDepartmentTree(departmentTree, deptKeyword),
-    [departmentTree, deptKeyword]
+    () => filterDepartmentTree(departmentTree, unifiedKeyword),
+    [departmentTree, unifiedKeyword]
   );
   const selectedScopeName = getSelectedDepartmentName(selectedDeptId, departmentIndex, orgName);
   const treePaneColumnWidth = treePaneCollapsed ? TREE_PANE_COLLAPSED_WIDTH : treePaneWidth;
@@ -1241,7 +1241,22 @@ export function OrgMemberManagement() {
 
   const renderMemberToolbar = () => (
     <div className="org-toolbar">
-      <Space className="org-toolbar-filters" size="small">
+      <Space className="org-toolbar-filters" size="small" wrap>
+        {(!canReadDepartments || activeTab === 'left') && (
+          <Search
+            allowClear
+            prefix={<SearchOutlined />}
+            placeholder="搜索部门、姓名、邮箱、手机号"
+            style={{ width: 280 }}
+            value={unifiedKeyword}
+            onChange={(e) => setUnifiedKeyword(e.target.value)}
+            onSearch={(keyword) => {
+              const trimmed = keyword.trim() || undefined;
+              handleFilterChange('keyword', trimmed);
+            }}
+            disabled={!currentOrgId}
+          />
+        )}
         {activeTab !== 'left' && (
           <Select
             value={filters.status as MemberStatus | undefined}
@@ -1438,13 +1453,18 @@ export function OrgMemberManagement() {
             </Tooltip>
             {!treePaneCollapsed && (
               <>
-                <div className="org-tree-pane-topbar">
+                <div className="org-tree-pane-topbar" style={{ padding: '12px 12px 0' }}>
                   <Search
                     allowClear
                     prefix={<SearchOutlined />}
-                    placeholder="请输入姓名、邮箱、手机号或用户 ID"
-                    value={deptKeyword}
-                    onChange={(event) => setDeptKeyword(event.target.value)}
+                    placeholder="搜索部门、姓名、邮箱、手机号"
+                    value={unifiedKeyword}
+                    onChange={(e) => setUnifiedKeyword(e.target.value)}
+                    onSearch={(keyword) => {
+                      const trimmed = keyword.trim() || undefined;
+                      handleFilterChange('keyword', trimmed);
+                    }}
+                    disabled={!currentOrgId}
                   />
                 </div>
                 <div className="org-tree-list">
