@@ -33,7 +33,6 @@ import {
   PlusOutlined,
   ReloadOutlined,
   RightOutlined,
-  SearchOutlined,
   UserAddOutlined,
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -223,6 +222,21 @@ function filterDepartmentTree(tree: DepartmentTreeDto[], keyword: string): Depar
       return matched || children.length ? { ...dept, children } : null;
     })
     .filter((dept): dept is DepartmentTreeDto => Boolean(dept));
+}
+
+function findDepartment(tree: DepartmentTreeDto[], keyword: string) {
+  const value = keyword.trim().toLowerCase();
+  if (!value) return undefined;
+
+  const departments = flattenDepartments(tree);
+  return (
+    departments.find(
+      (dept) => dept.name.toLowerCase() === value || dept.code.toLowerCase() === value
+    ) ||
+    departments.find(
+      (dept) => dept.name.toLowerCase().includes(value) || dept.code.toLowerCase().includes(value)
+    )
+  );
 }
 
 function normalizeDepartmentIds(primaryDeptId?: string, departmentIds?: string[]) {
@@ -548,6 +562,17 @@ export function OrgMemberManagement() {
     setSelectedRowKeys([]);
     setFilters((prev) => ({ ...prev, page: 1 }));
     if (activeTab === 'departments') setActiveTab('members');
+  };
+
+  const handleUnifiedSearch = (value: string) => {
+    const department = findDepartment(departmentTree, value);
+    if (department) {
+      handleSelectDepartment(department.id);
+      handleFilterChange('keyword', undefined);
+      return;
+    }
+
+    handleFilterChange('keyword', value.trim());
   };
 
   const openCreateMemberModal = () => {
@@ -1244,9 +1269,14 @@ export function OrgMemberManagement() {
       <Space className="org-toolbar-filters" size="small">
         <Search
           allowClear
-          placeholder="请输入姓名、邮箱、手机号、工号或用户 ID"
-          style={{ width: 280 }}
-          onSearch={(value) => handleFilterChange('keyword', value.trim())}
+          placeholder="搜索部门、姓名、邮箱、手机号、工号或用户 ID"
+          style={{ width: 320 }}
+          value={deptKeyword}
+          onChange={(event) => {
+            setDeptKeyword(event.target.value);
+            if (!event.target.value.trim()) handleFilterChange('keyword', undefined);
+          }}
+          onSearch={handleUnifiedSearch}
           disabled={!currentOrgId}
         />
         {activeTab !== 'left' && (
@@ -1445,15 +1475,6 @@ export function OrgMemberManagement() {
             </Tooltip>
             {!treePaneCollapsed && (
               <>
-                <div className="org-tree-pane-topbar">
-                  <Search
-                    allowClear
-                    prefix={<SearchOutlined />}
-                    placeholder="搜索部门"
-                    value={deptKeyword}
-                    onChange={(event) => setDeptKeyword(event.target.value)}
-                  />
-                </div>
                 <div className="org-tree-list">
                   <div className={`org-dept-node ${!selectedDeptId ? 'is-active' : ''}`}>
                     <button
