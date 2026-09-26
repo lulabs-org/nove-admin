@@ -12,6 +12,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { login, getMe, logout as logoutApi } from '../api/api';
 import { authService } from '../api/service';
+import { isNetworkFailure } from '../../../shared/lib/api/networkFailure';
 import type { LoginRequest, User } from './types';
 import { canAccessPermission } from './permissions';
 
@@ -72,10 +73,18 @@ export const useAuthStore = create<AuthState>()(
           await logoutApi();
         } catch (error) {
           console.error('Logout error:', error);
-        } finally {
-          authService.removeToken();
-          set({ user: null, isAuthenticated: false });
+
+          // 只有网络故障才向上抛：交给调用方提示「请检查网络后重试」，并保留
+          // 本地登录态以便重试；其余失败（4xx/5xx/3xx/非 axios 等，服务端已
+          // 应答或属确定性错误）仍完成本地登出，不打扰用户。
+          // 判定口径见 shared/lib/api/networkFailure.ts。
+          if (isNetworkFailure(error)) {
+            throw error;
+          }
         }
+
+        authService.removeToken();
+        set({ user: null, isAuthenticated: false });
       },
 
       checkPermission: (permission: string) => {
