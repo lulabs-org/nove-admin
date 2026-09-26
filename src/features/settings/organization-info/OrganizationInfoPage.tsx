@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Button,
   Empty,
@@ -11,17 +11,18 @@ import {
   Switch,
   Tag,
   Typography,
+  Upload,
 } from 'antd';
-import { EditOutlined } from '@ant-design/icons';
-import { useQueryClient } from '@tanstack/react-query';
+import { DeleteOutlined, EditOutlined, UploadOutlined } from '@ant-design/icons';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../shared/hooks/useAuth';
 import {
   getOrganizationControllerGetOrganizationQueryKey,
   useOrganizationControllerGetOrganization,
-  useOrganizationControllerUpdateOrganization,
 } from '../../../shared/lib/api/orval/business/admin-organizations';
 import type { UpdateOrganizationDto } from '../../../shared/lib/api/orval/business/schemas';
 import { PERMISSIONS } from '../../../shared/utils/permissions';
+import { saveOrganizationProfile } from './organizationProfileApi';
 import './OrganizationInfoPage.css';
 
 const { Text, Title, Paragraph } = Typography;
@@ -42,7 +43,20 @@ export function OrganizationInfoPage() {
   const [form] = Form.useForm<UpdateOrganizationDto>();
   const [messageApi, contextHolder] = message.useMessage();
   const [editorOpen, setEditorOpen] = useState(false);
+  const [selectedLogo, setSelectedLogo] = useState<{ file: File; url: string }>();
+  const logoFile = selectedLogo?.file;
+  const logoPreview = selectedLogo?.url;
+  const setLogoFile = (file?: File) => {
+    setSelectedLogo(file ? { file, url: URL.createObjectURL(file) } : undefined);
+  };
+  const [removeLogo, setRemoveLogo] = useState(false);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    return () => {
+      if (logoPreview) URL.revokeObjectURL(logoPreview);
+    };
+  }, [logoPreview]);
   const { user, checkPermission } = useAuth();
   const orgId = user?.currentOrgId || '';
   const canUpdate = checkPermission(PERMISSIONS.ORGANIZATION.UPDATE);
@@ -50,37 +64,34 @@ export function OrganizationInfoPage() {
   const organizationQuery = useOrganizationControllerGetOrganization(orgId, {
     query: { enabled: !!orgId },
   });
-  const updateOrganization = useOrganizationControllerUpdateOrganization({
-    mutation: {
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: getOrganizationControllerGetOrganizationQueryKey(orgId),
-        });
-        messageApi.success('企业信息已更新');
-      },
-      onError: () => messageApi.error('企业信息更新失败'),
+  const updateOrganization = useMutation({
+    mutationFn: (values: UpdateOrganizationDto) =>
+      saveOrganizationProfile(orgId, values, logoFile, removeLogo),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(getOrganizationControllerGetOrganizationQueryKey(orgId), updated);
+      void queryClient.invalidateQueries({
+        queryKey: getOrganizationControllerGetOrganizationQueryKey(orgId),
+      });
+      messageApi.success('企业信息已更新');
+      setEditorOpen(false);
+      setLogoFile(undefined);
     },
+    onError: () => messageApi.error('企业信息保存失败，请重试'),
   });
 
   const organization = organizationQuery.data;
 
   const openEditor = () => {
     if (!organization) return;
+    setLogoFile(undefined);
+    setRemoveLogo(false);
     form.setFieldsValue({
       name: organization.name,
-      code: organization.code,
-      logo: textValue(organization.logo) === '-' ? undefined : String(organization.logo),
       description:
         textValue(organization.description) === '-' ? undefined : String(organization.description),
       active: organization.active,
     });
     setEditorOpen(true);
-  };
-
-  const saveOrganization = async () => {
-    const values = await form.validateFields();
-    await updateOrganization.mutateAsync({ orgId, data: values });
-    setEditorOpen(false);
   };
 
   if (!orgId) {
@@ -96,6 +107,7 @@ export function OrganizationInfoPage() {
   }
 
   const logo = textValue(organization.logo);
+  const editorLogo = logoPreview || (!removeLogo && logo !== '-' ? logo : undefined);
   const logoFallback = organization.name.trim().slice(0, 1).toUpperCase() || 'N';
 
   return (
@@ -108,12 +120,26 @@ export function OrganizationInfoPage() {
         okText="保存"
         cancelText="取消"
         confirmLoading={updateOrganization.isPending}
-        onCancel={() => setEditorOpen(false)}
-        onOk={saveOrganization}
+        onCancel={() => {
+          if (updateOrganization.isPending) return;
+          setEditorOpen(false);
+          setLogoFile(undefined);
+        }}
+        cancelButtonProps={{ disabled: updateOrganization.isPending }}
+        closable={!updateOrganization.isPending}
+        maskClosable={!updateOrganization.isPending}
+        keyboard={!updateOrganization.isPending}
+        onOk={() => form.submit()}
         destroyOnHidden
         forceRender
       >
-        <Form form={form} layout="vertical" className="organization-info-form">
+        <Form
+          form={form}
+          onFinish={(values) => updateOrganization.mutate(values)}
+          layout="vertical"
+          className="organization-info-form"
+          disabled={updateOrganization.isPending}
+        >
           <Form.Item
             name="name"
             label="企业名称"
@@ -121,15 +147,54 @@ export function OrganizationInfoPage() {
           >
             <Input placeholder="请输入企业名称" />
           </Form.Item>
-          <Form.Item
-            name="code"
-            label="企业编码"
-            rules={[{ required: true, message: '请输入企业编码' }]}
-          >
-            <Input placeholder="请输入企业编码" />
+          <Form.Item label="企业编码" extra="企业编码由系统分配，创建后不可修改。">
+            <Input value={organization.code} readOnly aria-label="企业编码" />
           </Form.Item>
-          <Form.Item name="logo" label="Logo URL">
-            <Input placeholder="https://example.com/logo.png" />
+          <Form.Item label="企业 Logo">
+            <div className="organization-logo-editor">
+              <div className="organization-logo-preview">
+                {editorLogo ? <img src={editorLogo} alt="企业 Logo 预览" /> : <span>未上传</span>}
+              </div>
+              <div className="organization-logo-controls">
+                <Space wrap>
+                  <Upload
+                    accept="image/jpeg,image/png,image/webp"
+                    showUploadList={false}
+                    disabled={updateOrganization.isPending}
+                    beforeUpload={(file) => {
+                      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                        messageApi.error('Logo 仅支持 JPEG、PNG 或 WebP 格式');
+                        return Upload.LIST_IGNORE;
+                      }
+                      if (file.size > 5 * 1024 * 1024) {
+                        messageApi.error('Logo 文件不能超过 5 MB');
+                        return Upload.LIST_IGNORE;
+                      }
+                      setLogoFile(file);
+                      setRemoveLogo(false);
+                      return false;
+                    }}
+                  >
+                    <Button icon={<UploadOutlined />}>
+                      {editorLogo ? '替换 Logo' : '上传 Logo'}
+                    </Button>
+                  </Upload>
+                  {editorLogo && (
+                    <Button
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => {
+                        setLogoFile(undefined);
+                        setRemoveLogo(true);
+                      }}
+                    >
+                      移除 Logo
+                    </Button>
+                  )}
+                </Space>
+                <Text type="secondary">支持 JPEG、PNG、WebP，最大 5 MB；保存后生效。</Text>
+              </div>
+            </div>
           </Form.Item>
           <Form.Item name="description" label="企业简介">
             <Input.TextArea rows={4} maxLength={500} showCount placeholder="填写企业简介" />
@@ -155,8 +220,8 @@ export function OrganizationInfoPage() {
           基础信息
         </Title>
         <div className="organization-info-hero">
-          <div className="organization-info-logo">
-            {logo !== '-' ? <img src={logo} alt="" /> : logoFallback}
+          <div className={`organization-info-logo${logo === '-' ? ' is-fallback' : ''}`}>
+            {logo !== '-' ? <img src={logo} alt={`${organization.name} Logo`} /> : logoFallback}
           </div>
           <div className="organization-info-hero-main">
             <Space size={8} wrap>
