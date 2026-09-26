@@ -4,7 +4,7 @@ import {
   meetingControllerDeleteMeetingRecord,
   meetingControllerGetMeetingStats,
   // meetingControllerReprocessMeetingRecord, // 后端接口暂时禁用，见 PR #321
-} from '../../../shared/lib/api/orval/business/meet';
+} from '../../../shared/lib/api/orval/business/meetings';
 import { mutator } from '../../../shared/lib/api/mutator';
 import type {
   Meeting,
