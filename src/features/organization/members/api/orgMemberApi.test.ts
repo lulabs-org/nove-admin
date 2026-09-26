@@ -6,10 +6,10 @@ const apiMocks = vi.hoisted(() => ({
   mutator: vi.fn(),
 }));
 
-vi.mock('../../../../shared/lib/api/orval/business/admin-orgmembers', async (importOriginal) => {
+vi.mock('../../../../shared/lib/api/orval/business/admin-org-members', async (importOriginal) => {
   const original =
     await importOriginal<
-      typeof import('../../../../shared/lib/api/orval/business/admin-orgmembers')
+      typeof import('../../../../shared/lib/api/orval/business/admin-org-members')
     >();
   return {
     ...original,

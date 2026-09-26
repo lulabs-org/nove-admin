@@ -6,7 +6,7 @@ import {
   orgMemberControllerUpdateMember,
   orgMemberControllerUpdateMemberDepartments,
   orgMemberControllerUpdateMemberStatus,
-} from '../../../../shared/lib/api/orval/business/admin-orgmembers';
+} from '../../../../shared/lib/api/orval/business/admin-org-members';
 import {
   departmentControllerCreateDepartment,
   departmentControllerDeleteDepartment,
