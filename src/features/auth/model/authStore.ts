@@ -12,6 +12,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { login, getMe, logout as logoutApi } from '../api/api';
 import { authService } from '../api/service';
+import { canRetryLogout } from './logoutRetry';
 import type { LoginRequest, User } from './types';
 import { canAccessPermission } from './permissions';
 
@@ -72,10 +73,14 @@ export const useAuthStore = create<AuthState>()(
           await logoutApi();
         } catch (error) {
           console.error('Logout error:', error);
-        } finally {
-          authService.removeToken();
-          set({ user: null, isAuthenticated: false });
+
+          if (canRetryLogout()) {
+            throw error;
+          }
         }
+
+        authService.removeToken();
+        set({ user: null, isAuthenticated: false });
       },
 
       checkPermission: (permission: string) => {
