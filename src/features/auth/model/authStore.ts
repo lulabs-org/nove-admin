@@ -12,7 +12,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { login, getMe, logout as logoutApi } from '../api/api';
 import { authService } from '../api/service';
-import { isNetworkError } from '../../../shared/lib/api/networkError';
+import { canRetryLogout } from './logoutRetry';
 import type { LoginRequest, User } from './types';
 import { canAccessPermission } from './permissions';
 
@@ -74,13 +74,11 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('Logout error:', error);
 
-          // 只有网络错误 / 超时才向上抛，交给调用方提示「请检查网络后重试」，
-          // 并保留本地登录态以便重试；服务端返回了响应（3xx/4xx/5xx）说明请求
-          // 已经到达服务端，此时仍应完成本地登出，不打扰用户。
-          if (isNetworkError(error)) {
+          if (canRetryLogout()) {
             throw error;
           }
         }
+
         authService.removeToken();
         set({ user: null, isAuthenticated: false });
       },

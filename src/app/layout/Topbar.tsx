@@ -48,7 +48,7 @@ export function Topbar({ collapsed, sidebarWidth }: TopbarProps) {
         try {
           await logout();
         } catch {
-          message.error('登出失败，请检查网络后重试');
+          message.error('登出失败，请重试');
         }
       },
     },

@@ -145,27 +145,26 @@ describe('useAuthStore', () => {
       expect(state.user).toBeNull();
     });
 
-    it('clears store and token even if logout API throws an error', async () => {
-      authService.setToken('active-token');
-      useAuthStore.setState({ isAuthenticated: true, user: mockUser });
-      apiMocks.logout.mockRejectedValueOnce(new Error('Network error'));
-
-      await useAuthStore.getState().logout();
-
-      expect(authService.getToken()).toBeNull();
-      const state = useAuthStore.getState();
-      expect(state.isAuthenticated).toBe(false);
-      expect(state.user).toBeNull();
-    });
-
-    it.each(['ERR_NETWORK', 'ECONNABORTED', 'ETIMEDOUT'])(
-      're-throws %s and keeps the local session so the user can retry',
-      async (code) => {
+    // 判断器 canRetryLogout() 只看「本地还有没有 access token」：
+    // 只要还能重试，就保留登录态，避免「客户端已登出、服务端仍存活幽灵令牌」。
+    it.each([
+      ['a network failure', axiosError({ code: 'ERR_NETWORK' })],
+      ['a timeout', axiosError({ code: 'ECONNABORTED' })],
+      ['a request that never got a response', axiosError({})],
+      ['a gateway 502', axiosError({ status: 502 })],
+      ['a gateway 503', axiosError({ status: 503 })],
+      ['a server 500', axiosError({ status: 500 })],
+      ['a client 403', axiosError({ status: 403 })],
+      ['a redirect 302', axiosError({ status: 302 })],
+      ['a non-axios failure', new Error('crypto.randomUUID is not a function')],
+    ])(
+      'keeps the local session and re-throws when %s happens while a token remains',
+      async (_label, error) => {
         authService.setToken('active-token');
         useAuthStore.setState({ isAuthenticated: true, user: mockUser });
-        apiMocks.logout.mockRejectedValueOnce(axiosError({ code }));
+        apiMocks.logout.mockRejectedValueOnce(error);
 
-        await expect(useAuthStore.getState().logout()).rejects.toMatchObject({ code });
+        await expect(useAuthStore.getState().logout()).rejects.toBe(error);
 
         expect(authService.getToken()).toBe('active-token');
         const state = useAuthStore.getState();
@@ -174,31 +173,19 @@ describe('useAuthStore', () => {
       }
     );
 
-    it('re-throws a request that never got a response (offline / DNS / CORS)', async () => {
-      authService.setToken('active-token');
+    it('completes local logout when the credentials are already gone (refresh failed)', async () => {
+      // 401 → 刷新失败路径：网络层已 removeToken + clearAuth，
+      // 本地已无凭据，重试不可能，因此不必保留登录态。
       useAuthStore.setState({ isAuthenticated: true, user: mockUser });
-      apiMocks.logout.mockRejectedValueOnce(axiosError({}));
+      apiMocks.logout.mockRejectedValueOnce(axiosError({ code: 'ERR_NETWORK' }));
 
-      await expect(useAuthStore.getState().logout()).rejects.toMatchObject({ isAxiosError: true });
+      await expect(useAuthStore.getState().logout()).resolves.toBeUndefined();
 
-      expect(authService.getToken()).toBe('active-token');
+      expect(authService.getToken()).toBeNull();
+      const state = useAuthStore.getState();
+      expect(state.isAuthenticated).toBe(false);
+      expect(state.user).toBeNull();
     });
-
-    it.each([302, 304, 400, 403, 429, 500])(
-      'swallows HTTP %i and still logs out locally',
-      async (status) => {
-        authService.setToken('active-token');
-        useAuthStore.setState({ isAuthenticated: true, user: mockUser });
-        apiMocks.logout.mockRejectedValueOnce(axiosError({ status }));
-
-        await expect(useAuthStore.getState().logout()).resolves.toBeUndefined();
-
-        expect(authService.getToken()).toBeNull();
-        const state = useAuthStore.getState();
-        expect(state.isAuthenticated).toBe(false);
-        expect(state.user).toBeNull();
-      }
-    );
   });
 
   describe('setUser', () => {
