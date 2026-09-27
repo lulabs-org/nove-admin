@@ -12,16 +12,20 @@ import Layout from 'antd/es/layout';
 import Dropdown from 'antd/es/dropdown';
 import Avatar from 'antd/es/avatar';
 import Space from 'antd/es/space';
-import Modal from 'antd/es/modal';
+import Button from 'antd/es/button';
+import App from 'antd/es/app';
 import theme from 'antd/es/theme';
 import {
   SafetyOutlined,
   UserOutlined,
   LogoutOutlined,
   ExclamationCircleFilled,
+  SunOutlined,
+  MoonOutlined,
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../shared/hooks/useAuth';
+import { useThemeStore } from '../providers/themeStore';
 import './Topbar.css';
 
 const { Header } = Layout;
@@ -33,7 +37,10 @@ interface TopbarProps {
 
 export function Topbar({ collapsed, sidebarWidth }: TopbarProps) {
   const { user, logout } = useAuth();
+  const { modal } = App.useApp();
   const { token } = theme.useToken();
+  const themeMode = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
   const menuItems = [
     {
@@ -52,7 +59,7 @@ export function Topbar({ collapsed, sidebarWidth }: TopbarProps) {
       icon: <LogoutOutlined />,
       label: '退出登录',
       onClick: () => {
-        Modal.confirm({
+        modal.confirm({
           title: `确认退出登录"${user?.name || user?.email || 'Admin'}"吗？`,
           icon: <ExclamationCircleFilled style={{ color: token.colorWarning }} />,
           content: '退出登录不会丢失任何数据，你仍可以随时登录本账号',
@@ -105,6 +112,12 @@ export function Topbar({ collapsed, sidebarWidth }: TopbarProps) {
       <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', padding: '0 24px' }}>
         <Dropdown menu={{ items: menuItems }} placement="bottomRight">
           <Space style={{ cursor: 'pointer' }}>
+            <Button
+              type="text"
+              aria-label={themeMode === 'dark' ? '切换到亮色模式' : '切换到暗色模式'}
+              icon={themeMode === 'dark' ? <SunOutlined /> : <MoonOutlined />}
+              onClick={toggleTheme}
+            />
             <Avatar src={user?.avatar} icon={<UserOutlined />} />
             <span>{user?.name || user?.email || 'Admin'}</span>
           </Space>
