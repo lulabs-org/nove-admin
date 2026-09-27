@@ -135,17 +135,17 @@ describe('useAuthStore', () => {
       expect(state.user).toBeNull();
     });
 
-    it('clears store and token even if logout API throws an error', async () => {
+    it('preserves auth when logout API throws an error', async () => {
       authService.setToken('active-token');
       useAuthStore.setState({ isAuthenticated: true, user: mockUser });
       apiMocks.logout.mockRejectedValueOnce(new Error('Network error'));
 
       await useAuthStore.getState().logout();
 
-      expect(authService.getToken()).toBeNull();
+      expect(authService.getToken()).toBe('active-token');
       const state = useAuthStore.getState();
-      expect(state.isAuthenticated).toBe(false);
-      expect(state.user).toBeNull();
+      expect(state.isAuthenticated).toBe(true);
+      expect(state.user).toEqual(mockUser);
     });
   });
 
