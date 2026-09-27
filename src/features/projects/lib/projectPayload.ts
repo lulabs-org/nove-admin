@@ -4,7 +4,6 @@ import type { CreateProject, ProjectLevel, ProjectStatus } from '../types';
 export interface ProjectFormValues {
   title: string;
   subtitle?: string;
-  slug?: string;
   category?: string;
   image?: string;
   description?: string;
@@ -44,10 +43,6 @@ export function buildProjectPayload(values: ProjectFormValues): CreateProject {
   return {
     title: values.title.trim(),
     subtitle: nullableText(values.subtitle),
-    slug:
-      nullableText(values.slug)
-        ?.toLowerCase()
-        .replace(/[\s_]+/g, '-') ?? null,
     category: nullableText(values.category),
     image: nullableText(values.image),
     description: nullableText(values.description),

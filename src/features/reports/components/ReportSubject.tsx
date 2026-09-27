@@ -23,7 +23,7 @@ export function ReportTargetSummary({
   size?: 'default' | 'large';
 }) {
   return (
-    <div className={`report-subject-summary is-${size}`}>
+    <div className={`report-subject-summary is-${size}`} data-target-type={target.targetType}>
       <Avatar size={size === 'large' ? 48 : 36}>{target.nameSnapshot.slice(0, 1)}</Avatar>
       <div className="report-subject-main">
         <Text className="report-subject-name" ellipsis={{ tooltip: target.nameSnapshot }}>

@@ -200,14 +200,6 @@ export function ProductManagement() {
     onError: (error) => message.error(getErrorMessage(error, '产品更新失败')),
   });
 
-  const statusMutation = useTableMutation({
-    queryKey: 'products',
-    mutationFn: ({ id, status }: { id: string; status: ProductStatus }) =>
-      productApi.updateStatus(id, status),
-    onSuccess: () => message.success('产品状态已更新'),
-    onError: (error) => message.error(getErrorMessage(error, '产品状态更新失败')),
-  });
-
   const deleteMutation = useTableDeleteMutation({
     queryKey: 'products',
     mutationFn: productApi.delete,
@@ -391,25 +383,9 @@ export function ProductManagement() {
       dataIndex: 'status',
       key: 'status',
       width: 130,
-      render: (status: ProductStatus, record) => {
+      render: (status: ProductStatus) => {
         const meta = STATUS_OPTIONS.find((option) => option.value === status)!;
-        return (
-          <Perm
-            permission={PERMISSIONS.PRODUCT.TOGGLE_STATUS}
-            fallback={<Tag color={meta.color}>{meta.label}</Tag>}
-          >
-            <Select
-              size="small"
-              value={status}
-              options={STATUS_OPTIONS.map(({ label, value }) => ({ label, value }))}
-              style={{ width: 104 }}
-              loading={statusMutation.isPending && statusMutation.variables?.id === record.id}
-              onChange={(nextStatus) =>
-                statusMutation.mutate({ id: record.id, status: nextStatus })
-              }
-            />
-          </Perm>
-        );
+        return <Tag color={meta.color}>{meta.label}</Tag>;
       },
     },
     {

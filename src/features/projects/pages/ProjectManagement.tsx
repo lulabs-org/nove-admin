@@ -224,7 +224,6 @@ export function ProjectManagement() {
     form.setFieldsValue({
       title: project.title,
       subtitle: project.subtitle ?? undefined,
-      slug: project.slug ?? undefined,
       category: project.category ?? undefined,
       image: project.image ?? undefined,
       description: project.description ?? undefined,
@@ -476,7 +475,7 @@ export function ProjectManagement() {
           <Search
             className="project-management-search"
             allowClear
-            placeholder="搜索标题、编号、slug 或描述"
+            placeholder="搜索项目"
             enterButton={<SearchOutlined />}
             onSearch={(value) => handleFilter('keyword', value)}
             onChange={(event) => !event.target.value && handleFilter('keyword', undefined)}
@@ -606,16 +605,14 @@ export function ProjectManagement() {
             </Col>
             <Col span={8}>
               <Form.Item
-                name="slug"
                 label="Slug"
-                rules={[
-                  {
-                    pattern: /^[a-zA-Z0-9 _-]*$/,
-                    message: '仅支持字母、数字、空格、下划线和连字符',
-                  },
-                ]}
+                extra={
+                  editingProject && !editingProject.slug
+                    ? '历史项目将在本次保存时自动补齐'
+                    : '创建时由系统自动生成'
+                }
               >
-                <Input placeholder="project-slug" />
+                <Input value={editingProject?.slug ?? ''} placeholder="保存后自动生成" disabled />
               </Form.Item>
             </Col>
             <Col span={8}>
