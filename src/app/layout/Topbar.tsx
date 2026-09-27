@@ -12,7 +12,14 @@ import Layout from 'antd/es/layout';
 import Dropdown from 'antd/es/dropdown';
 import Avatar from 'antd/es/avatar';
 import Space from 'antd/es/space';
-import { SafetyOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons';
+import Modal from 'antd/es/modal';
+import theme from 'antd/es/theme';
+import {
+  SafetyOutlined,
+  UserOutlined,
+  LogoutOutlined,
+  ExclamationCircleFilled,
+} from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../shared/hooks/useAuth';
 import './Topbar.css';
@@ -26,6 +33,7 @@ interface TopbarProps {
 
 export function Topbar({ collapsed, sidebarWidth }: TopbarProps) {
   const { user, logout } = useAuth();
+  const { token } = theme.useToken();
 
   const menuItems = [
     {
@@ -43,8 +51,17 @@ export function Topbar({ collapsed, sidebarWidth }: TopbarProps) {
       key: 'logout',
       icon: <LogoutOutlined />,
       label: '退出登录',
-      onClick: async () => {
-        await logout();
+      onClick: () => {
+        Modal.confirm({
+          title: `确认退出登录"${user?.name || user?.email || 'Admin'}"吗？`,
+          icon: <ExclamationCircleFilled style={{ color: token.colorWarning }} />,
+          content: '退出登录不会丢失任何数据，你仍可以随时登录本账号',
+          centered: true,
+          okText: '退出',
+          cancelText: '返回',
+          okButtonProps: { danger: true },
+          onOk: () => logout(),
+        });
       },
     },
   ];
