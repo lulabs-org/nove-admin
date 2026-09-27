@@ -73,6 +73,7 @@ export const MultiMemberCompareView: React.FC<MultiMemberCompareViewProps> = ({
   const [hoveredMemberId, setHoveredMemberId] = useState<string | null>(null);
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [onlyShowProfitInTable, setOnlyShowProfitInTable] = useState<boolean>(false);
+  const [tablePagination, setTablePagination] = useState({ current: 1, pageSize: 10 });
 
   // 根据当前预设计算实际对比的成员 ID 列表
   const effectiveMemberIds = useMemo(() => {
@@ -179,6 +180,10 @@ export const MultiMemberCompareView: React.FC<MultiMemberCompareViewProps> = ({
         (m.departmentName && m.departmentName.toLowerCase().includes(kw))
     );
   }, [memberSeries, searchKeyword, onlyShowProfitInTable]);
+  const tableCurrentPage = Math.min(
+    tablePagination.current,
+    Math.max(1, Math.ceil(filteredMemberSeries.length / tablePagination.pageSize))
+  );
 
   // 表格列定义
   const columns = [
@@ -187,15 +192,16 @@ export const MultiMemberCompareView: React.FC<MultiMemberCompareViewProps> = ({
       key: 'rank',
       width: 65,
       render: (_: unknown, __: unknown, index: number) => {
+        const rank = (tableCurrentPage - 1) * tablePagination.pageSize + index + 1;
         const rankClass =
-          index === 0
+          rank === 1
             ? 'profit-rank-1'
-            : index === 1
+            : rank === 2
               ? 'profit-rank-2'
-              : index === 2
+              : rank === 3
                 ? 'profit-rank-3'
                 : 'profit-rank-default';
-        return <div className={`profit-rank-badge ${rankClass}`}>{index + 1}</div>;
+        return <div className={`profit-rank-badge ${rankClass}`}>{rank}</div>;
       },
     },
     {
@@ -796,7 +802,10 @@ export const MultiMemberCompareView: React.FC<MultiMemberCompareViewProps> = ({
               <Button
                 size="small"
                 type={onlyShowProfitInTable ? 'primary' : 'default'}
-                onClick={() => setOnlyShowProfitInTable(!onlyShowProfitInTable)}
+                onClick={() => {
+                  setOnlyShowProfitInTable(!onlyShowProfitInTable);
+                  setTablePagination((pagination) => ({ ...pagination, current: 1 }));
+                }}
               >
                 {onlyShowProfitInTable ? '显示全部在册人员' : '仅看有分润人员'}
               </Button>
@@ -806,7 +815,10 @@ export const MultiMemberCompareView: React.FC<MultiMemberCompareViewProps> = ({
                 size="small"
                 allowClear
                 value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
+                onChange={(e) => {
+                  setSearchKeyword(e.target.value);
+                  setTablePagination((pagination) => ({ ...pagination, current: 1 }));
+                }}
                 style={{ width: 220 }}
               />
               <span style={{ fontSize: 12, color: '#94a3b8' }}>
@@ -827,7 +839,16 @@ export const MultiMemberCompareView: React.FC<MultiMemberCompareViewProps> = ({
           columns={columns}
           dataSource={filteredMemberSeries}
           rowKey="memberId"
-          pagination={{ pageSize: 10, showSizeChanger: true }}
+          pagination={{
+            current: tableCurrentPage,
+            pageSize: tablePagination.pageSize,
+            showSizeChanger: true,
+            onChange: (current, pageSize) =>
+              setTablePagination((pagination) => ({
+                current: pageSize === pagination.pageSize ? current : 1,
+                pageSize,
+              })),
+          }}
           size="small"
         />
       </Card>
