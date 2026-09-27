@@ -33,9 +33,15 @@
   overflow: hidden;
   justify-content: flex-start;
   text-overflow: ellipsis;
+  color: #1f2937;
+  font-weight: 600;
 }
 
-.minute-meeting-cell span {
-  color: #929bad;
+.minute-meeting-cell .ant-btn:hover {
+  color: #1677ff;
+}
+
+.minute-meeting-cell > span {
+  color: #64748b;
   font-size: 12px;
 }

@@ -3,11 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { buildProjectPayload, parseProjectMetadata } from './projectPayload';
 
 describe('project payload', () => {
-  it('normalizes nullable values, lists, dates, slug, and metadata', () => {
+  it('normalizes nullable values, lists, dates, and metadata without sending a slug', () => {
     const payload = buildProjectPayload({
       title: ' Project One ',
       subtitle: ' ',
-      slug: ' Project_One ',
       level: 'BEGINNER',
       maxStudents: 10,
       prerequisites: [{ value: ' TypeScript ' }, { value: 'TypeScript' }],
@@ -23,12 +22,12 @@ describe('project payload', () => {
     expect(payload).toMatchObject({
       title: 'Project One',
       subtitle: null,
-      slug: 'project-one',
       prerequisites: ['TypeScript'],
       outcomes: ['Working app'],
       tags: ['Web'],
       metadata: { source: 'admin' },
     });
+    expect(payload).not.toHaveProperty('slug');
     expect(payload.startDate).toMatch(/^2026-09-01T01:00:00/);
   });
 

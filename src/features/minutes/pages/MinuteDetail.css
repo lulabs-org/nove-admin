@@ -170,6 +170,13 @@
   padding: 14px;
 }
 
+.minute-participant-row > .ant-avatar:not(.ant-avatar-image) {
+  color: #1d4ed8;
+  background: linear-gradient(135deg, #e6f4ff, #e0e7ff);
+  border: 1px solid #c7d2fe;
+  font-weight: 600;
+}
+
 .minute-participant-identity,
 .minute-participant-time {
   display: flex;
