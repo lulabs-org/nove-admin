@@ -47,6 +47,7 @@ export const useAuthStore = create<AuthState>()(
           set({ user: userData, isAuthenticated: true, loading: false });
         } catch (error) {
           console.error('Failed to fetch user data:', error);
+          set({ isAuthenticated: true, loading: true });
         }
       },
 

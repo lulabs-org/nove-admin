@@ -11,6 +11,7 @@
 import { useAuth } from '../../shared/hooks/useAuth';
 import Result from 'antd/es/result';
 import Button from 'antd/es/button';
+import Spin from 'antd/es/spin';
 import { Navigate, useLocation } from 'react-router-dom';
 
 interface ProtectedRouteProps {
@@ -27,7 +28,7 @@ export function ProtectedRoute({ children, permission }: ProtectedRouteProps) {
       <div
         style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
       >
-        <div className="loading-spinner" />
+        <Spin size="large" />
       </div>
     );
   }
