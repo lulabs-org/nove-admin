@@ -70,11 +70,10 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         try {
           await logoutApi();
-        } catch (error) {
-          console.error('Logout error:', error);
-        } finally {
           authService.removeToken();
           set({ user: null, isAuthenticated: false });
+        } catch (error) {
+          console.error('Logout error:', error);
         }
       },
 
