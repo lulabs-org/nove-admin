@@ -39,6 +39,7 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
+  padding-right: 28px;
 }
 
 .org-tree-pane-topbar .ant-input-search {
@@ -49,17 +50,20 @@
 .org-tree-collapse-button {
   position: absolute;
   top: 16px;
-  right: -12px;
+  right: -1px;
   z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 24px;
   min-width: 24px;
   height: 40px;
   padding: 0;
-  border: 1px solid #e5e6eb;
-  border-radius: 6px;
+  border: 1px solid #d9dce3;
+  border-radius: 6px 0 0 6px;
   background: #fff;
   color: #646a73;
-  box-shadow: 0 2px 8px rgb(31 35 41 / 8%);
+  box-shadow: none;
 }
 
 .org-tree-collapse-button:hover,
@@ -70,7 +74,8 @@
 }
 
 .org-structure-tree-pane.is-collapsed .org-tree-collapse-button {
-  right: -28px;
+  right: -24px;
+  border-radius: 0 6px 6px 0;
 }
 
 .org-tree-list {
@@ -183,7 +188,7 @@
 
 @media (min-width: 981px) {
   .org-structure-tree-pane.is-collapsed + .org-structure-content {
-    padding-left: 56px;
+    padding-left: 32px;
   }
 }
 
@@ -205,11 +210,13 @@
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 14px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
 }
 
 .org-toolbar-filters {
-  min-width: 0;
+  flex: none;
+  max-width: 100%;
+  flex-wrap: wrap;
 }
 
 .org-toolbar-filters .ant-checkbox-wrapper {
@@ -218,7 +225,9 @@
 
 .org-toolbar-actions {
   flex: none;
+  max-width: 100%;
   margin-left: auto;
+  flex-wrap: wrap;
 }
 
 .org-member-name-cell {
@@ -346,6 +355,11 @@
   .org-structure-tree-pane.is-collapsed .org-tree-collapse-button {
     top: 8px;
     right: 8px;
+    border-radius: 6px;
+  }
+
+  .org-tree-pane-topbar {
+    padding-right: 40px;
   }
 
   .org-tree-list {
