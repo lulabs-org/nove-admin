@@ -34,7 +34,9 @@ import { Perm } from '../../../app/guards/Perm';
 import { PERMISSIONS } from '../../../shared/utils/permissions';
 import { driveApi } from '../api/driveApi';
 import { DriveDetailModal } from '../components/DriveDetailModal';
+import { DriveMediaPreviewModal } from '../components/DriveMediaPreviewModal';
 import { DrivePermissionModal } from '../components/DrivePermissionModal';
+import { resolvePreviewKind } from '../lib/drivePreview';
 import type { DriveNode, DriveSpace } from '../model/types';
 import './DrivePage.css';
 
@@ -44,6 +46,15 @@ const MEDIA_EXTENSIONS = new Set(['mp3', 'm4a', 'wav', 'aac', 'ogg', 'mp4', 'mov
 function requiresCloudScan(fileName: string): boolean {
   const extension = fileName.split('.').pop()?.toLowerCase() ?? '';
   return !MEDIA_EXTENSIONS.has(extension);
+}
+
+function isPreviewableMedia(node: DriveNode): boolean {
+  return (
+    node.type === 'FILE' &&
+    node.fileStatus === 'ACTIVE' &&
+    Boolean(node.fileId) &&
+    resolvePreviewKind(node.contentType, node.name) !== null
+  );
 }
 
 async function calculateSha256(file: File): Promise<string> {
@@ -89,6 +100,7 @@ export function DrivePage() {
   const [search, setSearch] = useState('');
   const [uploading, setUploading] = useState<Record<string, number>>({});
   const [detailNode, setDetailNode] = useState<DriveNode | null>(null);
+  const [previewNode, setPreviewNode] = useState<DriveNode | null>(null);
   const [grantNode, setGrantNode] = useState<DriveNode | null>(null);
 
   const parentId = path.at(-1)?.id ?? null;
@@ -256,6 +268,9 @@ export function DrivePage() {
   };
 
   const rowMenu = (node: DriveNode): MenuProps['items'] => [
+    ...(isPreviewableMedia(node)
+      ? [{ key: 'preview', label: '预览', onClick: () => setPreviewNode(node) }]
+      : []),
     { key: 'details', label: '查看详情', onClick: () => void openDetails(node) },
     ...(checkPermission(PERMISSIONS.DRIVE.UPDATE)
       ? [
@@ -399,11 +414,13 @@ export function DrivePage() {
                 <button
                   className="drive-file-name"
                   title={name}
-                  onClick={() =>
-                    node.type === 'FOLDER' && !trash
-                      ? setPath([...path, node])
-                      : void openDetails(node)
-                  }
+                  onClick={() => {
+                    if (node.type === 'FOLDER' && !trash) {
+                      setPath([...path, node]);
+                      return;
+                    }
+                    void openDetails(node);
+                  }}
                 >
                   <span className={`drive-file-icon ${node.type === 'FOLDER' ? 'is-folder' : ''}`}>
                     {node.type === 'FOLDER' ? (
@@ -531,6 +548,8 @@ export function DrivePage() {
         }}
         onDownload={(node) => void download(node)}
       />
+
+      <DriveMediaPreviewModal node={previewNode} onClose={() => setPreviewNode(null)} />
 
       <DrivePermissionModal
         node={grantNode}
