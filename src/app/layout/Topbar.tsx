@@ -76,7 +76,6 @@ export function Topbar({ collapsed, sidebarWidth }: TopbarProps) {
   return (
     <Header
       style={{
-        background: '#fff',
         padding: 0,
         display: 'flex',
         alignItems: 'center',
@@ -100,7 +99,7 @@ export function Topbar({ collapsed, sidebarWidth }: TopbarProps) {
           justifyContent: 'center',
           fontSize: 18,
           fontWeight: 600,
-          color: '#17233d',
+          color: token.colorTextHeading,
           textDecoration: 'none',
         }}
       >

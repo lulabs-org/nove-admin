@@ -16,6 +16,7 @@ import Switch from 'antd/es/switch';
 import Table from 'antd/es/table';
 import Tabs from 'antd/es/tabs';
 import Tag from 'antd/es/tag';
+import theme from 'antd/es/theme';
 import Tooltip from 'antd/es/tooltip';
 import Typography from 'antd/es/typography';
 import type { MenuProps } from 'antd/es/menu';
@@ -194,6 +195,7 @@ function downloadCsv(filename: string, rows: string[][]) {
 export function RoleManagement() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { token } = theme.useToken();
   const currentOrgId = user?.currentOrgId;
   const [roleKeyword, setRoleKeyword] = useState('');
   const [memberKeyword, setMemberKeyword] = useState('');
@@ -1243,7 +1245,7 @@ export function RoleManagement() {
                                     </Tag>
                                   </div>
                                   <div style={{ marginTop: 4, paddingLeft: 24 }}>
-                                    <Text style={{ fontSize: 13, color: '#1677ff' }}>
+                                    <Text style={{ fontSize: 13, color: token.colorPrimary }}>
                                       业务释义：{explanation}
                                     </Text>
                                   </div>

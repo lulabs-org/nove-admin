@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Table, Card, DatePicker, Input, Button, Space, Tag, Popconfirm, message } from 'antd';
+import theme from 'antd/es/theme';
 import {
   DownloadOutlined,
   DollarOutlined,
@@ -20,6 +21,7 @@ import type { PayslipSummaryItem } from './types';
 const { Search } = Input;
 
 export const PayslipList: React.FC = () => {
+  const { token } = theme.useToken();
   const queryClient = useQueryClient();
   const [selectedMonth, setSelectedMonth] = useState<Dayjs>(dayjs());
   const [keyword, setKeyword] = useState<string>('');
@@ -180,8 +182,8 @@ export const PayslipList: React.FC = () => {
       width: 120,
       render: (_, record: PayslipSummaryItem) => (
         <div>
-          <div style={{ fontWeight: 600, color: '#1e293b' }}>{record.memberName}</div>
-          <div style={{ fontSize: 12, color: '#94a3b8' }}>
+          <div style={{ fontWeight: 600, color: token.colorText }}>{record.memberName}</div>
+          <div style={{ fontSize: 12, color: token.colorTextTertiary }}>
             {record.departmentName || '未分配部门'}
           </div>
         </div>
@@ -368,7 +370,7 @@ export const PayslipList: React.FC = () => {
           <Button
             type="link"
             size="small"
-            style={{ color: '#722ed1', padding: 0 }}
+            style={{ color: token.purple, padding: 0 }}
             icon={<PlusCircleOutlined />}
             onClick={() => handleOpenAdjustment({ id: record.memberId, name: record.memberName })}
           >
@@ -387,7 +389,7 @@ export const PayslipList: React.FC = () => {
               <Button
                 type="link"
                 size="small"
-                style={{ color: '#16a34a', padding: 0 }}
+                style={{ color: token.colorSuccess, padding: 0 }}
                 icon={<DollarOutlined />}
               >
                 发薪
@@ -413,7 +415,14 @@ export const PayslipList: React.FC = () => {
         >
           {/* 左侧：标题、月份选择与实时财务统计 */}
           <Space size="middle" align="center" style={{ flexWrap: 'nowrap', minWidth: 0 }}>
-            <span style={{ fontWeight: 700, fontSize: 16, color: '#1e293b', whiteSpace: 'nowrap' }}>
+            <span
+              style={{
+                fontWeight: 700,
+                fontSize: 16,
+                color: token.colorText,
+                whiteSpace: 'nowrap',
+              }}
+            >
               工资条台账
             </span>
             <DatePicker
@@ -425,9 +434,9 @@ export const PayslipList: React.FC = () => {
               allowClear={false}
               style={{ width: 115, flexShrink: 0 }}
             />
-            <span style={{ fontSize: 13, color: '#64748b', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 13, color: token.colorTextSecondary, whiteSpace: 'nowrap' }}>
               共 <strong>{items.length}</strong> 人 · 应发合计{' '}
-              <strong style={{ color: '#1677ff', fontFamily: 'monospace' }}>
+              <strong style={{ color: token.colorPrimary, fontFamily: 'monospace' }}>
                 ¥{((summary?.totalGrossAmount || 0) / 100).toFixed(2)}
               </strong>{' '}
               (已发{' '}
@@ -437,7 +446,10 @@ export const PayslipList: React.FC = () => {
               / 待发{' '}
               <span
                 style={{
-                  color: (summary?.totalPendingAmount || 0) > 0 ? '#d97706' : '#16a34a',
+                  color:
+                    (summary?.totalPendingAmount || 0) > 0
+                      ? token.colorWarning
+                      : token.colorSuccess,
                   fontWeight: 600,
                   fontFamily: 'monospace',
                 }}

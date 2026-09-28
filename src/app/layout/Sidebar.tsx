@@ -23,8 +23,6 @@ interface SidebarProps {
   collapsed?: boolean;
 }
 
-export const SIDEBAR_BACKGROUND = '#f5f6f8';
-
 function findActiveParentKeys(
   routes: RouteConfig[],
   pathname: string,
@@ -111,7 +109,7 @@ export function Sidebar({ routes, collapsed }: SidebarProps) {
       triggerSubMenuAction="hover"
       subMenuOpenDelay={0.12}
       subMenuCloseDelay={0.18}
-      style={{ height: '100%', borderRight: 0, background: SIDEBAR_BACKGROUND }}
+      style={{ height: '100%', borderRight: 0 }}
     />
   );
 }

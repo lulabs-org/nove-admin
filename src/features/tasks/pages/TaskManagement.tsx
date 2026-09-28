@@ -11,6 +11,7 @@ import Select from 'antd/es/select';
 import Space from 'antd/es/space';
 import Table from 'antd/es/table';
 import Tag from 'antd/es/tag';
+import theme from 'antd/es/theme';
 import Tooltip from 'antd/es/tooltip';
 import type { TableProps } from 'antd/es/table';
 import dayjs from 'dayjs';
@@ -157,6 +158,7 @@ function getTaskTypeLabel(type: TaskType) {
 }
 
 export function TaskManagement() {
+  const { token } = theme.useToken();
   const [filters, setFilters] = useState<TableQueryParams>({
     page: 1,
     pageSize: 10,
@@ -475,7 +477,7 @@ export function TaskManagement() {
               <Tooltip title={`Cron：${record.cron || '-'}`}>
                 <span>{describeCronExpression(record.cron)}</span>
               </Tooltip>
-              <span style={{ color: '#8c8c8c', fontSize: 12 }}>
+              <span style={{ color: token.colorTextTertiary, fontSize: 12 }}>
                 {record.timezone || 'Asia/Shanghai'}
               </span>
             </Space>
@@ -493,7 +495,7 @@ export function TaskManagement() {
       render: (lastError: string | null) =>
         lastError ? (
           <Tooltip title={lastError}>
-            <span style={{ color: '#cf1322' }}>{lastError}</span>
+            <span style={{ color: token.colorError }}>{lastError}</span>
           </Tooltip>
         ) : (
           '-'

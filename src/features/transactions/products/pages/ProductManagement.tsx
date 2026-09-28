@@ -15,6 +15,7 @@ import Space from 'antd/es/space';
 import Switch from 'antd/es/switch';
 import Table from 'antd/es/table';
 import Tag from 'antd/es/tag';
+import theme from 'antd/es/theme';
 import Tooltip from 'antd/es/tooltip';
 import type { TableProps } from 'antd/es/table';
 import dayjs from 'dayjs';
@@ -143,6 +144,7 @@ function buildPayload(values: ProductFormValues): CreateProduct {
 }
 
 export function ProductManagement() {
+  const { token } = theme.useToken();
   const { user } = useAuth();
   const [filters, setFilters] = useState<TableQueryParams>({
     page: 1,
@@ -295,14 +297,16 @@ export function ProductManagement() {
           <ProjectCoverAvatar reference={record.imageUrl} />
           <Space orientation="vertical" size={1}>
             <span style={{ fontWeight: 600 }}>{record.name}</span>
-            <span style={{ color: '#64748b', fontFamily: 'monospace', fontSize: 12 }}>
+            <span
+              style={{ color: token.colorTextSecondary, fontFamily: 'monospace', fontSize: 12 }}
+            >
               {record.productCode}
             </span>
             {record.shortDescription ? (
               <Tooltip title={record.shortDescription}>
                 <span
                   style={{
-                    color: '#94a3b8',
+                    color: token.colorTextTertiary,
                     fontSize: 12,
                     maxWidth: 210,
                     overflow: 'hidden',
@@ -336,7 +340,13 @@ export function ProductManagement() {
         <Space orientation="vertical" size={0}>
           <span>{formatMoney(record.price, record.currency)}</span>
           {record.originalPrice !== null ? (
-            <span style={{ color: '#94a3b8', fontSize: 12, textDecoration: 'line-through' }}>
+            <span
+              style={{
+                color: token.colorTextTertiary,
+                fontSize: 12,
+                textDecoration: 'line-through',
+              }}
+            >
               {formatMoney(record.originalPrice, record.currency)}
             </span>
           ) : null}
@@ -360,7 +370,7 @@ export function ProductManagement() {
       render: (_value: number, record) => (
         <Space orientation="vertical" size={0}>
           <span>销量 {record.salesCount}</span>
-          <span style={{ color: '#64748b', fontSize: 12 }}>
+          <span style={{ color: token.colorTextSecondary, fontSize: 12 }}>
             浏览 {record.viewCount} · {record.rating === null ? '暂无评分' : `${record.rating} 分`}
           </span>
         </Space>
