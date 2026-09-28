@@ -17,7 +17,13 @@ describe('application routes', () => {
     {
       path: '/governance',
       title: '平台治理',
-      childPaths: ['/permissions', '/api-keys', '/oauth-clients', '/settings/integrations'],
+      childPaths: [
+        '/permissions',
+        '/api-keys',
+        '/oauth-clients',
+        '/settings/integrations',
+        '/skills',
+      ],
     },
     {
       path: '/settings',
@@ -41,6 +47,13 @@ describe('application routes', () => {
       { permission: PERMISSIONS.ORDER.READ },
       { permission: PERMISSIONS.ORDER_REFUND.READ },
     ]);
+  });
+
+  it('requires skill read permission for the management page', () => {
+    const governance = routes.find((route) => route.path === '/governance');
+    expect(governance?.children?.find((route) => route.path === '/skills')?.permission).toBe(
+      PERMISSIONS.SKILL.READ
+    );
   });
 
   it('uses account and identity language for organization users', () => {
