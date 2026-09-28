@@ -1267,18 +1267,6 @@ export function OrgMemberManagement() {
   const renderMemberToolbar = () => (
     <div className="org-toolbar">
       <Space className="org-toolbar-filters" size="small">
-        <Search
-          allowClear
-          placeholder="搜索部门、姓名、邮箱、手机号、工号或用户 ID"
-          style={{ width: 320 }}
-          value={deptKeyword}
-          onChange={(event) => {
-            setDeptKeyword(event.target.value);
-            if (!event.target.value.trim()) handleFilterChange('keyword', undefined);
-          }}
-          onSearch={handleUnifiedSearch}
-          disabled={!currentOrgId}
-        />
         {activeTab !== 'left' && (
           <Select
             value={filters.status as MemberStatus | undefined}
@@ -1475,6 +1463,19 @@ export function OrgMemberManagement() {
             </Tooltip>
             {!treePaneCollapsed && (
               <>
+                <div className="org-tree-pane-topbar">
+                  <Search
+                    allowClear
+                    placeholder="搜索部门、姓名、邮箱、手机号、工号或用户 ID"
+                    value={deptKeyword}
+                    onChange={(event) => {
+                      setDeptKeyword(event.target.value);
+                      if (!event.target.value.trim()) handleFilterChange('keyword', undefined);
+                    }}
+                    onSearch={handleUnifiedSearch}
+                    disabled={!currentOrgId}
+                  />
+                </div>
                 <div className="org-tree-list">
                   <div className={`org-dept-node ${!selectedDeptId ? 'is-active' : ''}`}>
                     <button
