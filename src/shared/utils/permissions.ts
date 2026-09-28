@@ -166,6 +166,12 @@ export const PERMISSIONS = {
     MANAGE_ACL: 'drive:manage-acl',
     ADMIN: 'drive:admin',
   },
+  SKILL: {
+    READ: 'skill:read',
+    CREATE: 'skill:create',
+    UPDATE: 'skill:update',
+    DELETE: 'skill:delete',
+  },
 } as const;
 
 export type Permission =
