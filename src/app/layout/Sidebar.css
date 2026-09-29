@@ -29,7 +29,7 @@
 }
 
 .ant-menu-submenu-popup .sidebar-popup-heading-label {
-  color: #8f959e;
+  color: var(--ant-color-text-tertiary);
   font-weight: 500;
 }
 

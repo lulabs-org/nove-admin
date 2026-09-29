@@ -22,6 +22,7 @@ import Select from 'antd/es/select';
 import Space from 'antd/es/space';
 import Table from 'antd/es/table';
 import Tag from 'antd/es/tag';
+import theme from 'antd/es/theme';
 import Tooltip from 'antd/es/tooltip';
 import Typography from 'antd/es/typography';
 import type { TableProps } from 'antd/es/table';
@@ -122,6 +123,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 export function OrderRefundManagement() {
+  const { token } = theme.useToken();
   const [filters, setFilters] = useState<TableQueryParams>({
     page: 1,
     pageSize: 10,
@@ -270,7 +272,9 @@ export function OrderRefundManagement() {
       render: (value: string, record) => (
         <Space direction="vertical" size={2}>
           <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{value}</span>
-          <span style={{ color: '#64748b', fontSize: 12 }}>{record.applicantName || '-'}</span>
+          <span style={{ color: token.colorTextSecondary, fontSize: 12 }}>
+            {record.applicantName || '-'}
+          </span>
         </Space>
       ),
     },
@@ -281,7 +285,9 @@ export function OrderRefundManagement() {
         record.order ? (
           <Space direction="vertical" size={2}>
             <span>{record.order.orderCode}</span>
-            <span style={{ color: '#64748b', fontSize: 12 }}>{record.order.orderNumber}</span>
+            <span style={{ color: token.colorTextSecondary, fontSize: 12 }}>
+              {record.order.orderNumber}
+            </span>
           </Space>
         ) : (
           '-'
@@ -550,7 +556,7 @@ export function OrderRefundManagement() {
                         ) : null}
                         ，扣除后有效使用 <strong>{calculationPreview.effectiveUsedDays}</strong>{' '}
                         天（剩余约 {calculationPreview.remainingDays} 天）。建议退款：
-                        <strong style={{ color: '#1677ff' }}>
+                        <strong style={{ color: token.colorPrimary }}>
                           ¥{(calculationPreview.suggestedRefundAmount / 100).toFixed(2)}
                         </strong>
                       </span>

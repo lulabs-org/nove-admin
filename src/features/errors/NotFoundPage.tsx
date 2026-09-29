@@ -1,9 +1,11 @@
 import Result from 'antd/es/result';
 import Button from 'antd/es/button';
+import theme from 'antd/es/theme';
 import { useNavigate } from 'react-router-dom';
 
 export function NotFoundPage() {
   const navigate = useNavigate();
+  const { token } = theme.useToken();
 
   return (
     <div
@@ -12,7 +14,7 @@ export function NotFoundPage() {
         alignItems: 'center',
         justifyContent: 'center',
         height: '100vh',
-        backgroundColor: '#f0f2f5',
+        backgroundColor: token.colorBgLayout,
       }}
     >
       <Result

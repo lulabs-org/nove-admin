@@ -4,6 +4,7 @@ import Table from 'antd/es/table';
 import message from 'antd/es/message';
 import Popconfirm from 'antd/es/popconfirm';
 import Tooltip from 'antd/es/tooltip';
+import theme from 'antd/es/theme';
 import type { TableProps } from 'antd/es/table';
 import { Perm } from '../../../app/guards/Perm';
 import { PERMISSIONS } from '../../../shared/utils/permissions';
@@ -22,6 +23,7 @@ import { ScopeSummary } from './components/ScopeSummary';
 import { KeyOutlined, RotateRightOutlined } from '@ant-design/icons';
 
 export function ApiKeyManagement() {
+  const { token } = theme.useToken();
   const [filters, setFilters] = useState<TableQueryParams>({
     page: 1,
     pageSize: 10,
@@ -158,7 +160,7 @@ export function ApiKeyManagement() {
       dataIndex: 'expiresAt',
       key: 'expiresAt',
       render: (expiresAt: string | null) => {
-        if (!expiresAt) return <span style={{ color: '#999' }}>永不过期</span>;
+        if (!expiresAt) return <span style={{ color: token.colorTextTertiary }}>永不过期</span>;
         return new Date(expiresAt).toLocaleString('zh-CN');
       },
     },
@@ -167,7 +169,7 @@ export function ApiKeyManagement() {
       dataIndex: 'lastUsedAt',
       key: 'lastUsedAt',
       render: (lastUsedAt: string | null) => {
-        if (!lastUsedAt) return <span style={{ color: '#999' }}>未使用</span>;
+        if (!lastUsedAt) return <span style={{ color: token.colorTextTertiary }}>未使用</span>;
         return new Date(lastUsedAt).toLocaleString('zh-CN');
       },
     },

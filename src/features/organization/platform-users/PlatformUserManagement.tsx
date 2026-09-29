@@ -8,6 +8,7 @@ import Select from 'antd/es/select';
 import Space from 'antd/es/space';
 import Table from 'antd/es/table';
 import Tag from 'antd/es/tag';
+import theme from 'antd/es/theme';
 import Tooltip from 'antd/es/tooltip';
 import Typography from 'antd/es/typography';
 import type { TableProps } from 'antd/es/table';
@@ -43,7 +44,8 @@ const { Option } = Select;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-const PLATFORM_LABELS: Record<Platform, { label: string; color: string }> = {
+// Brand colors for third-party platforms are intentional literals (not theme tokens).
+const PLATFORM_LABELS: Record<Platform, { label: string; color?: string }> = {
   FEISHU: { label: '飞书', color: '#3370ff' },
   TENCENT_MEETING: { label: '腾讯会议', color: '#07c160' },
   DINGTALK: { label: '钉钉', color: '#ff6a00' },
@@ -51,7 +53,8 @@ const PLATFORM_LABELS: Record<Platform, { label: string; color: string }> = {
   TEAMS: { label: 'Teams', color: '#464eb8' },
   WEBEX: { label: 'Webex', color: '#00bceb' },
   VOOV: { label: 'VooV Meeting', color: '#00a4ff' },
-  OTHER: { label: '其他', color: '#8f959e' },
+  WECOM: { label: '企业微信', color: '#07c160' },
+  OTHER: { label: '其他' },
 };
 
 interface EditFormValues {
@@ -74,6 +77,7 @@ const getLocalUserLabel = (user: LocalUserOption) =>
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function PlatformUserManagement() {
+  const { token } = theme.useToken();
   const queryClient = useQueryClient();
 
   // ── Filter state ──────────────────────────────────────────────────────────
@@ -232,9 +236,9 @@ export function PlatformUserManagement() {
       key: 'platform',
       width: 130,
       render: (platform: Platform) => {
-        const info = PLATFORM_LABELS[platform] ?? { label: platform, color: '#8f959e' };
+        const info = PLATFORM_LABELS[platform] ?? { label: platform };
         return (
-          <Tag color={info.color} style={{ margin: 0 }}>
+          <Tag color={info.color ?? token.colorTextTertiary} style={{ margin: 0 }}>
             {info.label}
           </Tag>
         );
@@ -264,7 +268,7 @@ export function PlatformUserManagement() {
       ellipsis: true,
       render: (val: string) => (
         <Tooltip title={val}>
-          <Text copyable style={{ fontSize: 12, color: '#646a73' }}>
+          <Text copyable style={{ fontSize: 12, color: token.colorTextSecondary }}>
             {val}
           </Text>
         </Tooltip>
@@ -577,6 +581,8 @@ function LocalUserOptionContent({ user }: { user: LocalUserOption }) {
 // ─── Detail Panel ─────────────────────────────────────────────────────────────
 
 function DetailPanel({ detail, loading }: { detail: PlatformUserDetail | null; loading: boolean }) {
+  const { token } = theme.useToken();
+
   if (loading || !detail) {
     return (
       <div className="platform-user-detail">
@@ -586,7 +592,7 @@ function DetailPanel({ detail, loading }: { detail: PlatformUserDetail | null; l
   }
 
   const platform = detail.platform as Platform;
-  const platformInfo = PLATFORM_LABELS[platform] ?? { label: platform, color: '#8f959e' };
+  const platformInfo = PLATFORM_LABELS[platform] ?? { label: platform };
 
   return (
     <div className="platform-user-detail">
@@ -595,7 +601,7 @@ function DetailPanel({ detail, loading }: { detail: PlatformUserDetail | null; l
         <PersonAvatar size={52} seed={detail.id} src={detail.avatarUrl} name={detail.displayName} />
         <div className="platform-user-detail-title">
           <Title level={5}>{detail.displayName ?? '—'}</Title>
-          <Tag color={platformInfo.color}>{platformInfo.label}</Tag>
+          <Tag color={platformInfo.color ?? token.colorTextTertiary}>{platformInfo.label}</Tag>
         </div>
       </div>
 
@@ -643,7 +649,7 @@ function DetailPanel({ detail, loading }: { detail: PlatformUserDetail | null; l
               {detail.user.id && (
                 <Text
                   copyable={{ text: detail.user.id }}
-                  style={{ fontSize: 11, color: '#8f959e' }}
+                  style={{ fontSize: 11, color: token.colorTextTertiary }}
                 >
                   {detail.user.id}
                 </Text>

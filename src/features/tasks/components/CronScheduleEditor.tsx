@@ -4,6 +4,7 @@ import InputNumber from 'antd/es/input-number';
 import Segmented from 'antd/es/segmented';
 import Select from 'antd/es/select';
 import Space from 'antd/es/space';
+import theme from 'antd/es/theme';
 import TimePicker from 'antd/es/time-picker';
 import Typography from 'antd/es/typography';
 import dayjs from 'dayjs';
@@ -56,6 +57,7 @@ export function CronScheduleEditor({
   timezone = 'Asia/Shanghai',
   onChange,
 }: CronScheduleEditorProps) {
+  const { token } = theme.useToken();
   const [draft, setDraft] = useState<ScheduleDraft>(() => inferScheduleDraft(value));
 
   useEffect(() => {
@@ -167,7 +169,7 @@ export function CronScheduleEditor({
         style={{
           padding: '10px 12px',
           borderRadius: 8,
-          background: '#f5f5f5',
+          background: token.colorFillTertiary,
           fontFamily: 'monospace',
         }}
       >

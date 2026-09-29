@@ -5,6 +5,7 @@ import Input from 'antd/es/input';
 import Modal from 'antd/es/modal';
 import Space from 'antd/es/space';
 import Tag from 'antd/es/tag';
+import theme from 'antd/es/theme';
 import Typography from 'antd/es/typography';
 import {
   CheckOutlined,
@@ -31,6 +32,7 @@ export function DataRulePreviewModal({ open, onClose, rule }: DataRulePreviewMod
   const [mockUserId, setMockUserId] = useState('usr_alice_001');
   const [mockDeptId, setMockDeptId] = useState('dept_sales_east');
   const [mockDeptIds, setMockDeptIds] = useState('["dept_sales_east", "dept_sales_team2"]');
+  const { token } = theme.useToken();
 
   const mockContext = useMemo(() => {
     let parsedDeptIds = ['dept_sales_east'];
@@ -107,7 +109,7 @@ export function DataRulePreviewModal({ open, onClose, rule }: DataRulePreviewMod
             </Tag>
           </Descriptions.Item>
           <Descriptions.Item label="业务释义" span={2}>
-            <Text strong style={{ color: '#1677ff' }}>
+            <Text strong style={{ color: token.colorPrimary }}>
               {explanation}
             </Text>
           </Descriptions.Item>
@@ -122,7 +124,7 @@ export function DataRulePreviewModal({ open, onClose, rule }: DataRulePreviewMod
               <span>模拟运行用户上下文 (Mock User Context)</span>
             </Space>
           }
-          style={{ marginBottom: 16, background: '#fafbfc' }}
+          style={{ marginBottom: 16, background: token.colorFillQuaternary }}
         >
           <Space direction="vertical" style={{ width: '100%' }} size="small">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -184,13 +186,19 @@ export function DataRulePreviewModal({ open, onClose, rule }: DataRulePreviewMod
               }}
             >
               <Space size="small">
-                <PlayCircleOutlined style={{ color: '#52c41a' }} />
+                <PlayCircleOutlined style={{ color: token.colorSuccess }} />
                 <Text strong>最终生效的数据库查询条件:</Text>
               </Space>
               <Button
                 size="small"
                 type="text"
-                icon={copied ? <CheckOutlined style={{ color: '#52c41a' }} /> : <CopyOutlined />}
+                icon={
+                  copied ? (
+                    <CheckOutlined style={{ color: token.colorSuccess }} />
+                  ) : (
+                    <CopyOutlined />
+                  )
+                }
                 onClick={handleCopy}
               >
                 {copied ? '已复制' : '复制'}
