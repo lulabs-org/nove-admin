@@ -1241,22 +1241,7 @@ export function OrgMemberManagement() {
 
   const renderMemberToolbar = () => (
     <div className="org-toolbar">
-      <Space className="org-toolbar-filters" size="small" wrap>
-        {(!canReadDepartments || activeTab === 'left') && (
-          <Search
-            allowClear
-            prefix={<SearchOutlined />}
-            placeholder="搜索部门、姓名、邮箱、手机号"
-            style={{ width: 280 }}
-            value={unifiedKeyword}
-            onChange={(e) => setUnifiedKeyword(e.target.value)}
-            onSearch={(keyword) => {
-              const trimmed = keyword.trim() || undefined;
-              handleFilterChange('keyword', trimmed);
-            }}
-            disabled={!currentOrgId}
-          />
-        )}
+      <Space className="org-toolbar-filters" size="small">
         {activeTab !== 'left' && (
           <Select
             value={filters.status as MemberStatus | undefined}
