@@ -24,7 +24,7 @@
   flex-direction: column;
   gap: 12px;
   align-self: start;
-  height: calc(100vh - 258px);
+  height: calc(100vh - 230px);
   min-height: 420px;
   min-width: 0;
   overflow: hidden;
@@ -149,6 +149,33 @@
   width: 320px;
 }
 
+.permission-item-toolbar,
+.permission-item-filters {
+  flex-wrap: nowrap;
+}
+
+.permission-item-filters {
+  flex: 1;
+}
+
+.permission-item-filters .permission-search {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+}
+
+.permission-item-filters .permission-type-filter {
+  flex: 0 0 104px;
+}
+
+.permission-item-filters .permission-status-filter {
+  flex: 0 0 88px;
+}
+
+.permission-item-toolbar > .ant-space {
+  flex: 0 0 auto;
+}
+
 .permission-code-input,
 .permission-resource-input {
   width: 180px;
@@ -168,11 +195,10 @@
 }
 
 .permission-description {
-  max-width: 260px;
-  overflow: hidden;
-  color: #646a73;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: block;
+  color: #3b3f45;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .permission-condition {
@@ -248,5 +274,14 @@
   .permission-resource-input,
   .permission-filters .ant-select {
     width: 100% !important;
+  }
+
+  .permission-item-filters {
+    flex-wrap: wrap;
+  }
+
+  .permission-item-filters .permission-search,
+  .permission-item-filters .ant-select {
+    flex: 0 0 100%;
   }
 }
