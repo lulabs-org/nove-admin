@@ -48,6 +48,11 @@ function requiresCloudScan(fileName: string): boolean {
   return !MEDIA_EXTENSIONS.has(extension);
 }
 
+/**
+ * 判断右键菜单是否展示「预览」入口。
+ * 要求同时满足：是文件、已通过校验（ACTIVE）、有可用的文件 id、且格式在支持范围内，
+ * 这样验证中/被拒的文件与 xlsx 等不支持的格式就不会出现误导性的菜单项。
+ */
 function isPreviewableMedia(node: DriveNode): boolean {
   return (
     node.type === 'FILE' &&
@@ -268,6 +273,7 @@ export function DrivePage() {
   };
 
   const rowMenu = (node: DriveNode): MenuProps['items'] => [
+    // 仅对可预览的媒体文件展示入口
     ...(isPreviewableMedia(node)
       ? [{ key: 'preview', label: '预览', onClick: () => setPreviewNode(node) }]
       : []),

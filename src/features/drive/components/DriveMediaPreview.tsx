@@ -7,6 +7,11 @@ import { resolvePreviewKind } from '../lib/drivePreview';
 import type { DriveNode } from '../model/types';
 import './DriveMediaPreview.css';
 
+/**
+ * 预览失败时的提示文案。
+ * docx 由服务端转换，失败原因（未配置转换服务、文件过大等）会由接口给出，优先透出；
+ * 图片、视频是浏览器直接加载，拿不到接口文案，统一给通用提示。
+ */
 function previewErrorText(error: unknown, isDocument: boolean): string {
   if (!isDocument) return '媒体预览加载失败，请稍后重试';
   if (isAxiosError(error)) {
@@ -36,7 +41,9 @@ export function DriveMediaPreview({ node }: DriveMediaPreviewProps) {
   const query = useQuery({
     queryKey: ['drive-image-preview-url', fileId],
     enabled: Boolean(fileId) && Boolean(kind),
+    // 后端签名有效期 10 分钟，这里取 8 分钟，避免复用已过期的地址
     staleTime: 8 * 60 * 1000,
+    // docx 失败多是转换服务不可用或文件过大，重试无意义且转换耗时，因此不重试
     retry: isDocument ? false : undefined,
     queryFn: () => driveApi.createPreviewUrl(fileId!),
   });
@@ -76,6 +83,7 @@ export function DriveMediaPreview({ node }: DriveMediaPreviewProps) {
         />
       )}
       {!query.isLoading && !failed && url && (kind === 'pdf' || kind === 'docx') && (
+        // docx 由服务端转成临时 PDF 后返回，因此与 pdf 同为 iframe 内嵌展示
         <iframe
           className="drive-preview-pdf"
           src={url}

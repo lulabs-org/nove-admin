@@ -643,6 +643,7 @@ export function DriveDetailModal({
                 </div>
               ),
             },
+            // 文件夹没有可预览内容，仅文件展示该 Tab
             ...(isFolder
               ? []
               : [
