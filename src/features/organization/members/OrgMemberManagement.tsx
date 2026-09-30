@@ -1438,7 +1438,7 @@ export function OrgMemberManagement() {
             </Tooltip>
             {!treePaneCollapsed && (
               <>
-                <div className="org-tree-pane-topbar" style={{ padding: '12px 12px 0' }}>
+                <div className="org-tree-pane-topbar">
                   <Search
                     allowClear
                     prefix={<SearchOutlined />}
