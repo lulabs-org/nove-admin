@@ -196,12 +196,6 @@ export function PermissionTab({ onTotalChange }: PermissionTabProps) {
       },
     },
     {
-      title: '层级',
-      dataIndex: 'level',
-      key: 'level',
-      width: 76,
-    },
-    {
       title: '状态',
       dataIndex: 'active',
       key: 'active',
@@ -214,7 +208,7 @@ export function PermissionTab({ onTotalChange }: PermissionTabProps) {
       title: '说明',
       dataIndex: 'description',
       key: 'description',
-      ellipsis: true,
+      width: 220,
       render: (description: unknown) => (
         <span className="permission-description">{displayNullableText(description) || '-'}</span>
       ),
@@ -271,19 +265,20 @@ export function PermissionTab({ onTotalChange }: PermissionTabProps) {
       />
 
       <main className="permission-table-pane">
-        <div className="permission-toolbar">
-          <div className="permission-filters">
+        <div className="permission-toolbar permission-item-toolbar">
+          <div className="permission-filters permission-item-filters">
             <Input
               allowClear
               className="permission-search"
               prefix={<SearchOutlined />}
-              placeholder="搜索名称、编码、资源或动作"
+              placeholder="搜索权限"
+              aria-label="搜索名称、编码、资源或动作"
               value={permissionFilters.keyword}
               onChange={(event) => handleFilterChange('keyword', event.target.value)}
             />
             <Select
               allowClear
-              style={{ width: 128 }}
+              className="permission-type-filter"
               placeholder="权限类型"
               value={permissionFilters.type}
               onChange={(value) => handleFilterChange('type', value)}
@@ -291,7 +286,7 @@ export function PermissionTab({ onTotalChange }: PermissionTabProps) {
             />
             <Select
               allowClear
-              style={{ width: 112 }}
+              className="permission-status-filter"
               placeholder="状态"
               value={permissionFilters.active}
               onChange={(value) => handleFilterChange('active', value)}
@@ -330,7 +325,7 @@ export function PermissionTab({ onTotalChange }: PermissionTabProps) {
             showSizeChanger: true,
             showTotal: (total) => `共 ${total} 条`,
           }}
-          scroll={{ x: 1120 }}
+          scroll={{ x: 1256 }}
           onChange={(pagination) =>
             setPermissionFilters((prev) => ({
               ...prev,
