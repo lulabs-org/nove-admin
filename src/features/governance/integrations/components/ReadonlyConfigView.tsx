@@ -135,19 +135,18 @@ const READONLY_SECTIONS: Record<IntegrationModule, ReadonlySection[]> = {
     {
       title: '应用凭证',
       fields: [
-        { key: 'appId', label: 'App ID', fullWidth: true },
-        { key: 'appSecret', label: 'App Secret', kind: 'secret', fullWidth: true },
+        { key: 'appId', label: 'App ID' },
+        { key: 'appSecret', label: 'App Secret', kind: 'secret' },
       ],
     },
     {
       title: 'Webhook',
       fields: [
-        { key: 'webhookToken', label: 'Webhook Token', kind: 'secret', fullWidth: true },
+        { key: 'webhookToken', label: 'Webhook Token', kind: 'secret' },
         {
           key: 'encodingAesKey',
           label: 'Encoding AES Key',
           kind: 'secret',
-          fullWidth: true,
         },
       ],
     },
@@ -238,8 +237,8 @@ const READONLY_SECTIONS: Record<IntegrationModule, ReadonlySection[]> = {
     {
       title: 'API 凭证',
       fields: [
-        { key: 'secretKey', label: 'Secret Key', kind: 'secret', fullWidth: true },
-        { key: 'publishableKey', label: 'Publishable Key', fullWidth: true },
+        { key: 'secretKey', label: 'Secret Key', kind: 'secret' },
+        { key: 'publishableKey', label: 'Publishable Key' },
       ],
     },
     {
