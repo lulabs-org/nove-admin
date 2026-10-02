@@ -45,6 +45,7 @@ import dayjs from 'dayjs';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { driveApi } from '../api/driveApi';
 import type { DriveNode, DriveSpace } from '../model/types';
+import { DriveMediaPreview } from './DriveMediaPreview';
 import './DriveDetailModal.css';
 
 export interface DriveDetailModalProps {
@@ -151,7 +152,9 @@ export function DriveDetailModal({
 }: DriveDetailModalProps) {
   const [loading, setLoading] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'bindings' | 'audit'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'bindings' | 'audit' | 'preview'>(
+    'overview'
+  );
   const [details, setDetails] = useState<FileDetailState>({
     bindings: [],
     audit: [],
@@ -640,6 +643,20 @@ export function DriveDetailModal({
                 </div>
               ),
             },
+            // 文件夹没有可预览内容，仅文件展示该 Tab
+            ...(isFolder
+              ? []
+              : [
+                  {
+                    key: 'preview',
+                    label: '预览',
+                    children: (
+                      <div className="drive-detail-tab-pane">
+                        <DriveMediaPreview key={node?.id} node={node} />
+                      </div>
+                    ),
+                  },
+                ]),
           ]}
         />
       </Spin>
