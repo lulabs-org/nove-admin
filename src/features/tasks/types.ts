@@ -11,7 +11,6 @@ export interface ScheduledTask {
   type: TaskType;
   queueName: string;
   jobId: string | null;
-  repeatKey: string | null;
   cron: string | null;
   timezone: string | null;
   runAt: string | null;
