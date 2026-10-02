@@ -121,6 +121,77 @@
   font-family: inherit;
 }
 
+.wechat-sync-panel .ant-card-body {
+  padding-top: 4px;
+}
+
+.wechat-sync-panel .ant-tabs-nav {
+  margin-bottom: 0;
+}
+
+.wechat-sync-tab-content {
+  padding-top: 24px;
+}
+
+.wechat-sync-form-footer p {
+  margin: 0;
+  color: #8f959e;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.wechat-sync-panel .ant-tabs-tab .ant-tag {
+  margin: 0 0 0 4px;
+}
+
+.wechat-sync-manual-form,
+.wechat-sync-schedule-form {
+  max-width: 680px;
+}
+
+.wechat-sync-manual-fields {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.75fr) minmax(300px, 1.25fr);
+  gap: 0 16px;
+}
+
+.wechat-sync-schedule-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0 16px;
+}
+
+.wechat-sync-form-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 4px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.wechat-sync-form-footer p {
+  max-width: 360px;
+  margin: 0;
+}
+
+.wechat-sync-time-input {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fff;
+}
+
+@media (max-width: 900px) {
+  .wechat-sync-manual-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .integrations-card-heading > span:last-child {
   color: #8f959e;
   font-size: 13px;

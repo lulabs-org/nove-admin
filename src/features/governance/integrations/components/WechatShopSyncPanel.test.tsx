@@ -26,7 +26,14 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 vi.mock('../../../../shared/hooks/useAuth', () => ({ useAuth: vi.fn() }));
-vi.mock('../api/wechatShopSyncApi', () => ({ wechatShopSyncApi: { historySync: vi.fn() } }));
+vi.mock('../api/wechatShopSyncApi', () => ({
+  wechatShopSyncApi: {
+    historySync: vi.fn(),
+    getSchedule: vi.fn(),
+    saveSchedule: vi.fn(),
+    removeSchedule: vi.fn(),
+  },
+}));
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -37,6 +44,7 @@ beforeEach(() => {
     success: true,
     result: { enqueuedRangeTasks: 1 },
   });
+  vi.mocked(wechatShopSyncApi.getSchedule).mockResolvedValue(null);
 });
 
 it('hides sync controls from non-super administrators', () => {
@@ -48,20 +56,53 @@ it('hides sync controls from non-super administrators', () => {
 it('requires a time range before submitting', async () => {
   const user = userEvent.setup();
   render(<WechatShopSyncPanel />);
-  await user.click(screen.getByRole('button', { name: '同步订单' }));
   await user.click(screen.getByRole('button', { name: '提交同步任务' }));
   expect(await screen.findByText('请选择时间范围')).toBeInTheDocument();
   expect(wechatShopSyncApi.historySync).not.toHaveBeenCalled();
 });
 
+it('saves a daily schedule for selected data', async () => {
+  const user = userEvent.setup();
+  vi.mocked(wechatShopSyncApi.saveSchedule).mockResolvedValue({
+    id: 'schedule-1',
+    status: 'SCHEDULED',
+    timezone: 'Asia/Shanghai',
+    kinds: ['orders'],
+    period: 'DAILY',
+    time: '02:00',
+  });
+  render(<WechatShopSyncPanel />);
+  await user.click(screen.getByRole('tab', { name: '定时同步' }));
+  await user.click(screen.getByRole('checkbox', { name: /售后单/ }));
+  await user.click(screen.getByRole('button', { name: '开启定时同步' }));
+  await waitFor(() =>
+    expect(wechatShopSyncApi.saveSchedule).toHaveBeenCalledWith({
+      kinds: ['orders'],
+      period: 'DAILY',
+      time: '02:00',
+    })
+  );
+  expect(await screen.findByText('运行中')).toBeInTheDocument();
+});
+
+it('offers weekday and execution time for weekly sync', async () => {
+  const user = userEvent.setup();
+  render(<WechatShopSyncPanel />);
+  await user.click(screen.getByRole('tab', { name: '定时同步' }));
+  await user.click(screen.getByRole('combobox', { name: /同步周期/ }));
+  await user.click(screen.getByText('每周'));
+  expect(screen.getByText('星期')).toBeInTheDocument();
+  expect(screen.getByLabelText(/执行时间/)).toBeInTheDocument();
+});
+
 describe.each([
-  ['同步订单', 'orders'],
-  ['同步售后单', 'aftersale'],
+  ['订单', 'orders'],
+  ['售后单', 'aftersale'],
 ] as const)('%s', (label, kind) => {
   it('submits only the selected time basis with ISO dates', async () => {
     const user = userEvent.setup();
     render(<WechatShopSyncPanel />);
-    await user.click(screen.getByRole('button', { name: label }));
+    await user.click(screen.getByText(label, { exact: true }));
     await user.click(screen.getByRole('combobox'));
     await user.click(screen.getByText('更新时间'));
     await user.click(screen.getByPlaceholderText('开始日期'));
