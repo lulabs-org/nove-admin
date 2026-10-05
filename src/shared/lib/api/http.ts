@@ -129,6 +129,17 @@ http.interceptors.response.use(
       });
     }
 
+    if (!axiosError.response && axiosError.code !== 'ERR_CANCELED') {
+      message.error('网络连接异常，请检查网络后重试');
+      console.error('[Network Error]', {
+        url: axiosError.config?.url,
+        method: axiosError.config?.method,
+        code: axiosError.code,
+        message: axiosError.message,
+        requestId: axiosError.config?.headers?.['x-request-id'],
+      });
+    }
+
     return Promise.reject(error);
   }
 );

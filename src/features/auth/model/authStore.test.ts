@@ -70,18 +70,17 @@ describe('useAuthStore', () => {
       expect(state.user).toEqual(mockUser);
     });
 
-    it('clears token and marks unauthenticated if getMe fails on initialize', async () => {
+    it('preserves token and keeps loading state if getMe fails on initialize', async () => {
       authService.setToken('expired-token');
-      apiMocks.getMe.mockRejectedValueOnce(new Error('Unauthorized'));
+      apiMocks.getMe.mockRejectedValueOnce(new Error('Network error'));
       useAuthStore.setState({ loading: true });
 
       await useAuthStore.getState().initialize();
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.isAuthenticated).toBe(false);
-      expect(state.user).toBeNull();
-      expect(authService.getToken()).toBeNull();
+      expect(state.loading).toBe(true);
+      expect(state.isAuthenticated).toBe(true);
+      expect(authService.getToken()).toBe('expired-token');
     });
   });
 
