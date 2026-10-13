@@ -40,6 +40,7 @@ import { PERMISSIONS } from '../../../shared/utils/permissions';
 import { productApi } from '../../transactions/products/api/productApi';
 import { projectApi } from '../api/projectApi';
 import { ProjectCoverAvatar, ProjectCoverPicker } from '../components/ProjectCoverPicker';
+import { MarkdownEditor } from '../../../shared/components/MarkdownEditor';
 import {
   buildProjectPayload,
   parseProjectMetadata,
@@ -627,7 +628,10 @@ export function ProjectManagement() {
             </Col>
             <Col span={24}>
               <Form.Item name="description" label="项目介绍">
-                <TextArea rows={4} />
+                <MarkdownEditor
+                  placeholder="请输入详细项目介绍，支持 Markdown 语法排版（如标题、列表、加粗、代码块等）"
+                  minHeight={180}
+                />
               </Form.Item>
             </Col>
           </Row>
