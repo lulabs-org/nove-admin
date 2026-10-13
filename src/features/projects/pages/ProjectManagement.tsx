@@ -587,9 +587,14 @@ export function ProjectManagement() {
                 <Input />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item name="subtitle" label="副标题" rules={[{ max: 255 }]}>
                 <Input />
+              </Form.Item>
+            </Col>
+            <Col span={4}>
+              <Form.Item name="status" label="项目状态" rules={[{ required: true }]}>
+                <Select options={STATUS_OPTIONS.map(({ label, value }) => ({ label, value }))} />
               </Form.Item>
             </Col>
             <Col span={8}>
@@ -717,22 +722,17 @@ export function ProjectManagement() {
                 </Form.Item>
               </Col>
             )}
-            <Col span={6}>
-              <Form.Item name="status" label="状态" rules={[{ required: true }]}>
-                <Select options={STATUS_OPTIONS.map(({ label, value }) => ({ label, value }))} />
-              </Form.Item>
-            </Col>
-            <Col span={6}>
+            <Col span={8}>
               <Form.Item name="sortOrder" label="排序">
                 <InputNumber precision={0} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-            <Col span={6}>
+            <Col span={8}>
               <Form.Item name="isFeatured" label="精选" valuePropName="checked">
                 <Switch />
               </Form.Item>
             </Col>
-            <Col span={6}>
+            <Col span={8}>
               <Form.Item name="enrollDeadline" label="报名截止">
                 <DatePicker showTime style={{ width: '100%' }} />
               </Form.Item>
