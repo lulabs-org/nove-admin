@@ -1,5 +1,14 @@
 # Nove Admin
 
+> [!IMPORTANT]
+> **本项目已迁移至 [lulabs-org/nove-api](https://github.com/lulabs-org/nove-api) Monorepo。**
+>
+> - 当前 Admin 源码：[apps/admin](https://github.com/lulabs-org/nove-api/tree/main/apps/admin)
+> - 开发与贡献说明：[新仓库 README](https://github.com/lulabs-org/nove-api#readme)
+> - 问题反馈与功能请求：[新仓库 Issues](https://github.com/lulabs-org/nove-api/issues)
+>
+> 本仓库已归档，仅保留历史代码、Issues 和 PR 供查阅，不再接收更新。请在新仓库开展开发、提交 Issue 和 PR。下方内容为归档时的历史说明。
+
 Nove 的组织管理后台，基于 React、TypeScript、Vite、Ant Design 和 TanStack Query 构建。
 
 ## 开始开发
